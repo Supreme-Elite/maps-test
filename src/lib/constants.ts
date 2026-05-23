@@ -44,7 +44,10 @@ export const COMPLETE_DEFAULT_VALUES: { [key: string]: boolean | string | number
 	domain: DEFAULT_DOMAIN,
 	variable: DEFAULT_VARIABLE,
 	...DEFAULT_PREFERENCES,
-	...DEFAULT_VECTOR_OPTIONS
+	...DEFAULT_VECTOR_OPTIONS,
+	variable2: 'precipitation',
+	opacity2: 70,
+	layer2: 'false'
 };
 
 // Time constants
