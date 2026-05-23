@@ -2,6 +2,7 @@
 	import { variable2, layer2Enabled } from '$lib/stores/variables';
 	import { opacity2 } from '$lib/stores/preferences';
 	import { changeOMfileURL } from '$lib/layers';
+	import { currentOmUrl } from '$lib/stores/om-url';
 	import { updateUrl } from '$lib/url';
 
 	function onToggle(e: Event) {
@@ -22,6 +23,10 @@
 		const val = Number((e.target as HTMLInputElement).value);
 		opacity2.set(val);
 		updateUrl('opacity2', String(val));
+		// commitOpacity is captured at SlotManager construction; force a refresh
+		// so the new value is picked up on the next slot rotation.
+		currentOmUrl.set('');
+		changeOMfileURL();
 	}
 </script>
 
