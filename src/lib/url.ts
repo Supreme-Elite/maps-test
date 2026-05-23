@@ -23,7 +23,7 @@ import {
 } from '$lib/stores/preferences';
 import { modelRun as mR, modelRunLocked as mRL, time } from '$lib/stores/time';
 import { domain as d, layer2Enabled, variable as v, variable2 } from '$lib/stores/variables';
-import { vectorOptions as vO } from '$lib/stores/vector';
+import { vectorOptions as vO, windOverlayEnabled, windOverlayLevel } from '$lib/stores/vector';
 
 import {
 	CLIP_COUNTRIES_PARAM,
@@ -158,6 +158,20 @@ export const urlParamsToPreferences = () => {
 		vectorOptions.contourInterval = Number(intervalRaw);
 	} else if (vectorOptions.contourInterval !== 2) {
 		url.searchParams.set('interval', String(vectorOptions.contourInterval));
+	}
+
+	const windOverlayRaw = params.get('wind_overlay');
+	if (windOverlayRaw !== null) {
+		windOverlayEnabled.set(windOverlayRaw === 'true');
+	} else if (get(windOverlayEnabled)) {
+		url.searchParams.set('wind_overlay', 'true');
+	}
+
+	const windOverlayLevelRaw = params.get('wind_overlay_level');
+	if (windOverlayLevelRaw !== null) {
+		windOverlayLevel.set(windOverlayLevelRaw);
+	} else if (get(windOverlayLevel) !== '10m') {
+		url.searchParams.set('wind_overlay_level', get(windOverlayLevel));
 	}
 
 	const clipCountries = parseClipCountriesParam(params.get(CLIP_COUNTRIES_PARAM));
