@@ -14,6 +14,7 @@
 	import UnitSettings from './unit-settings.svelte';
 	import WaterClipSetting from './water-clip-setting.svelte';
 	import SecondaryLayerPanel from '$lib/components/secondary-layer/secondary-layer-panel.svelte';
+	import WindOverlayPanel from '$lib/components/wind-overlay/wind-overlay-panel.svelte';
 </script>
 
 <Sheet.Root bind:open={$sheet}>
@@ -28,6 +29,7 @@
 			<WaterClipSetting />
 			<OpacitySetting />
 			<SecondaryLayerPanel />
+			<WindOverlayPanel />
 			<CacheSettings />
 			<StateSettings />
 		</div>
