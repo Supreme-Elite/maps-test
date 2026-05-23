@@ -273,6 +273,19 @@ export let rasterManager: SlotManager | undefined;
 export let rasterManager2: SlotManager | undefined;
 export let vectorManager: SlotManager | undefined;
 
+const buildRasterManager2 = (map: maplibregl.Map): SlotManager =>
+	new SlotManager(map, {
+		sourceIdPrefix: 'omRasterSource2',
+		beforeLayer: BEFORE_LAYER_RASTER_SECONDARY,
+		layerFactory: () => [rasterLayer2()],
+		sourceSpec: (sourceUrl) => ({ url: sourceUrl, type: 'raster', maxzoom: 14 }),
+		removeDelayMs: 300,
+		onCommit: () => refreshPopup(),
+		onError: () => {},
+		slowLoadWarningMs: 10000,
+		onSlowLoad: () => {}
+	});
+
 export const createManagers = (): void => {
 	const map = get(m);
 	if (!map) return;
@@ -299,21 +312,7 @@ export const createManagers = (): void => {
 			toast.warning('Loading raster data might be limited by bandwidth or upstream server speed.')
 	});
 
-	rasterManager2 = new SlotManager(map, {
-		sourceIdPrefix: 'omRasterSource2',
-		beforeLayer: BEFORE_LAYER_RASTER_SECONDARY,
-		layerFactory: () => [rasterLayer2()],
-		sourceSpec: (sourceUrl) => ({
-			url: sourceUrl,
-			type: 'raster',
-			maxzoom: 14
-		}),
-		removeDelayMs: 300,
-		onCommit: () => refreshPopup(),
-		onError: () => {},
-		slowLoadWarningMs: 10000,
-		onSlowLoad: () => {}
-	});
+	rasterManager2 = buildRasterManager2(map);
 
 	vectorManager = new SlotManager(map, {
 		sourceIdPrefix: 'omVectorSource',
@@ -367,10 +366,15 @@ export const changeOMfileURL = (vectorOnly = false, rasterOnly = false): void =>
 
 	if (!vectorOnly) {
 		if (get(layer2Enabled)) {
+			const map = get(m);
+			if (map && !rasterManager2) {
+				rasterManager2 = buildRasterManager2(map);
+			}
 			const omUrl2 = getOMUrlFor(get(variable2));
 			if (omUrl2) rasterManager2?.update('om://' + omUrl2);
 		} else {
 			rasterManager2?.destroy();
+			rasterManager2 = undefined;
 		}
 	}
 };

@@ -13,6 +13,7 @@
 	import TileSizeSettings from './tile-size-settings.svelte';
 	import UnitSettings from './unit-settings.svelte';
 	import WaterClipSetting from './water-clip-setting.svelte';
+	import SecondaryLayerPanel from '$lib/components/secondary-layer/secondary-layer-panel.svelte';
 </script>
 
 <Sheet.Root bind:open={$sheet}>
@@ -26,6 +27,7 @@
 			<PopupSettings />
 			<WaterClipSetting />
 			<OpacitySetting />
+			<SecondaryLayerPanel />
 			<CacheSettings />
 			<StateSettings />
 		</div>
