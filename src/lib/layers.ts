@@ -20,7 +20,7 @@ import { type SlotLayer, SlotManager } from '$lib/slot-manager';
 
 import { refreshPopup } from './popup';
 import { currentOmUrl } from './stores/om-url';
-import { getOMUrl, getOMUrlFor } from './url';
+import { getOMUrl, getOMUrlFor, getWindOverlayUrl } from './url';
 
 // =============================================================================
 // Expression helpers
@@ -338,7 +338,10 @@ export const addOmFileLayers = (): void => {
 	const omUrl = getOMUrl();
 	createManagers();
 	if (omUrl) rasterManager?.update('om://' + omUrl);
-	if (omUrl) vectorManager?.update('om://' + omUrl);
+	if (omUrl) {
+		const windUrl = getWindOverlayUrl();
+		vectorManager?.update('om://' + (windUrl ?? omUrl));
+	}
 	if (get(layer2Enabled)) {
 		const omUrl2 = getOMUrlFor(get(variable2));
 		if (omUrl2) rasterManager2?.update('om://' + omUrl2);
@@ -362,7 +365,15 @@ export const changeOMfileURL = (vectorOnly = false, rasterOnly = false): void =>
 	rasterManager?.setBeforeLayer(preferences.hillshade ? HILLSHADE_LAYER : BEFORE_LAYER_RASTER);
 
 	if (!vectorOnly) rasterManager?.update('om://' + omUrl);
-	if (!rasterOnly) vectorManager?.update('om://' + omUrl);
+	if (!rasterOnly) {
+		const windUrl = getWindOverlayUrl();
+		if (windUrl) {
+			vectorManager?.update('om://' + windUrl);
+		} else {
+			// Legacy behavior: vector is rendered if the primary variable is itself a wind variable.
+			vectorManager?.update('om://' + omUrl);
+		}
+	}
 
 	if (!vectorOnly) {
 		if (get(layer2Enabled)) {

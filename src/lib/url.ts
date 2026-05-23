@@ -272,6 +272,17 @@ export const getOMUrlFor = (variable: string): string | undefined => {
 
 export const getOMUrl = (): string | undefined => getOMUrlFor(get(v));
 
+/**
+ * Builds the om:// URL for the wind-overlay vector layer at the configured level.
+ * Returns undefined when wind overlay is disabled or model run is unknown.
+ */
+export const getWindOverlayUrl = (): string | undefined => {
+	if (!get(windOverlayEnabled)) return undefined;
+	const level = get(windOverlayLevel);
+	// weather-map-layer reads U/V components and renders arrows when arrows=true.
+	return getOMUrlFor(`wind_u_component_${level}`);
+};
+
 export const getNextOmUrls = (
 	_omUrl: string,
 	domain: Domain,
