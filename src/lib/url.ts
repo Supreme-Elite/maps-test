@@ -16,12 +16,13 @@ import { map as m } from '$lib/stores/map';
 import {
 	type Preferences,
 	completeDefaultValues,
+	opacity2,
 	preferences as p,
 	tileSize as tS,
 	url as u
 } from '$lib/stores/preferences';
 import { modelRun as mR, modelRunLocked as mRL, time } from '$lib/stores/time';
-import { domain as d, variable as v } from '$lib/stores/variables';
+import { domain as d, layer2Enabled, variable as v, variable2 } from '$lib/stores/variables';
 import { vectorOptions as vO } from '$lib/stores/vector';
 
 import {
@@ -114,6 +115,28 @@ export const urlParamsToPreferences = () => {
 		v.set(variable);
 	} else if (get(v) !== 'temperature_2m') {
 		url.searchParams.set('variable', get(v));
+	}
+
+	const variable2Param = params.get('variable2');
+	if (variable2Param) {
+		variable2.set(variable2Param);
+	} else if (get(variable2) !== 'precipitation') {
+		url.searchParams.set('variable2', get(variable2));
+	}
+
+	const layer2Param = params.get('layer2');
+	if (layer2Param !== null) {
+		layer2Enabled.set(layer2Param === 'true');
+	} else if (get(layer2Enabled)) {
+		url.searchParams.set('layer2', 'true');
+	}
+
+	const opacity2Param = params.get('opacity2');
+	if (opacity2Param !== null) {
+		const n = Number(opacity2Param);
+		if (Number.isFinite(n)) opacity2.set(n);
+	} else if (get(opacity2) !== 70) {
+		url.searchParams.set('opacity2', String(get(opacity2)));
 	}
 
 	const arrowsRaw = params.get('arrows');
