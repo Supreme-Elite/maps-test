@@ -182,12 +182,11 @@ const memorisedHash = (json: string, cachedJson: string, cachedHash: string) => 
 /** Matches cumul-style variable names like `precipitation_sum_24h`. */
 const CUMUL_VARIABLE_REGEX = /^(?<base>.+)_sum_(?<hours>\d+)h$/;
 
-export const getOMUrl = () => {
+export const getOMUrlFor = (variable: string): string | undefined => {
 	const domain = get(d);
 	const modelRun = get(mR);
 	if (!modelRun) return undefined;
 	const selectedTime = get(time);
-	const variable = get(v);
 
 	const cumulMatch = variable.match(CUMUL_VARIABLE_REGEX);
 	const base = cumulMatch
@@ -233,6 +232,8 @@ export const getOMUrl = () => {
 
 	return result;
 };
+
+export const getOMUrl = (): string | undefined => getOMUrlFor(get(v));
 
 export const getNextOmUrls = (
 	_omUrl: string,
