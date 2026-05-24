@@ -72,9 +72,22 @@ export const addHillshadeLayer = () => {
 
 export const getStyle = async () => {
 	const preferences = get(p);
-	const style = await fetch(
+	// tiles.open-meteo.com (basemap) doesn't serve CORS, unlike map-tiles.* and
+	// map-assets.*. When VITE_OM_WORKER_URL is set, route the basemap fetches
+	// through the worker's /v1/tile-proxy endpoint, which forwards them with
+	// permissive CORS and rewrites the embedded TileJSON URLs too.
+	const styleText = await fetch(
 		`https://map-assets.open-meteo.com/styles/minimal-planet-maps${mode.current === 'dark' ? '-dark' : ''}${preferences.clipWater ? '-water-clip' : ''}.json`
-	).then((r) => r.json());
+	).then((r) => r.text());
+
+	const workerBase = import.meta.env.VITE_OM_WORKER_URL;
+	const patched = workerBase
+		? styleText.replaceAll(
+				'https://tiles.open-meteo.com/',
+				`${String(workerBase).replace(/\/$/, '')}/v1/tile-proxy/`
+			)
+		: styleText;
+	const style = JSON.parse(patched);
 
 	return preferences.globe ? { ...style, projection: { type: 'globe' } } : style;
 };
