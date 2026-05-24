@@ -9,6 +9,7 @@ import { defaultPreferences, preferences as p } from '$lib/stores/preferences';
 import { BEFORE_LAYER_RASTER, HILLSHADE_LAYER } from '$lib/constants';
 
 import { addOmFileLayers } from './layers';
+import { getOmWorkerUrl } from './runtime-env';
 import { updateUrl } from './url';
 
 export const setMapControlSettings = () => {
@@ -73,20 +74,21 @@ export const addHillshadeLayer = () => {
 export const getStyle = async () => {
 	const preferences = get(p);
 	// tiles.open-meteo.com (basemap) doesn't serve CORS, unlike map-tiles.* and
-	// map-assets.*. When VITE_OM_WORKER_URL is set, route the basemap fetches
+	// map-assets.*. When the worker URL is set, route the basemap fetches
 	// through the worker's /v1/tile-proxy endpoint, which forwards them with
 	// permissive CORS and rewrites the embedded TileJSON URLs too.
 	const styleText = await fetch(
 		`https://map-assets.open-meteo.com/styles/minimal-planet-maps${mode.current === 'dark' ? '-dark' : ''}${preferences.clipWater ? '-water-clip' : ''}.json`
 	).then((r) => r.text());
 
-	const workerBase = import.meta.env.VITE_OM_WORKER_URL;
-	const patched = workerBase
-		? styleText.replaceAll(
-				'https://tiles.open-meteo.com/',
-				`${String(workerBase).replace(/\/$/, '')}/v1/tile-proxy/`
-			)
-		: styleText;
+	const workerBase = getOmWorkerUrl();
+	const patched =
+		workerBase.length > 0
+			? styleText.replaceAll(
+					'https://tiles.open-meteo.com/',
+					`${workerBase.replace(/\/$/, '')}/v1/tile-proxy/`
+				)
+			: styleText;
 	const style = JSON.parse(patched);
 
 	return preferences.globe ? { ...style, projection: { type: 'globe' } } : style;

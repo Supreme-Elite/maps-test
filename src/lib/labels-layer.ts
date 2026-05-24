@@ -17,6 +17,7 @@ import { domain as domainStore, variable as variableStore } from '$lib/stores/va
 
 import { BEFORE_LAYER_VECTOR } from './constants';
 import { type LabelsFeatureCollection, fetchLabelsForBounds } from './labels';
+import { getOmWorkerUrl } from './runtime-env';
 import { CUMUL_VARIABLE_REGEX, resolveCumulModelRun } from './url';
 
 const SOURCE_ID = 'omLabelsSource';
@@ -91,9 +92,9 @@ export const refreshLabels = async (_deps?: unknown): Promise<void> => {
 		return;
 	}
 
-	const workerBase = import.meta.env.VITE_OM_WORKER_URL;
+	const workerBase = getOmWorkerUrl();
 	if (!workerBase) {
-		console.warn('[labels] VITE_OM_WORKER_URL not set — labels disabled');
+		console.warn('[labels] worker URL not set — labels disabled');
 		return;
 	}
 

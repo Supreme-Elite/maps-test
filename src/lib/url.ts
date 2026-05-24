@@ -32,6 +32,7 @@ import {
 	serializeClipCountriesParam
 } from './clipping';
 import { fmtModelRun, fmtSelectedTime, getBaseUri, hashValue } from './helpers';
+import { getOmWorkerUrl, isCumulFlagEnabled } from './runtime-env';
 import { clippingCountryCodes } from './stores/clipping';
 import { omProtocolSettings } from './stores/om-protocol-settings';
 import { formatISOUTCWithZ, parseISOWithoutTimezone } from './time-format';
@@ -213,11 +214,10 @@ export const urlParamsToPreferences = () => {
 };
 
 /** Cumul variables (`*_sum_Nh`) are an opt-in feature on top of the worker.
- * Disabled when `VITE_CUMUL_ENABLED=false` *or* when the worker URL isn't
+ * Disabled when the cumul flag is off *or* when the worker URL isn't
  * configured. Labels are gated separately on the worker URL alone. */
 export const isCumulEnabled = (): boolean =>
-	Boolean(import.meta.env.VITE_OM_WORKER_URL) &&
-	import.meta.env.VITE_CUMUL_ENABLED !== 'false';
+	Boolean(getOmWorkerUrl()) && isCumulFlagEnabled();
 
 /**
  * Builds the path prefix expected by infoclimat-om-worker so omProtocol can
@@ -234,8 +234,7 @@ const buildWorkerBase = (
 	hours: number
 ): string | undefined => {
 	if (!isCumulEnabled()) return undefined;
-	const workerUrl = import.meta.env.VITE_OM_WORKER_URL;
-	return `${String(workerUrl).replace(/\/$/, '')}/v1/sum/${domain}/${baseVariable}/${hours}h`;
+	return `${getOmWorkerUrl().replace(/\/$/, '')}/v1/sum/${domain}/${baseVariable}/${hours}h`;
 };
 
 let cachedClippingJson = '';

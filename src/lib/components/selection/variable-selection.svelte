@@ -15,6 +15,7 @@
 	} from '@openmeteo/weather-map-layer';
 
 	import { CUMUL_BASE_VARIABLES, CUMUL_GROUP_PREFIX, CUMUL_HOURS } from '$lib/constants';
+	import { getOmWorkerUrl, isCumulFlagEnabled } from '$lib/runtime-env';
 	import { desktop, loading } from '$lib/stores/preferences';
 	import { metaJson } from '$lib/stores/time';
 	import {
@@ -44,9 +45,7 @@
 		translateVariableLabel
 	} from '$lib/i18n/variables-fr';
 
-	const cumulWorkerEnabled =
-		Boolean(import.meta.env.VITE_OM_WORKER_URL) &&
-		import.meta.env.VITE_CUMUL_ENABLED !== 'false';
+	const cumulWorkerEnabled = Boolean(getOmWorkerUrl()) && isCumulFlagEnabled();
 
 	import VariableSelectionEmpty from './variable-selection-empty.svelte';
 
