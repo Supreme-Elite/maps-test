@@ -267,12 +267,14 @@
 		{:else}
 			<button
 				type="button"
-				class="cursor-pointer text-foreground/70 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+				class="cursor-pointer hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed {boundsValid
+					? 'text-green-500'
+					: 'text-foreground/70'}"
 				onclick={play}
 				disabled={!boundsValid}
 				aria-label={$playbackStatus === 'paused' ? 'Resume playback' : 'Play animation'}
 				title={boundsValid
-					? `Play (${frameCount} frames)`
+					? `Play animation (${frameCount} frames)`
 					: 'Define start [ and end ] bounds first'}
 			>
 				<svg
