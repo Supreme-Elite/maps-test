@@ -247,14 +247,21 @@
 			return;
 		}
 
-		const container = map.getContainer();
-		overlay = new PlaybackOverlay(container);
-		overlay.attach(bitmaps, (idx) => playbackCurrentIndex.set(idx));
-		playbackFrames.set(bitmaps);
-		playbackCurrentIndex.set(0);
+		try {
+			const container = map.getContainer();
+			overlay = new PlaybackOverlay(container);
+			overlay.attach(bitmaps, (idx) => playbackCurrentIndex.set(idx));
+			playbackFrames.set(bitmaps);
+			playbackCurrentIndex.set(0);
 
-		playbackStatus.set('playing');
-		overlay.start(computeFrameIntervalMs(get(playbackFps)));
+			playbackStatus.set('playing');
+			overlay.start(computeFrameIntervalMs(get(playbackFps)));
+		} catch {
+			for (const bm of bitmaps) bm.close();
+			toast.error("Impossible d'initialiser l'overlay de lecture");
+			stopPlayback();
+			return;
+		}
 	};
 
 	// Stop sur changement domain/variable/modelRun (cleanup overlay + bitmaps inclus dans stopPlayback)

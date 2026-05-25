@@ -33,6 +33,14 @@ export const isFailureRateExceeded = (
 /**
  * Resolve on the next `commit` from `slotEvents`, reject on `error`, on
  * timeout, or on abort signal. Listeners are cleaned up in all paths.
+ *
+ * NOTE on stale commits across frames: both raster and vector dispatch into the
+ * same `slotEvents` bus, and raster typically commits before vector. If the
+ * prerender loop has already moved on by the time the vector commit arrives,
+ * that stale event could resolve the next frame's `waitForCommit` prematurely.
+ * The pipeline's true serialization barrier is `waitForIdle` — `waitForCommit`
+ * is a fast-path optimization and may resolve on a stale event. Capture
+ * correctness is guaranteed by `waitForIdle`, not by `waitForCommit`.
  */
 export const waitForCommit = (
 	target: EventTarget,
