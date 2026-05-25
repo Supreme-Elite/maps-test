@@ -133,6 +133,7 @@ const INTERACTION_KEYS = [
 	'boxZoom',
 	'doubleClickZoom',
 	'touchZoomRotate',
+	'touchPitch',
 	'keyboard',
 	'dragRotate'
 ] as const;
@@ -148,6 +149,7 @@ export class MapInteractionLock {
 	constructor(private map: MaplibreMap) {}
 
 	freeze(): void {
+		if (this.previouslyEnabled.length > 0) return;
 		this.previouslyEnabled = [];
 		for (const key of INTERACTION_KEYS) {
 			const handler = this.map[key] as MapInteractionHandler | undefined;
@@ -193,6 +195,17 @@ export class PlaybackOverlay {
 	}
 
 	attach(bitmaps: ImageBitmap[], onIndexChange?: (idx: number) => void): void {
+		// Defensive: clean up any prior attached state.
+		if (this.resizeHandler) {
+			window.removeEventListener('resize', this.resizeHandler);
+			this.resizeHandler = null;
+		}
+		if (this.resizeRaf !== null) {
+			cancelAnimationFrame(this.resizeRaf);
+			this.resizeRaf = null;
+		}
+		this.stopInterval();
+		for (const bm of this.bitmaps) bm.close();
 		this.bitmaps = bitmaps;
 		this.currentIndex = 0;
 		this.onIndexChange = onIndexChange ?? null;
