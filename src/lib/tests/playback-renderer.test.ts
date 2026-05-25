@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
 	computeFrameIntervalMs,
@@ -53,6 +53,10 @@ describe('waitForCommit', () => {
 		vi.useFakeTimers();
 	});
 
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	it('resolves when commit event fires', async () => {
 		const p = waitForCommit(slotEvents, 5_000);
 		slotEvents.dispatchEvent(new Event(SLOT_EVENT_COMMIT));
@@ -75,6 +79,13 @@ describe('waitForCommit', () => {
 		const controller = new AbortController();
 		const p = waitForCommit(slotEvents, 5_000, controller.signal);
 		controller.abort();
+		await expect(p).rejects.toThrow(/abort/i);
+	});
+
+	it('rejects immediately when signal is already aborted at call time', async () => {
+		const controller = new AbortController();
+		controller.abort();
+		const p = waitForCommit(slotEvents, 5_000, controller.signal);
 		await expect(p).rejects.toThrow(/abort/i);
 	});
 
