@@ -47,6 +47,7 @@
 	import Scale from '$lib/components/scale/scale.svelte';
 	import VariableSelection from '$lib/components/selection/variable-selection.svelte';
 	import Settings from '$lib/components/settings/settings.svelte';
+	import SiteHeader from '$lib/components/site-header/site-header.svelte';
 	import TimeSelector from '$lib/components/time/time-selector.svelte';
 
 	import { checkHighDefinition } from '$lib/helpers';
@@ -220,6 +221,7 @@
 
 <div class="map maplibregl-map" id="#map_container" bind:this={mapContainer}></div>
 
+<SiteHeader />
 <Scale />
 <VariableSelection />
 <ClippingPanel bind:this={clippingPanel} />
