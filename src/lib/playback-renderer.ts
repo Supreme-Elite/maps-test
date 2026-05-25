@@ -1,5 +1,7 @@
 import { SLOT_EVENT_COMMIT, SLOT_EVENT_ERROR } from '$lib/slot-events';
 
+import type { Map as MaplibreMap } from 'maplibre-gl';
+
 /**
  * Convert frames-per-second to the interval in milliseconds between frame draws.
  * Throws if fps <= 0.
@@ -67,3 +69,209 @@ export const waitForCommit = (
 		target.addEventListener(SLOT_EVENT_COMMIT, onCommit, { once: true });
 		target.addEventListener(SLOT_EVENT_ERROR, onError, { once: true });
 	});
+
+/**
+ * Wait for the map to become idle (no in-flight tile loads, all paints done),
+ * or reject on timeout. Acts as a safety net in case the SlotManager `commit`
+ * event fires before all auxiliary layers (hillshade, labels) are painted.
+ */
+export const waitForIdle = (map: MaplibreMap, timeoutMs: number): Promise<void> =>
+	new Promise<void>((resolve, reject) => {
+		let settled = false;
+		const onIdle = () => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timeoutId);
+			resolve();
+		};
+		const timeoutId = setTimeout(() => {
+			if (settled) return;
+			settled = true;
+			map.off('idle', onIdle);
+			reject(new Error(`waitForIdle timeout after ${timeoutMs}ms`));
+		}, timeoutMs);
+		map.once('idle', onIdle);
+	});
+
+/**
+ * Capture the current map canvas as a WebP blob. Returns null on encode failure.
+ * The map must be at rest (waitForCommit + waitForIdle) before calling — otherwise
+ * the capture will show whatever is currently painted, which may be a transient
+ * blend state during a cross-fade.
+ *
+ * Note: MapLibre's WebGL context must be created with `preserveDrawingBuffer: true`
+ * for `toBlob` to work reliably. This is checked at app boot — see Task 7.
+ */
+export const captureFrame = (map: MaplibreMap, quality: number): Promise<Blob | null> =>
+	new Promise<Blob | null>((resolve) => {
+		map.getCanvas().toBlob((blob) => resolve(blob), 'image/webp', quality);
+	});
+
+/**
+ * Decode an array of WebP/PNG/JPEG blobs into GPU-resident ImageBitmaps in parallel.
+ * Failed decodes are filtered out.
+ */
+export const decodeFrames = async (blobs: Blob[]): Promise<ImageBitmap[]> => {
+	if (blobs.length === 0) return [];
+	const results = await Promise.allSettled(blobs.map((b) => createImageBitmap(b)));
+	const bitmaps: ImageBitmap[] = [];
+	for (const r of results) {
+		if (r.status === 'fulfilled') bitmaps.push(r.value);
+	}
+	return bitmaps;
+};
+
+type MapInteractionHandler = {
+	enable: () => void;
+	disable: () => void;
+	isEnabled: () => boolean;
+};
+
+const INTERACTION_KEYS = [
+	'dragPan',
+	'scrollZoom',
+	'boxZoom',
+	'doubleClickZoom',
+	'touchZoomRotate',
+	'keyboard',
+	'dragRotate'
+] as const;
+type InteractionKey = (typeof INTERACTION_KEYS)[number];
+
+/**
+ * Freeze and restore map user interactions. Records which were enabled at
+ * freeze time so we only re-enable those, not all of them blindly.
+ */
+export class MapInteractionLock {
+	private previouslyEnabled: InteractionKey[] = [];
+
+	constructor(private map: MaplibreMap) {}
+
+	freeze(): void {
+		this.previouslyEnabled = [];
+		for (const key of INTERACTION_KEYS) {
+			const handler = this.map[key] as MapInteractionHandler | undefined;
+			if (handler && handler.isEnabled()) {
+				this.previouslyEnabled.push(key);
+				handler.disable();
+			}
+		}
+	}
+
+	thaw(): void {
+		for (const key of this.previouslyEnabled) {
+			const handler = this.map[key] as MapInteractionHandler | undefined;
+			handler?.enable();
+		}
+		this.previouslyEnabled = [];
+	}
+}
+
+/**
+ * Canvas overlay that displays pre-rendered ImageBitmap frames in a loop.
+ * Owns its DOM node, drawing interval, and the bitmap references (closes them
+ * on `detach`).
+ */
+export class PlaybackOverlay {
+	private canvas: HTMLCanvasElement;
+	private ctx: CanvasRenderingContext2D;
+	private bitmaps: ImageBitmap[] = [];
+	private intervalId: ReturnType<typeof setInterval> | null = null;
+	private currentIndex = 0;
+	private resizeHandler: (() => void) | null = null;
+	private resizeRaf: number | null = null;
+	private onIndexChange: ((idx: number) => void) | null = null;
+
+	constructor(private container: HTMLElement) {
+		this.canvas = document.createElement('canvas');
+		this.canvas.style.cssText =
+			'position:absolute;inset:0;pointer-events:none;width:100%;height:100%';
+		this.canvas.setAttribute('aria-hidden', 'true');
+		const ctx = this.canvas.getContext('2d');
+		if (!ctx) throw new Error('2D canvas context unavailable');
+		this.ctx = ctx;
+	}
+
+	attach(bitmaps: ImageBitmap[], onIndexChange?: (idx: number) => void): void {
+		this.bitmaps = bitmaps;
+		this.currentIndex = 0;
+		this.onIndexChange = onIndexChange ?? null;
+		this.container.appendChild(this.canvas);
+		this.syncCanvasSize();
+
+		this.resizeHandler = () => {
+			if (this.resizeRaf !== null) cancelAnimationFrame(this.resizeRaf);
+			this.resizeRaf = requestAnimationFrame(() => {
+				this.resizeRaf = null;
+				this.syncCanvasSize();
+				this.drawCurrent();
+			});
+		};
+		window.addEventListener('resize', this.resizeHandler);
+
+		this.drawCurrent();
+	}
+
+	start(intervalMs: number): void {
+		this.stopInterval();
+		this.intervalId = setInterval(() => this.advance(), intervalMs);
+	}
+
+	pause(): void {
+		this.stopInterval();
+	}
+
+	setIndex(idx: number): void {
+		if (this.bitmaps.length === 0) return;
+		this.currentIndex = ((idx % this.bitmaps.length) + this.bitmaps.length) % this.bitmaps.length;
+		this.drawCurrent();
+		this.onIndexChange?.(this.currentIndex);
+	}
+
+	detach(): void {
+		this.stopInterval();
+		if (this.resizeHandler) {
+			window.removeEventListener('resize', this.resizeHandler);
+			this.resizeHandler = null;
+		}
+		if (this.resizeRaf !== null) {
+			cancelAnimationFrame(this.resizeRaf);
+			this.resizeRaf = null;
+		}
+		if (this.canvas.parentNode === this.container) {
+			this.container.removeChild(this.canvas);
+		}
+		for (const bm of this.bitmaps) bm.close();
+		this.bitmaps = [];
+		this.onIndexChange = null;
+	}
+
+	private stopInterval(): void {
+		if (this.intervalId !== null) {
+			clearInterval(this.intervalId);
+			this.intervalId = null;
+		}
+	}
+
+	private advance(): void {
+		if (this.bitmaps.length === 0) return;
+		this.currentIndex = (this.currentIndex + 1) % this.bitmaps.length;
+		this.drawCurrent();
+		this.onIndexChange?.(this.currentIndex);
+	}
+
+	private syncCanvasSize(): void {
+		const dpr = window.devicePixelRatio || 1;
+		const cw = this.container.clientWidth;
+		const ch = this.container.clientHeight;
+		this.canvas.width = Math.max(1, Math.round(cw * dpr));
+		this.canvas.height = Math.max(1, Math.round(ch * dpr));
+	}
+
+	private drawCurrent(): void {
+		const bm = this.bitmaps[this.currentIndex];
+		if (!bm) return;
+		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		this.ctx.drawImage(bm, 0, 0, this.canvas.width, this.canvas.height);
+	}
+}
