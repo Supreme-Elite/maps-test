@@ -16,6 +16,7 @@ import {
 	BEFORE_LAYER_VECTOR_WATER_CLIP,
 	HILLSHADE_LAYER
 } from '$lib/constants';
+import { SLOT_EVENT_COMMIT, SLOT_EVENT_ERROR, slotEvents } from '$lib/slot-events';
 import { type SlotLayer, SlotManager } from '$lib/slot-manager';
 
 import { refreshPopup } from './popup';
@@ -305,8 +306,12 @@ export const createManagers = (): void => {
 		onCommit: () => {
 			loading.set(false);
 			refreshPopup();
+			slotEvents.dispatchEvent(new Event(SLOT_EVENT_COMMIT));
 		},
-		onError: () => loading.set(false),
+		onError: () => {
+			loading.set(false);
+			slotEvents.dispatchEvent(new Event(SLOT_EVENT_ERROR));
+		},
 		slowLoadWarningMs: 10000,
 		onSlowLoad: () =>
 			toast.warning(
@@ -326,7 +331,9 @@ export const createManagers = (): void => {
 			vectorContourLabelsLayer()
 		],
 		sourceSpec: (sourceUrl) => ({ url: sourceUrl, type: 'vector' }),
-		removeDelayMs: 250
+		removeDelayMs: 250,
+		onCommit: () => slotEvents.dispatchEvent(new Event(SLOT_EVENT_COMMIT)),
+		onError: () => slotEvents.dispatchEvent(new Event(SLOT_EVENT_ERROR))
 	});
 };
 
