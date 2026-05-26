@@ -2,6 +2,11 @@
 export const DEFAULT_DOMAIN = 'meteofrance_arome_france0025';
 export const DEFAULT_VARIABLE = 'temperature_2m';
 
+/** Pseudo-domaine des anomalies de température (servi depuis le bucket R2). */
+export const ANOMALY_DOMAIN = 'anomaly_europe';
+/** Variable unique exposée par le pseudo-domaine anomalie. */
+export const ANOMALY_VARIABLE = 'temperature_2m_anomaly';
+
 // Cumul (precipitation aggregation) — bases that the worker can sum, and the
 // proposed windows shown in the UI. Sentinel prefix marks group entries in the
 // flat variable list so the selector can branch into a secondary popover.
@@ -82,6 +87,9 @@ export const VISIBLE_PRESSURE_LEVELS_HPA: readonly number[] = [
 // Pour réactiver tous les modèles : passer la liste à `null` ou retirer le
 // filtre dans variable-selection.svelte.
 export const DOMAIN_ALLOWLIST: readonly string[] = [
+	// Anomalies (pseudo-domaine, visible seulement si le bucket est configuré)
+	'anomaly_europe',
+
 	// Cœur français
 	'meteofrance_arome_france_hd',
 	'meteofrance_arome_france0025',
