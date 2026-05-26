@@ -1,0 +1,17 @@
+{
+	"name": "Infoclimat - Modèles",
+	"short_name": "Infoclimat",
+	"description": "Visualisation des modèles de prévision météo (ARPEGE, AROME, ECMWF, ICON) par Infoclimat",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#ffffff",
+	"theme_color": "#0a5fb4",
+	"icons": [
+		{
+			"src": "/apple-touch-icon.png",
+			"sizes": "128x128",
+			"type": "image/png",
+			"purpose": "any"
+		}
+	]
+}
