@@ -1,5 +1,8 @@
 import { browser, dev } from '$app/environment';
 
+import { ANOMALY_DOMAIN } from '$lib/constants';
+import { getModelsBucketUrl } from '$lib/runtime-env';
+
 /**
  * Pads a number with leading zeros to ensure 2 digits
  */
@@ -11,10 +14,14 @@ export const fmtModelRun = (modelRun: Date): string =>
 export const fmtSelectedTime = (t: Date): string =>
 	`${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}T${pad(t.getUTCHours())}${pad(t.getUTCMinutes())}`;
 
-export const getBaseUri = (domainValue: string): string =>
-	dev && domainValue.startsWith('dwd_icon') && !domainValue.endsWith('eps')
+export const getBaseUri = (domainValue: string): string => {
+	if (domainValue === ANOMALY_DOMAIN) {
+		return getModelsBucketUrl().replace(/\/$/, '');
+	}
+	return dev && domainValue.startsWith('dwd_icon') && !domainValue.endsWith('eps')
 		? 'https://s3.servert.ch'
 		: 'https://map-tiles.open-meteo.com';
+};
 
 export const hashValue = (val: string): string => {
 	// FNV-1a 32-bit – synchronous, fast, and sufficient for cache-busting keys.
