@@ -36,14 +36,11 @@ export const selectedDomain = derived(domain, ($domain) => {
 
 export const selectedVariable = derived(variable, ($variable) => {
 	const object = variableOptions.find(({ value }) => value === $variable);
-	if (object) {
-		return object;
-	} else {
-		return {
-			value: $variable,
-			label: $variable
-		};
+	if (object) return object;
+	if ($variable === 'temperature_2m_anomaly') {
+		return { value: $variable, label: 'Anomalie T° 2m vs. normale 1991–2020' };
 	}
+	return { value: $variable, label: $variable };
 });
 
 export const levelGroupSelected: Writable<{ value: string; label: string } | undefined> = writable(
