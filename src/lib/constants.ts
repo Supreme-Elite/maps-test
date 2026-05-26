@@ -77,9 +77,7 @@ export const DEPARTMENTS_GEOJSON_URL = '/departements.geojson';
 export const DOMAIN_ALLOWLIST: readonly string[] = [
 	// Cœur français
 	'meteofrance_arome_france_hd',
-	'meteofrance_arome_france_hd_15min',
 	'meteofrance_arome_france0025',
-	'meteofrance_arome_france0025_15min',
 	'meteofrance_arpege_europe',
 
 	// Référence globale + Europe
