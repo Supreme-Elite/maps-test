@@ -382,9 +382,30 @@ export const getNextOmUrls = (
 	domain: Domain,
 	metaJson: DomainMetaDataJson | undefined
 ): [string | undefined, string | undefined] => {
-	const base = `https://map-tiles.open-meteo.com/data_spatial/${domain.value}`;
 	const date = get(time);
 	const dateString = formatISOUTCWithZ(date);
+
+	// Pseudo-domaine anomalie : le préchargement suit le layout bucket
+	// (`anomaly/temperature_2m/{phase}/{date}.om`), pas le schéma data_spatial.
+	if (domain.value === ANOMALY_DOMAIN) {
+		if (!metaJson) return [undefined, undefined];
+		const idx = metaJson.valid_times.findIndex((s) => s === dateString);
+		const bucket = getModelsBucketUrl().replace(/\/$/, '');
+		const now = new Date();
+		const buildAnomalyUrl = (i: number): string | undefined => {
+			const t = metaJson.valid_times[i];
+			if (!t) return undefined;
+			const d2 = new Date(t);
+			if (isNaN(d2.getTime())) return undefined;
+			return (
+				`${bucket}/anomaly/temperature_2m/${anomalyPhase(d2, now)}/${fmtDateYMD(d2)}.om` +
+				`?variable=${ANOMALY_VARIABLE}`
+			);
+		};
+		return [buildAnomalyUrl(idx + 1), buildAnomalyUrl(idx - 1)];
+	}
+
+	const base = `https://map-tiles.open-meteo.com/data_spatial/${domain.value}`;
 
 	let prevDate: Date;
 	let nextDate: Date;

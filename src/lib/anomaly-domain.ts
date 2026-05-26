@@ -1,7 +1,12 @@
-import { type Domain, domainOptions } from '@openmeteo/weather-map-layer';
+import { type Domain, domainGroups, domainOptions } from '@openmeteo/weather-map-layer';
 
 import { ANOMALY_DOMAIN } from '$lib/constants';
 import { getModelsBucketUrl } from '$lib/runtime-env';
+
+/** Groupe (fournisseur) sous lequel le sélecteur range le pseudo-domaine.
+ *  Le sélecteur affiche un domaine sous un groupe si `domain.value` commence
+ *  par `group.value` — `anomaly_europe`.startsWith('anomaly') === true. */
+const ANOMALY_GROUP = 'anomaly';
 
 /** Domaine synthétique calqué sur la grille ARPEGE Europe (741×521, 0.1°). */
 const anomalyDomain: Domain = {
@@ -28,6 +33,11 @@ const anomalyDomain: Domain = {
  */
 export function registerAnomalyDomain(): void {
 	if (!getModelsBucketUrl()) return;
+	// Groupe : le sélecteur range les domaines par préfixe fournisseur, donc
+	// sans groupe `anomaly` le domaine ne s'affiche sous aucune section.
+	if (!domainGroups.some((g) => g.value === ANOMALY_GROUP)) {
+		domainGroups.push({ value: ANOMALY_GROUP, label: 'Anomalies' });
+	}
 	if (domainOptions.some((d) => d.value === ANOMALY_DOMAIN)) return;
 	domainOptions.push(anomalyDomain);
 }

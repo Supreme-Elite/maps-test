@@ -1,4 +1,4 @@
-import { domainOptions } from '@openmeteo/weather-map-layer';
+import { domainGroups, domainOptions } from '@openmeteo/weather-map-layer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('registerAnomalyDomain', () => {
@@ -6,7 +6,20 @@ describe('registerAnomalyDomain', () => {
 		// retire toute entrée anomaly_europe d'un test précédent
 		const idx = domainOptions.findIndex((d) => d.value === 'anomaly_europe');
 		if (idx >= 0) domainOptions.splice(idx, 1);
+		const gidx = domainGroups.findIndex((g) => g.value === 'anomaly');
+		if (gidx >= 0) domainGroups.splice(gidx, 1);
 		vi.resetModules();
+	});
+
+	it('registers the "anomaly" domain group so the selector can show it', async () => {
+		// Sans le groupe, le sélecteur (qui range par préfixe fournisseur via
+		// `domain.value.startsWith(group.value)`) n'affiche jamais le domaine.
+		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
+		const { registerAnomalyDomain } = await import('$lib/anomaly-domain');
+		registerAnomalyDomain();
+		expect(domainGroups.filter((g) => g.value === 'anomaly').length).toBe(1);
+		// `anomaly_europe`.startsWith('anomaly') doit être vrai (lien groupe↔domaine).
+		expect('anomaly_europe'.startsWith('anomaly')).toBe(true);
 	});
 
 	it('pushes anomaly_europe when bucket URL is set', async () => {
