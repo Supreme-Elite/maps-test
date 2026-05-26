@@ -83,6 +83,8 @@ export const DOMAIN_ALLOWLIST: readonly string[] = [
 	'meteofrance_arpege_europe',
 
 	// Référence globale + Europe
+	'meteofrance_arpege_world025',
+	'ncep_gfs025',
 	'ecmwf_ifs',
 	'ecmwf_ifs025',
 	'ecmwf_aifs025_single',
