@@ -1,6 +1,5 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
-
 import { domainOptions } from '@openmeteo/weather-map-layer';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('registerAnomalyDomain', () => {
 	beforeEach(() => {
