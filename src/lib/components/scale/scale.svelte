@@ -118,10 +118,10 @@
 	>
 		{#if $variable === ANOMALY_VARIABLE}
 			<div
-				class="bg-glass/75 mb-1 max-w-40 rounded px-2 py-1 text-xs leading-tight shadow-md backdrop-blur-sm"
+				class="bg-glass/75 mb-1 w-28 rounded px-2 py-1 text-[10px] leading-snug shadow-md backdrop-blur-sm"
 			>
-				<div class="font-semibold">Écart à la normale 1991–2020</div>
-				<div class="opacity-80">🔵 plus froid · 🔴 plus chaud</div>
+				<div class="font-semibold">Anomalie<br />vs normale 1991–2020</div>
+				<div class="mt-0.5 opacity-80">🔵 froid · 🔴 chaud</div>
 			</div>
 		{/if}
 		<div class="flex flex-col-reverse shadow-md">
