@@ -18,6 +18,7 @@
 	import * as Select from '$lib/components/ui/select';
 
 	import {
+		ANOMALY_DOMAIN,
 		DAY_NAMES,
 		MILLISECONDS_PER_DAY,
 		MILLISECONDS_PER_HOUR,
@@ -187,8 +188,16 @@
 			nearestModelRun = latestReferenceTime;
 		}
 
-		// other than seasonal models, data is not available longer than 7 days
-		if ($selectedDomain.model_interval !== 'monthly') {
+		// Le domaine anomalie a un historique profond (J-30) : sa borne basse
+		// est le 1er valid_time, pas la limite générique de 7 jours.
+		if ($selectedDomain.value === ANOMALY_DOMAIN) {
+			if ($metaJson && timeStep.getTime() < metaFirstTime.getTime()) {
+				toast.warning('Date trop ancienne, recalée sur la plus ancienne disponible');
+				time.set(new Date(metaFirstTime));
+				timeStep = new Date(metaFirstTime);
+			}
+		} else if ($selectedDomain.model_interval !== 'monthly') {
+			// other than seasonal models, data is not available longer than 7 days
 			// check that requested timeStep is not older than 7 days
 			const date7DaysAgo = Date.now() - MILLISECONDS_PER_WEEK;
 			if (timeStep.getTime() < date7DaysAgo) {
