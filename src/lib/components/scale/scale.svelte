@@ -6,7 +6,11 @@
 	import { mode } from 'mode-watcher';
 	import { toast } from 'svelte-sonner';
 
-	import { customColorScales, omProtocolSettings } from '$lib/stores/om-protocol-settings';
+	import {
+		customColorScales,
+		omProtocolSettings,
+		standardColorScales
+	} from '$lib/stores/om-protocol-settings';
 	import { opacity, preferences } from '$lib/stores/preferences';
 	import {
 		convertValue,
@@ -94,6 +98,24 @@
 
 	const closePicker = () => {
 		editingIndex = null;
+	};
+
+	// Vrai quand l'utilisateur a personnalisé les couleurs de la variable courante.
+	const hasCustomScale = $derived(Boolean($customColorScales[$variable]));
+
+	/** Réinitialise l'échelle de la variable courante aux couleurs standard. */
+	const resetColorScale = async () => {
+		const standard = getColorScale($variable, isDark, standardColorScales);
+		customColorScales.update((scales) => {
+			const next = { ...scales };
+			delete next[$variable];
+			return next;
+		});
+		$omProtocolSettings.colorScales[$variable] = standard;
+		editingIndex = null;
+		await tick();
+		await changeOMfileURL();
+		toast('Couleurs réinitialisées');
 	};
 
 	const digits = 2;
@@ -200,6 +222,18 @@
 						<span class="leading-6">{displayUnit}</span>
 					{/if}
 				</div>
+			{/if}
+
+			{#if editable && hasCustomScale}
+				<button
+					type="button"
+					onclick={resetColorScale}
+					class="bg-glass/75 hover:bg-glass/95 rounded-t backdrop-blur-sm shadow-md h-6 w-full cursor-pointer text-center text-xs leading-6"
+					title="Réinitialiser aux couleurs standard"
+					aria-label="Réinitialiser aux couleurs standard"
+				>
+					↺ couleurs
+				</button>
 			{/if}
 		</div>
 	</div>
