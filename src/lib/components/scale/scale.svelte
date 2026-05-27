@@ -20,7 +20,6 @@
 	import * as Select from '$lib/components/ui/select';
 
 	import { getAlpha, hexToRgba, rgbaToHex } from '$lib/color';
-	import { ANOMALY_VARIABLE } from '$lib/constants';
 	import { textWhite } from '$lib/helpers';
 	import { changeOMfileURL } from '$lib/layers';
 	import { refreshPopup } from '$lib/popup';
@@ -116,14 +115,6 @@
 			: 'bottom-2.5'} duration-500 left-2.5 z-10 select-none rounded"
 		style="max-height: {totalHeight + 100}px;"
 	>
-		{#if $variable === ANOMALY_VARIABLE}
-			<div
-				class="bg-glass/75 mb-1 w-28 rounded px-2 py-1 text-[10px] leading-snug shadow-md backdrop-blur-sm"
-			>
-				<div class="font-semibold">Anomalie<br />vs normale 1991–2020</div>
-				<div class="mt-0.5 opacity-80">🔵 froid · 🔴 chaud</div>
-			</div>
-		{/if}
 		<div class="flex flex-col-reverse shadow-md">
 			<div class="flex flex-col-reverse bg-glass/30 backdrop-blur-sm rounded-b">
 				{#each labeledColors as lc, i (lc)}

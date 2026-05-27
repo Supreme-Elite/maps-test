@@ -37,6 +37,7 @@
 	import * as Popover from '$lib/components/ui/popover';
 
 	import {
+		ANOMALY_VARIABLE,
 		CUMUL_BASE_VARIABLES,
 		CUMUL_GROUP_PREFIX,
 		CUMUL_HOURS,
@@ -632,6 +633,15 @@
 						</Command.Root>
 					</Popover.Content>
 				</Popover.Root>
+			{/if}
+
+			{#if $selectedVariable.value === ANOMALY_VARIABLE}
+				<div
+					class="bg-glass/75 w-45 rounded px-2.5 py-1.5 text-xs leading-snug shadow-md backdrop-blur-sm"
+				>
+					<div class="font-semibold">Écart à la normale 1991–2020</div>
+					<div class="mt-0.5 opacity-80">🔵 plus froid · 🔴 plus chaud</div>
+				</div>
 			{/if}
 		</div>
 	{/if}
