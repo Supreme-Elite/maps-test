@@ -377,6 +377,11 @@
 	const metaReferenceTime = $derived(new Date($metaJson?.reference_time as string));
 
 	const metaFirstTime = $derived(new Date($metaJson?.valid_times[0] as string));
+	// Domaine journalier (anomalie) : on affiche le jour, pas l'heure (la valeur
+	// est une moyenne sur 24h ; l'heure 00Z affichée en local trouble l'utilisateur).
+	const isDailyDomain = $derived($selectedDomain.value === ANOMALY_DOMAIN);
+	const formatStepLabel = (date: Date): string =>
+		isDailyDomain ? formatLocalDate(date) : formatLocalTime(date);
 	const metaFirstResolution = $derived.by(() => {
 		const metaSecondTime = new Date($metaJson?.valid_times[1] as string);
 		return metaSecondTime.getTime() - metaFirstTime.getTime();
@@ -752,7 +757,7 @@
 					>
 						<div class="relative {!timeValid(hoveredHour) ? 'text-foreground/50' : ''}">
 							{#if hoveredHour}
-								{formatLocalTime(hoveredHour)}
+								{formatStepLabel(hoveredHour)}
 							{/if}
 							<div
 								class="-z-10 absolute -bottom-2 w-3 h-3 bg-glass/75 backdrop-blur-sm rotate-45 -translate-x-1/2 left-1/2"
@@ -775,11 +780,11 @@
 							{#if currentTimeStep}
 								{#if desktop.current}
 									<div class="font-bold">
-										{formatLocalTime(currentTimeStep!)}
+										{formatStepLabel(currentTimeStep!)}
 									</div>
 								{:else}
 									<div class={$time.getTime() === currentDate.getTime() ? 'font-bold' : ''}>
-										{formatLocalTime(currentDate)}
+										{formatStepLabel(currentDate)}
 									</div>
 								{/if}
 							{/if}
