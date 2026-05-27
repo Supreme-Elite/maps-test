@@ -224,12 +224,15 @@
 				</div>
 			{/if}
 
-			{#if editable && hasCustomScale}
+			{#if editable}
 				<button
 					type="button"
 					onclick={resetColorScale}
-					class="bg-glass/75 hover:bg-glass/95 rounded-t backdrop-blur-sm shadow-md h-6 w-full cursor-pointer text-center text-xs leading-6"
-					title="Réinitialiser aux couleurs standard"
+					disabled={!hasCustomScale}
+					class="bg-glass/75 rounded-t backdrop-blur-sm shadow-md h-6 w-full text-center text-xs leading-6 {hasCustomScale
+						? 'hover:bg-glass/95 cursor-pointer'
+						: 'cursor-default opacity-50'}"
+					title={hasCustomScale ? 'Réinitialiser aux couleurs standard' : 'Couleurs déjà standard'}
 					aria-label="Réinitialiser aux couleurs standard"
 				>
 					↺ couleurs
