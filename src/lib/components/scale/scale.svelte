@@ -189,7 +189,9 @@
 
 			{#if colorScale.unit}
 				<div
-					class="bg-glass/75 rounded-t backdrop-blur-sm shadow-md h-6 w-full overflow-hidden text-center text-xs"
+					class="bg-glass/75 backdrop-blur-sm shadow-md h-6 w-full overflow-hidden text-center text-xs {editable
+						? ''
+						: 'rounded-t'}"
 				>
 					{#if unitOptions}
 						<Select.Root
@@ -229,13 +231,13 @@
 					type="button"
 					onclick={resetColorScale}
 					disabled={!hasCustomScale}
-					class="bg-glass/75 rounded-t backdrop-blur-sm shadow-md h-6 w-full text-center text-xs leading-6 {hasCustomScale
+					class="bg-glass/75 rounded-t backdrop-blur-sm shadow-md h-4 w-full text-center text-[11px] leading-4 {hasCustomScale
 						? 'hover:bg-glass/95 cursor-pointer'
-						: 'cursor-default opacity-50'}"
+						: 'cursor-default opacity-40'}"
 					title={hasCustomScale ? 'Réinitialiser aux couleurs standard' : 'Couleurs déjà standard'}
 					aria-label="Réinitialiser aux couleurs standard"
 				>
-					↺ couleurs
+					↺
 				</button>
 			{/if}
 		</div>
