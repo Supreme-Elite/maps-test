@@ -414,111 +414,109 @@
 		abortController = new AbortController();
 		const signal = abortController.signal;
 		const originalTime = new Date(get(time));
+		let timeMutated = false;
 
 		playbackStatus.set('prefetching');
 		playbackPrefetchProgress.set({ current: 0, total: 0 });
 
-		const prefetchResult = await prefetchData(
-			{
-				startDate,
-				endDate,
-				metaJson: meta,
-				modelRun: run,
-				domain: get(domainStore),
-				variable: get(variableStore),
-				signal
-			},
-			(progress) => playbackPrefetchProgress.set(progress)
-		);
+		try {
+			const prefetchResult = await prefetchData(
+				{
+					startDate,
+					endDate,
+					metaJson: meta,
+					modelRun: run,
+					domain: get(domainStore),
+					variable: get(variableStore),
+					signal
+				},
+				(progress) => playbackPrefetchProgress.set(progress)
+			);
 
-		playbackPrefetchProgress.set(null);
-		if (prefetchResult.aborted || signal.aborted) {
-			stopPlayback();
-			return;
-		}
-		if (!prefetchResult.success) {
-			toast.error(prefetchResult.error ?? "Échec du préchargement avant l'export PNG");
-			stopPlayback();
-			return;
-		}
-
-		interactionLock = new MapInteractionLock(map);
-		interactionLock.freeze();
-		playbackStatus.set('exporting');
-		playbackExportProgress.set({ current: 0, total: steps.length });
-		toast.info(`Export PNG de ${steps.length} frames en cours`);
-
-		const entries: ZipFileEntry[] = [];
-		const domainLabel = get(selectedDomain).label ?? get(domainStore);
-		const variableLabel = get(selectedVariable).label ?? get(variableStore);
-		const basename = [
-			sanitizeFilenamePart(get(domainStore)),
-			sanitizeFilenamePart(get(variableStore)),
-			formatUtcStamp(run)
-		].join('_');
-
-		let failures = 0;
-		for (let i = 0; i < steps.length; i++) {
-			if (signal.aborted) {
-				stopPlayback();
+			playbackPrefetchProgress.set(null);
+			if (prefetchResult.aborted || signal.aborted) return;
+			if (!prefetchResult.success) {
+				toast.error(prefetchResult.error ?? "Échec du préchargement avant l'export PNG");
 				return;
 			}
 
-			const previousOmUrl = get(currentOmUrl);
-			time.set(steps[i]);
-			changeOMfileURL();
-			const triggeredLoad = get(currentOmUrl) !== previousOmUrl;
+			interactionLock = new MapInteractionLock(map);
+			interactionLock.freeze();
+			playbackStatus.set('exporting');
+			playbackExportProgress.set({ current: 0, total: steps.length });
+			toast.info(`Export PNG de ${steps.length} frames en cours`);
+
+			const entries: ZipFileEntry[] = [];
+			const domainLabel = get(selectedDomain).label ?? get(domainStore);
+			const variableLabel = get(selectedVariable).label ?? get(variableStore);
+			const basename = [
+				sanitizeFilenamePart(get(domainStore)),
+				sanitizeFilenamePart(get(variableStore)),
+				formatUtcStamp(run)
+			].join('_');
+
+			let failures = 0;
+			for (let i = 0; i < steps.length; i++) {
+				if (signal.aborted) return;
+
+				const previousOmUrl = get(currentOmUrl);
+				timeMutated = true;
+				time.set(steps[i]);
+				changeOMfileURL();
+				const triggeredLoad = get(currentOmUrl) !== previousOmUrl;
+
+				try {
+					if (triggeredLoad) {
+						await waitForCommit(slotEvents, PRERENDER_FRAME_TIMEOUT_MS, signal);
+					}
+					await waitForIdle(map, PRERENDER_FRAME_TIMEOUT_MS, signal);
+					const png = await captureWatermarkedPng(
+						map,
+						getPngDetails(run, steps[i], i, steps.length, domainLabel, variableLabel)
+					);
+					entries.push({
+						name: `${basename}_${formatLeadTimeForFilename(
+							run,
+							steps[i]
+						)}_${formatISOWithoutTimezone(steps[i])}.png`,
+						blob: png
+					});
+				} catch {
+					failures++;
+				}
+
+				playbackExportProgress.set({ current: i + 1, total: steps.length });
+				if (i + 1 >= 5 && isFailureRateExceeded(failures, i + 1, PRERENDER_MAX_FAILURE_RATIO)) {
+					toast.error('Export PNG interrompu : trop de frames en échec');
+					return;
+				}
+			}
+
+			if (entries.length === 0) {
+				toast.error('Aucune image PNG générée');
+				return;
+			}
 
 			try {
-				if (triggeredLoad) {
-					await waitForCommit(slotEvents, PRERENDER_FRAME_TIMEOUT_MS, signal);
-				}
-				await waitForIdle(map, PRERENDER_FRAME_TIMEOUT_MS, signal);
-				const png = await captureWatermarkedPng(
-					map,
-					getPngDetails(run, steps[i], i, steps.length, domainLabel, variableLabel)
-				);
-				entries.push({
-					name: `${basename}_${formatLeadTimeForFilename(
-						run,
-						steps[i]
-					)}_${formatISOWithoutTimezone(steps[i])}.png`,
-					blob: png
-				});
+				const zip = await createStoredZip(entries);
+				downloadBlob(zip, `${basename}_png.zip`);
+				toast.success(`${entries.length} PNG exportés`);
 			} catch {
-				failures++;
+				toast.error("Impossible de créer l'archive PNG");
 			}
-
-			playbackExportProgress.set({ current: i + 1, total: steps.length });
-			if (i + 1 >= 5 && isFailureRateExceeded(failures, i + 1, PRERENDER_MAX_FAILURE_RATIO)) {
-				toast.error('Export PNG interrompu : trop de frames en échec');
-				stopPlayback();
-				return;
-			}
-		}
-
-		if (entries.length === 0) {
-			toast.error('Aucune image PNG générée');
-			stopPlayback();
-			return;
-		}
-
-		try {
-			const zip = await createStoredZip(entries);
-			downloadBlob(zip, `${basename}_png.zip`);
-			toast.success(`${entries.length} PNG exportés`);
-		} catch {
-			toast.error("Impossible de créer l'archive PNG");
 		} finally {
 			interactionLock?.thaw();
 			interactionLock = null;
 			abortController = null;
 			playbackStatus.set('idle');
+			playbackPrefetchProgress.set(null);
 			playbackExportProgress.set(null);
 			playbackStart.set(undefined);
 			playbackEnd.set(undefined);
-			time.set(originalTime);
-			changeOMfileURL();
+			if (timeMutated) {
+				time.set(originalTime);
+				changeOMfileURL();
+			}
 		}
 	};
 
