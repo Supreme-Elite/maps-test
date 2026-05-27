@@ -205,8 +205,8 @@ const drawWatermark = (
 	}
 
 	const runLabel = `Run ${formatUtcStamp(details.modelRun)}`;
-	const validLabel = `Validite ${formatUtcStamp(details.validTime)}`;
-	const validReadableLabel = `Echeance ${formatUtcReadable(details.validTime)}`;
+	const validLabel = `Validité ${formatUtcStamp(details.validTime)}`;
+	const validReadableLabel = `Échéance ${formatUtcReadable(details.validTime)}`;
 	const frameLabel = `${details.frameIndex + 1}/${details.frameCount}`;
 	const rightLine1 = `${details.title} - ${validReadableLabel}`;
 	const rightLine2 = `${details.domainLabel} - ${details.leadTimeLabel} - ${runLabel} - ${validLabel} - ${frameLabel}`;
@@ -300,7 +300,18 @@ const concat = (chunks: Uint8Array[]): Uint8Array => {
 	return output;
 };
 
+// Tailles, offsets (32 bits) et nombre d'entrées (16 bits) du format ZIP
+// classique. Cette implémentation n'émet PAS d'enregistrements ZIP64 : au-delà
+// de ces bornes une archive serait silencieusement corrompue, donc on lève une
+// erreur explicite. Suffisant pour l'export PNG (séries courtes, < 4 Go).
+const ZIP_MAX_U32 = 0xffffffff;
+const ZIP_MAX_ENTRIES = 0xffff;
+
 export const createStoredZip = async (entries: ZipFileEntry[]): Promise<Blob> => {
+	if (entries.length > ZIP_MAX_ENTRIES) {
+		throw new Error(`ZIP: trop d'entrées (${entries.length} > ${ZIP_MAX_ENTRIES}), ZIP64 requis`);
+	}
+
 	const chunks: Uint8Array[] = [];
 	const centralChunks: Uint8Array[] = [];
 	let offset = 0;
@@ -309,6 +320,9 @@ export const createStoredZip = async (entries: ZipFileEntry[]): Promise<Blob> =>
 	for (const entry of entries) {
 		const name = encoder.encode(entry.name);
 		const data = new Uint8Array(await entry.blob.arrayBuffer());
+		if (data.length > ZIP_MAX_U32) {
+			throw new Error(`ZIP: fichier "${entry.name}" trop volumineux pour un ZIP non-ZIP64`);
+		}
 		const crc = crc32(data);
 
 		const local = new Uint8Array(30 + name.length);
@@ -348,6 +362,9 @@ export const createStoredZip = async (entries: ZipFileEntry[]): Promise<Blob> =>
 	}
 
 	const centralOffset = offset;
+	if (centralOffset > ZIP_MAX_U32) {
+		throw new Error('ZIP: archive trop volumineuse pour un ZIP non-ZIP64 (> 4 Go)');
+	}
 	const centralDirectory = concat(centralChunks);
 	const end = new Uint8Array(22);
 	const endView = new DataView(end.buffer);

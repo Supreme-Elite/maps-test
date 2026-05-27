@@ -96,6 +96,14 @@ describe('createStoredZip', () => {
 		expect(extracted[1].bytes).toEqual(b);
 	});
 
+	it('rejects archives that exceed the 16-bit entry count (would need ZIP64)', async () => {
+		const tooMany = Array.from({ length: 0x10000 + 1 }, (_, i) => ({
+			name: `${i}.txt`,
+			blob: new Blob([new Uint8Array(0)])
+		}));
+		await expect(createStoredZip(tooMany)).rejects.toThrow(/ZIP64/);
+	});
+
 	it('records the entry count in the end-of-central-directory record', async () => {
 		const zip = await createStoredZip([
 			{ name: 'a.txt', blob: new Blob([new Uint8Array([1])]) },

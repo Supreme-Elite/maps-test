@@ -245,6 +245,12 @@
 		>
 			PNG carré
 		</div>
+		<!-- Bande recouverte par le filigrane Infoclimat dans le PNG final (~118/1080 px). -->
+		<div
+			class="absolute inset-x-0 bottom-0 flex h-[10.9%] items-center justify-center border-t border-white/60 bg-black/45 text-[10px] font-semibold uppercase tracking-wide text-white/80"
+		>
+			filigrane
+		</div>
 	</div>
 {/if}
 
