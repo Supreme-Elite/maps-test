@@ -11,7 +11,10 @@ import { persisted } from 'svelte-persisted-store';
 import { browser } from '$app/environment';
 
 import { infoclimatTemperatureScale } from '$lib/color-scales/infoclimat-temperature';
+import { temperatureAnomalyScale } from '$lib/color-scales/temperature-anomaly';
 import {
+	ANOMALY_DOMAIN,
+	ANOMALY_VARIABLE,
 	DEFAULT_CACHE_BLOCK_SIZE_KB,
 	DEFAULT_CACHE_MAX_BYTES_MB,
 	HTTP_OVERHEAD_BYTES
@@ -54,7 +57,27 @@ function createBlockCache() {
  * resolver for upstream Open-Meteo URLs.
  */
 const WORKER_DOMAIN_REGEX = /\/v1\/sum\/(?<domain>[^/]+)\//;
+const ANOMALY_PATH_REGEX = /\/anomaly\/temperature_2m\//;
 const cumulAwareResolveRequest: typeof defaultResolveRequest = (urlComponents, settings) => {
+	if (ANOMALY_PATH_REGEX.test(urlComponents.baseUrl)) {
+		const domain = settings.domainOptions.find((d) => d.value === ANOMALY_DOMAIN);
+		if (!domain) {
+			throw new Error(`Anomaly domain not registered: ${ANOMALY_DOMAIN}`);
+		}
+		// Réutilise les renderOptions par défaut (tileSize, color scale, etc.) via
+		// un baseUrl synthétique. La color scale divergente est imposée en
+		// surchargeant la clé `temperature_2m_anomaly` dans `settings.colorScales`
+		// (voir plus bas), que le resolver par défaut résout pour cette variable.
+		const synthetic = {
+			...urlComponents,
+			baseUrl: urlComponents.baseUrl.replace(ANOMALY_PATH_REGEX, `/data_spatial/${ANOMALY_DOMAIN}/`)
+		};
+		const { renderOptions } = defaultResolveRequest(synthetic, settings);
+		return {
+			dataOptions: { domain, variable: ANOMALY_VARIABLE, bounds: undefined },
+			renderOptions
+		};
+	}
 	const match = urlComponents.baseUrl.match(WORKER_DOMAIN_REGEX);
 	if (!match?.groups?.domain) {
 		return defaultResolveRequest(urlComponents, settings);
@@ -91,6 +114,10 @@ export const omProtocolSettings: Writable<OmProtocolSettings> = writable({
 	colorScales: {
 		...defaultOmProtocolSettings.colorScales,
 		temperature: infoclimatTemperatureScale,
+		// Surcharge la color scale anomalie intégrée au package (clé exacte
+		// résolue par `defaultResolveRequest` pour la variable
+		// `temperature_2m_anomaly`) par notre palette divergente ±10 °C.
+		temperature_2m_anomaly: temperatureAnomalyScale,
 		...initialCustomColorScales
 	},
 

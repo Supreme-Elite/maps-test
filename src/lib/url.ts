@@ -27,13 +27,15 @@ import { modelRun as mR, modelRunLocked as mRL, time } from '$lib/stores/time';
 import { domain as d, layer2Enabled, variable as v, variable2 } from '$lib/stores/variables';
 import { vectorOptions as vO, windOverlayEnabled, windOverlayLevel } from '$lib/stores/vector';
 
+import { ANOMALY_DOMAIN, ANOMALY_VARIABLE } from '$lib/constants';
+
 import {
 	CLIP_COUNTRIES_PARAM,
 	parseClipCountriesParam,
 	serializeClipCountriesParam
 } from './clipping';
-import { fmtModelRun, fmtSelectedTime, getBaseUri, hashValue } from './helpers';
-import { getOmWorkerUrl, isCumulFlagEnabled } from './runtime-env';
+import { fmtModelRun, fmtSelectedTime, getBaseUri, hashValue, pad } from './helpers';
+import { getModelsBucketUrl, getOmWorkerUrl, isCumulFlagEnabled } from './runtime-env';
 import { clippingCountryCodes } from './stores/clipping';
 import { omProtocolSettings } from './stores/om-protocol-settings';
 import { formatISOUTCWithZ, parseISOWithoutTimezone } from './time-format';
@@ -278,11 +280,32 @@ export const resolveCumulModelRun = (modelRun: Date, selectedTime: Date, hours: 
 	return new Date(Date.UTC(ws.getUTCFullYear(), ws.getUTCMonth(), ws.getUTCDate(), 0, 0, 0, 0));
 };
 
+/** Formate une date en `YYYY-MM-DD` (UTC). */
+export const fmtDateYMD = (d: Date): string =>
+	`${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+
+/** Début du jour UTC courant. */
+const startOfUTCDay = (d: Date): Date =>
+	new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+
+/** `observed` si la date est avant aujourd'hui (UTC), sinon `forecast`. */
+export const anomalyPhase = (selected: Date, now: Date): 'observed' | 'forecast' =>
+	selected.getTime() < startOfUTCDay(now).getTime() ? 'observed' : 'forecast';
+
 export const getOMUrlFor = (variable: string): string | undefined => {
 	const domain = get(d);
 	const modelRun = get(mR);
 	if (!modelRun) return undefined;
 	const selectedTime = get(time);
+
+	if (domain === ANOMALY_DOMAIN) {
+		const phase = anomalyPhase(selectedTime, new Date());
+		const base = getModelsBucketUrl().replace(/\/$/, '');
+		return (
+			`${base}/anomaly/temperature_2m/${phase}/${fmtDateYMD(selectedTime)}.om` +
+			`?variable=${ANOMALY_VARIABLE}`
+		);
+	}
 
 	const cumulMatch = variable.match(CUMUL_VARIABLE_REGEX);
 	const workerBase = cumulMatch
@@ -359,9 +382,30 @@ export const getNextOmUrls = (
 	domain: Domain,
 	metaJson: DomainMetaDataJson | undefined
 ): [string | undefined, string | undefined] => {
-	const base = `https://map-tiles.open-meteo.com/data_spatial/${domain.value}`;
 	const date = get(time);
 	const dateString = formatISOUTCWithZ(date);
+
+	// Pseudo-domaine anomalie : le préchargement suit le layout bucket
+	// (`anomaly/temperature_2m/{phase}/{date}.om`), pas le schéma data_spatial.
+	if (domain.value === ANOMALY_DOMAIN) {
+		if (!metaJson) return [undefined, undefined];
+		const idx = metaJson.valid_times.findIndex((s) => s === dateString);
+		const bucket = getModelsBucketUrl().replace(/\/$/, '');
+		const now = new Date();
+		const buildAnomalyUrl = (i: number): string | undefined => {
+			const t = metaJson.valid_times[i];
+			if (!t) return undefined;
+			const d2 = new Date(t);
+			if (isNaN(d2.getTime())) return undefined;
+			return (
+				`${bucket}/anomaly/temperature_2m/${anomalyPhase(d2, now)}/${fmtDateYMD(d2)}.om` +
+				`?variable=${ANOMALY_VARIABLE}`
+			);
+		};
+		return [buildAnomalyUrl(idx + 1), buildAnomalyUrl(idx - 1)];
+	}
+
+	const base = `https://map-tiles.open-meteo.com/data_spatial/${domain.value}`;
 
 	let prevDate: Date;
 	let nextDate: Date;

@@ -83,6 +83,7 @@ export const matchVariableOrFirst = () => {
 	const metaJson = get(mJ);
 	if (!metaJson || metaJson.variables.includes(variable)) return;
 	if (CUMUL_VARIABLE_REGEX.test(variable)) return;
+	if (variable === 'temperature_2m_anomaly') return;
 
 	let matched: string | undefined;
 	const prefix = variable.match(VARIABLE_PREFIX)?.groups?.prefix;

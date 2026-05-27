@@ -9,7 +9,11 @@ import {
 } from '@openmeteo/weather-map-layer';
 import { type Persisted, persisted } from 'svelte-persisted-store';
 
+import { registerAnomalyDomain } from '$lib/anomaly-domain';
 import { CUMUL_GROUP_PREFIX, DEFAULT_DOMAIN, DEFAULT_VARIABLE } from '$lib/constants';
+
+// Doit tourner avant la première évaluation de `selectedDomain`.
+registerAnomalyDomain();
 
 const CUMUL_VARIABLE_REGEX = /^(?<base>.+)_sum_(?<hours>\d+)h$/;
 
@@ -21,23 +25,22 @@ export const variable = persisted('variable', defaultVariable);
 
 export const selectedDomain = derived(domain, ($domain) => {
 	const object = domainOptions.find(({ value }) => value === $domain);
-	if (object) {
-		return object;
-	} else {
-		throw new Error('Domain not found');
-	}
+	if (object) return object;
+	// Domaine inconnu (ex. URL partagée d'un domaine non enregistré comme
+	// anomaly_europe sans bucket configuré) : fallback au domaine par défaut
+	// plutôt que de crasher l'app.
+	const fallback = domainOptions.find(({ value }) => value === DEFAULT_DOMAIN);
+	if (fallback) return fallback;
+	throw new Error('Domain not found');
 });
 
 export const selectedVariable = derived(variable, ($variable) => {
 	const object = variableOptions.find(({ value }) => value === $variable);
-	if (object) {
-		return object;
-	} else {
-		return {
-			value: $variable,
-			label: $variable
-		};
+	if (object) return object;
+	if ($variable === 'temperature_2m_anomaly') {
+		return { value: $variable, label: 'Anomalie T° 2m vs. normale 1991–2020' };
 	}
+	return { value: $variable, label: $variable };
 });
 
 export const levelGroupSelected: Writable<{ value: string; label: string } | undefined> = writable(
