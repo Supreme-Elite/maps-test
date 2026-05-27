@@ -53,6 +53,7 @@
 		waitForIdle
 	} from '$lib/playback-renderer';
 	import {
+		type PngExportFormat,
 		type ZipFileEntry,
 		captureWatermarkedPng,
 		createStoredZip,
@@ -447,6 +448,10 @@
 			toast.info(`Export PNG de ${steps.length} frames en cours`);
 
 			const entries: ZipFileEntry[] = [];
+			// La série suit le même cadrage que l'export unitaire « PNG » : si le cadre
+			// carré est affiché, chaque frame est croppée en carré ; sinon vue courante.
+			const squareFormat = get(exportFrameVisible);
+			const pngFormat: PngExportFormat = squareFormat ? 'square' : 'current-view';
 			const domainLabel = get(selectedDomain).label ?? get(domainStore);
 			const variableLabel = get(selectedVariable).label ?? get(variableStore);
 			const basename = [
@@ -472,7 +477,8 @@
 					await waitForIdle(map, PRERENDER_FRAME_TIMEOUT_MS, signal);
 					const png = await captureWatermarkedPng(
 						map,
-						getPngDetails(run, steps[i], i, steps.length, domainLabel, variableLabel)
+						getPngDetails(run, steps[i], i, steps.length, domainLabel, variableLabel),
+						pngFormat
 					);
 					entries.push({
 						name: `${basename}_${formatLeadTimeForFilename(
@@ -499,8 +505,9 @@
 
 			try {
 				const zip = await createStoredZip(entries);
-				downloadBlob(zip, `${basename}_png.zip`);
+				downloadBlob(zip, `${basename}${squareFormat ? '_carre' : ''}_png.zip`);
 				toast.success(`${entries.length} PNG exportés`);
+				if (squareFormat) exportFrameVisible.set(false);
 			} catch {
 				toast.error("Impossible de créer l'archive PNG");
 			}
