@@ -64,6 +64,11 @@ export const opacity = persisted('opacity', DEFAULT_OPACITY);
 export const opacity2 = persisted('opacity2', 70);
 export const exportFrameVisible = persisted('export-frame-visible', false);
 
+// Hauteur (en px) du chrome bas (TimeSelector + PlaybackPanel) mesurée à l'exécution.
+// Sert au cadre d'export PNG/Série pour ne pas étendre le voile sombre par-dessus
+// la barre du temps. Valeur initiale prudente (~120px) ; le composant la met à jour.
+export const bottomChromeHeight = writable(120);
+
 export { cacheBlockSizeKb, cacheMaxBytesMb } from './om-protocol-settings';
 
 export const localStorageVersion: Persisted<string | undefined> = persisted(

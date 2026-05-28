@@ -8,7 +8,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import { timeSelectorActions } from '$lib/stores/keyboard';
-	import { desktop, loading } from '$lib/stores/preferences';
+	import { bottomChromeHeight, desktop, loading } from '$lib/stores/preferences';
 	import { metaJson, modelRunLocked } from '$lib/stores/time';
 	import { inProgress, latest, modelRun, now, time } from '$lib/stores/time';
 	import { selectedDomain } from '$lib/stores/variables';
@@ -715,6 +715,36 @@
 		if (resizeTimeout) clearTimeout(resizeTimeout);
 	});
 
+	// Mesure dynamique de la hauteur visible du chrome bas (TimeSelector + PlaybackPanel)
+	// pour que le cadre d'export PNG/Série puisse arrêter son voile sombre juste au-dessus.
+	// On utilise la position visuelle la plus haute parmi les enfants (le PlaybackPanel
+	// est positionné en absolute -top-4.5, donc il dépasse au-dessus du wrapper fixe).
+	let chromeWrapper: HTMLDivElement | null = $state(null);
+
+	$effect(() => {
+		if (typeof window === 'undefined' || !chromeWrapper) return;
+
+		const update = () => {
+			if (!chromeWrapper) return;
+			const wrapperRect = chromeWrapper.getBoundingClientRect();
+			let topMost = wrapperRect.top;
+			for (const child of chromeWrapper.querySelectorAll<HTMLElement>('*')) {
+				const r = child.getBoundingClientRect();
+				if (r.height > 0 && r.top < topMost) topMost = r.top;
+			}
+			bottomChromeHeight.set(Math.max(0, Math.round(window.innerHeight - topMost)));
+		};
+
+		update();
+		const ro = new ResizeObserver(update);
+		ro.observe(chromeWrapper);
+		window.addEventListener('resize', update);
+		return () => {
+			ro.disconnect();
+			window.removeEventListener('resize', update);
+		};
+	});
+
 	let previousModelSteps = $derived.by(() => {
 		const previousModels = [];
 		for (let day of Array.from({ length: Math.floor((6.9 * 24) / modelInterval) }, (_, i) => i)) {
@@ -738,6 +768,7 @@
 </script>
 
 <div
+	bind:this={chromeWrapper}
 	class="fixed bottom-0 w-full md:w-[unset] md:max-w-[75vw] -translate-x-1/2 left-1/2 z-40 {disabled
 		? 'text-foreground/50 cursor-not-allowed'
 		: ''}"
