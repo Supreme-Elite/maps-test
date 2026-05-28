@@ -40,6 +40,7 @@
 		PRERENDER_MAX_FAILURE_RATIO,
 		type PlaybackFps
 	} from '$lib/constants';
+	import { playSeriesEnd, playSeriesStart, playShutter } from '$lib/capture-sound';
 	import { changeOMfileURL } from '$lib/layers';
 	import {
 		MapInteractionLock,
@@ -454,6 +455,7 @@
 			playbackStatus.set('exporting');
 			playbackExportProgress.set({ current: 0, total: steps.length });
 			toast.info(`Export PNG de ${steps.length} frames en cours`);
+			playSeriesStart();
 
 			const entries: ZipFileEntry[] = [];
 			// On n'arrive ici qu'avec le cadre carré affiché : la série est croppée carré.
@@ -514,6 +516,7 @@
 				downloadBlob(zip, `${basename}_carre_png.zip`);
 				toast.success(`${entries.length} PNG exportés`);
 				exportFrameVisible.set(false);
+				playSeriesEnd();
 			} catch {
 				toast.error("Impossible de créer l'archive PNG");
 			}
@@ -568,6 +571,7 @@
 				getPngDetails(run, currentTime, 0, 1, domainLabel, variableLabel),
 				'square'
 			);
+			playShutter();
 			const filename = [
 				'infoclimat',
 				sanitizeFilenamePart(domainValue),

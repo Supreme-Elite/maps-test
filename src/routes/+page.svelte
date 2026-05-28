@@ -21,6 +21,7 @@
 	import { omProtocolSettings } from '$lib/stores/om-protocol-settings';
 	import { currentOmUrl } from '$lib/stores/om-url';
 	import {
+		bottomChromeHeight,
 		exportFrameVisible,
 		loading,
 		localStorageVersion,
@@ -214,6 +215,32 @@
 		refreshDepartments([$showDepartments]);
 	});
 
+	// Ferme le cadre d'export quand l'utilisateur clique hors du carré sur la carte.
+	// On s'abonne à l'évènement `click` de MapLibre — qui filtre déjà les drags (pan)
+	// et le wheel (zoom), donc le cadrage reste libre tant qu'on ne fait pas un clic
+	// franc dans la zone sombre.
+	$effect(() => {
+		const mapInstance = $map;
+		if (!mapInstance) return;
+		const handleClick = (e: maplibregl.MapMouseEvent) => {
+			if (!get(exportFrameVisible)) return;
+			const vw = window.innerWidth;
+			const vh = window.innerHeight;
+			const side = Math.min(vw, vh);
+			const halfSide = side / 2;
+			const cx = vw / 2;
+			const cy = vh / 2;
+			const { x, y } = e.point;
+			const insideSquare =
+				x >= cx - halfSide && x <= cx + halfSide && y >= cy - halfSide && y <= cy + halfSide;
+			if (!insideSquare) exportFrameVisible.set(false);
+		};
+		mapInstance.on('click', handleClick);
+		return () => {
+			mapInstance.off('click', handleClick);
+		};
+	});
+
 	onDestroy(() => {
 		if ($map) {
 			$map.remove();
@@ -234,21 +261,60 @@
 <div class="map maplibregl-map" id="#map_container" bind:this={mapContainer}></div>
 
 {#if $exportFrameVisible}
+	<!--
+		Wrapper clippé : s'arrête juste au-dessus du TimeSelector pour que ni le voile
+		sombre ni la bande FILIGRANE ne débordent sur la barre du temps. Le carré reste
+		positionné par rapport au viewport (calc avec 50vh / min(50vw,50vh)) pour que la
+		zone capturée ne bouge pas — seul le rendu visuel est tronqué.
+
+		`pointer-events-none` sur tout le wrapper : les drags (pan), molette (zoom) et
+		clics passent intégralement à MapLibre dessous, donc on peut recadrer la carte
+		avec le cadre ouvert. La fermeture par clic-hors-carré est gérée via l'évènement
+		`click` du map (cf. $effect plus haut) — il ne se déclenche pas sur un drag.
+	-->
 	<div
-		class="pointer-events-none fixed left-1/2 top-1/2 z-50 aspect-square w-[min(100vw,100vh)] -translate-x-1/2 -translate-y-1/2 border-2 border-white/95 shadow-[0_0_0_9999px_rgba(0,0,0,0.24),0_0_18px_rgba(0,0,0,0.45)]"
+		class="pointer-events-none fixed inset-x-0 top-0 z-50 overflow-hidden"
+		style="bottom: {$bottomChromeHeight}px"
 		aria-hidden="true"
 	>
-		<div class="absolute inset-0 border border-black/60"></div>
+		<!-- Bande au-dessus du carré (portrait uniquement) -->
 		<div
-			class="absolute left-1/2 top-2 -translate-x-1/2 rounded bg-black/70 px-2 py-0.5 text-xs font-bold text-white shadow"
-		>
-			PNG carré
-		</div>
-		<!-- Bande recouverte par le filigrane Infoclimat dans le PNG final (~118/1080 px). -->
+			class="absolute bg-black/24"
+			style="top: 0; left: 0; right: 0; height: calc(50vh - min(50vw, 50vh))"
+		></div>
+		<!-- Bande à gauche du carré (paysage uniquement) -->
 		<div
-			class="absolute inset-x-0 bottom-0 flex h-[10.9%] items-center justify-center border-t border-white/60 bg-black/45 text-[10px] font-semibold uppercase tracking-wide text-white/80"
+			class="absolute bg-black/24"
+			style="top: calc(50vh - min(50vw, 50vh)); height: min(100vw, 100vh); left: 0; width: calc(50vw - min(50vw, 50vh))"
+		></div>
+		<!-- Bande à droite du carré (paysage uniquement) -->
+		<div
+			class="absolute bg-black/24"
+			style="top: calc(50vh - min(50vw, 50vh)); height: min(100vw, 100vh); right: 0; width: calc(50vw - min(50vw, 50vh))"
+		></div>
+		<!-- Bande sous le carré (portrait uniquement) -->
+		<div
+			class="absolute bg-black/24"
+			style="top: calc(50vh + min(50vw, 50vh)); bottom: 0; left: 0; right: 0"
+		></div>
+
+		<!-- Le cadre carré : visuel uniquement -->
+		<div
+			class="absolute left-1/2 aspect-square w-[min(100vw,100vh)] -translate-x-1/2 border-2 border-white/95 shadow-[0_0_18px_rgba(0,0,0,0.45)]"
+			style="top: calc(50vh - min(50vw, 50vh))"
 		>
-			filigrane
+			<div class="absolute inset-0 border border-black/60"></div>
+			<div
+				class="absolute left-1/2 top-2 -translate-x-1/2 rounded bg-black/70 px-2 py-0.5 text-xs font-bold text-white shadow"
+			>
+				PNG carré
+			</div>
+			<!-- Bande recouverte par le filigrane Infoclimat dans le PNG final (~118/1080 px). -->
+			<div
+				class="absolute inset-x-0 bottom-0 flex h-[10.9%] items-center justify-center border-t border-white/60 bg-black/45 text-[10px] font-semibold uppercase tracking-wide text-white/80"
+			>
+				filigrane
+			</div>
 		</div>
 	</div>
 {/if}
