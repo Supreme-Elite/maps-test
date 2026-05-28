@@ -13,7 +13,6 @@ declare global {
 	interface Window {
 		__OM_CONFIG?: {
 			OM_WORKER_URL?: string;
-			CUMUL_ENABLED?: string;
 			MODELS_BUCKET_URL?: string;
 		};
 	}
@@ -25,13 +24,6 @@ export function getOmWorkerUrl(): string {
 		if (fromWindow && fromWindow.length > 0) return fromWindow;
 	}
 	return (import.meta.env.VITE_OM_WORKER_URL as string | undefined) ?? '';
-}
-
-export function isCumulFlagEnabled(): boolean {
-	const fromWindow = typeof window !== 'undefined' ? window.__OM_CONFIG?.CUMUL_ENABLED : undefined;
-	const fromEnv = import.meta.env.VITE_CUMUL_ENABLED as string | undefined;
-	const v = fromWindow ?? fromEnv;
-	return v !== 'false';
 }
 
 export function getModelsBucketUrl(): string {

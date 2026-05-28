@@ -74,15 +74,10 @@ export const getMetaData = async (): Promise<DomainMetaDataJson> => {
 	return result;
 };
 
-/** Cumul-style variables (e.g. `precipitation_sum_24h`) are synthesised by the
- *  worker, so they will never appear in `metaJson.variables`. Keep them as-is. */
-const CUMUL_VARIABLE_REGEX = /^.+_sum_\d+h$/;
-
 export const matchVariableOrFirst = () => {
 	const variable = get(v);
 	const metaJson = get(mJ);
 	if (!metaJson || metaJson.variables.includes(variable)) return;
-	if (CUMUL_VARIABLE_REGEX.test(variable)) return;
 	if (variable === 'temperature_2m_anomaly') return;
 
 	let matched: string | undefined;

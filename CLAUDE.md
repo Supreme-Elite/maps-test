@@ -73,9 +73,9 @@ The departments contour file is bundled (`static/departements.geojson`) to avoid
 
 `DOMAIN_ALLOWLIST` in `src/lib/constants.ts` filters the domain selector in `variable-selection.svelte` to the Infoclimat-relevant subset (MF AROME / ARPEGE, ECMWF IFS / AIFS, DWD ICON). This is **display-only**: URLs sharing a non-listed domain still resolve correctly (the rest of the app reads `domainOptions` from the package unfiltered). Add/remove entries in the list to expose more models in the UI.
 
-### Cumul precipitation (worker integration)
+### infoclimat-om-worker integration
 
-Variables matching `CUMUL_VARIABLE_REGEX` (`^(.+)_sum_(\d+)h$`) are routed to `infoclimat-om-worker` via `getOMUrl()` instead of the upstream Open-Meteo S3 bucket. The worker URL is read from `VITE_OM_WORKER_URL` (build-time) or `/runtime-config.js` (Docker runtime templating). Cumul UI entries appear in the variable selector only when the worker URL is set AND the cumul flag is enabled (`isCumulEnabled()`). See the root `CLAUDE.md` for the full cross-project contract.
+The worker URL (`getOmWorkerUrl()`, read from `VITE_OM_WORKER_URL` at build time or `/runtime-config.js` for Docker runtime templating) backs two features: the basemap tile-proxy (`map-controls.ts`) and the labels overlay (`labels-layer.ts`, per-viewport numeric value fetches). When the URL is unset, those features are disabled.
 
 ### Tests
 

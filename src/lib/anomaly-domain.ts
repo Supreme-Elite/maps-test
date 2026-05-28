@@ -29,7 +29,7 @@ const anomalyDomain: Domain = {
 /**
  * Pousse le pseudo-domaine anomalie dans `domainOptions` (mutable). Idempotent.
  * Ne fait rien si `VITE_MODELS_BUCKET_URL` n'est pas configuré — le domaine
- * reste alors absent du sélecteur (gating analogue au feature cumul).
+ * reste alors absent du sélecteur (gating analogue à anomaly/arome-om).
  */
 export function registerAnomalyDomain(): void {
 	if (!getModelsBucketUrl()) return;
