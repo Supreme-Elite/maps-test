@@ -16,7 +16,7 @@ const AROME_OM_GROUP = 'arome_om';
  *  spec `2026-05-28-arome-om-forecast-design.md`). */
 const aromeOmReunionDomain: Domain = {
 	value: AROME_OM_REUNION_DOMAIN,
-	label: 'AROME-OM Réunion / Océan Indien',
+	label: 'AROME-OM Réunion-Mayotte',
 	grid: {
 		type: 'regular',
 		nx: 1395,
