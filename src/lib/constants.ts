@@ -7,6 +7,10 @@ export const ANOMALY_DOMAIN = 'anomaly_europe';
 /** Variable unique exposée par le pseudo-domaine anomalie. */
 export const ANOMALY_VARIABLE = 'temperature_2m_anomaly';
 
+/** Pseudo-domaine AROME-OM Réunion / Océan Indien (servi depuis le bucket R2,
+ *  produit par le pipeline `arome-om-forecast`). */
+export const AROME_OM_REUNION_DOMAIN = 'arome_om_reunion';
+
 // Cumul (precipitation aggregation) — bases that the worker can sum, and the
 // proposed windows shown in the UI. Sentinel prefix marks group entries in the
 // flat variable list so the selector can branch into a secondary popover.
@@ -87,6 +91,9 @@ export const VISIBLE_PRESSURE_LEVELS_HPA: readonly number[] = [925, 850, 700, 50
 export const DOMAIN_ALLOWLIST: readonly string[] = [
 	// Anomalies (pseudo-domaine, visible seulement si le bucket est configuré)
 	'anomaly_europe',
+
+	// AROME-OM Outre-Mer (pseudo-domaine, visible seulement si le bucket est configuré)
+	'arome_om_reunion',
 
 	// Cœur français
 	'meteofrance_arome_france_hd',
