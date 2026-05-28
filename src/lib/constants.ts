@@ -19,13 +19,6 @@ export const DOMAIN_DEFAULT_VIEWS: Record<string, { center: [number, number]; zo
 	[AROME_OM_REUNION_DOMAIN]: { center: [50.2, -15.97], zoom: 4.47 }
 };
 
-// Cumul (precipitation aggregation) — bases that the worker can sum, and the
-// proposed windows shown in the UI. Sentinel prefix marks group entries in the
-// flat variable list so the selector can branch into a secondary popover.
-export const CUMUL_BASE_VARIABLES = ['precipitation', 'snowfall', 'rain', 'showers'] as const;
-export const CUMUL_HOURS = [3, 6, 12, 24, 48, 72] as const;
-export const CUMUL_GROUP_PREFIX = '__cumul:';
-
 // Vector options defaults
 export const DEFAULT_VECTOR_OPTIONS = {
 	grid: false,

@@ -64,6 +64,10 @@ const EXPLICIT: Record<string, string> = {
 	PM10: 'PM10',
 	'Potential Evapotranspiration': 'Évapotranspiration potentielle',
 	Precipitation: 'Précipitations',
+	// Variable `precipitation_sum` (cumul depuis le début du run, domaine
+	// arome_om_reunion). Absente des variableOptions du package, donc le libellé
+	// affiché est la valeur brute : on la traduit via sa clé snake_case.
+	precipitation_sum: 'Précipitations cumulées',
 	'Precipitation EFI': 'Précipitations (EFI)',
 	'Precipitation Probability': 'Probabilité de précipitations',
 	'Precipitation SOT90': 'Précipitations (SOT90)',
@@ -259,24 +263,6 @@ function translateByComposition(label: string): string | null {
 
 	// Cas inconnu : on concatène le suffixe entre parenthèses
 	return `${capitalize(baseEntry.fr)}${frLevel} (${suffix})`;
-}
-
-const CUMUL_BASE_LABELS_FR: Record<string, string> = {
-	precipitation: 'précipitations',
-	snowfall: 'neige',
-	rain: 'pluie',
-	showers: 'averses'
-};
-
-/** Libellé du bouton/groupe pour une base cumul ("Cumul des précipitations"). */
-export function cumulGroupLabelFr(base: string): string {
-	const fr = CUMUL_BASE_LABELS_FR[base] ?? base;
-	return `Cumul ${base === 'snowfall' ? 'de ' : 'des '}${fr}`;
-}
-
-/** Libellé d'une durée de cumul ("Cumul 3 h"). */
-export function cumulDurationLabelFr(hours: number): string {
-	return `Cumul ${hours} h`;
 }
 
 /** API publique : renvoie le libellé FR ou le libellé EN si non traduit. */

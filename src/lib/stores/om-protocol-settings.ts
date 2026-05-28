@@ -11,6 +11,7 @@ import { persisted } from 'svelte-persisted-store';
 import { browser } from '$app/environment';
 
 import { infoclimatTemperatureScale } from '$lib/color-scales/infoclimat-temperature';
+import { precipitationSumScale } from '$lib/color-scales/precipitation-sum';
 import { temperatureAnomalyScale } from '$lib/color-scales/temperature-anomaly';
 import {
 	ANOMALY_DOMAIN,
@@ -52,13 +53,12 @@ function createBlockCache() {
 }
 
 /**
- * Custom resolver that recognises infoclimat-om-worker URLs (which embed the
- * domain in a `/v1/sum/<domain>/...` path) and falls back to the default
- * resolver for upstream Open-Meteo URLs.
+ * Custom resolver that recognises anomaly URLs (which embed the domain in a
+ * `/anomaly/temperature_2m/...` path) and falls back to the default resolver
+ * for upstream Open-Meteo URLs.
  */
-const WORKER_DOMAIN_REGEX = /\/v1\/sum\/(?<domain>[^/]+)\//;
 const ANOMALY_PATH_REGEX = /\/anomaly\/temperature_2m\//;
-const cumulAwareResolveRequest: typeof defaultResolveRequest = (urlComponents, settings) => {
+const customResolveRequest: typeof defaultResolveRequest = (urlComponents, settings) => {
 	if (ANOMALY_PATH_REGEX.test(urlComponents.baseUrl)) {
 		const domain = settings.domainOptions.find((d) => d.value === ANOMALY_DOMAIN);
 		if (!domain) {
@@ -78,27 +78,7 @@ const cumulAwareResolveRequest: typeof defaultResolveRequest = (urlComponents, s
 			renderOptions
 		};
 	}
-	const match = urlComponents.baseUrl.match(WORKER_DOMAIN_REGEX);
-	if (!match?.groups?.domain) {
-		return defaultResolveRequest(urlComponents, settings);
-	}
-	const domainValue = match.groups.domain;
-	const domain = settings.domainOptions.find((d) => d.value === domainValue);
-	if (!domain) {
-		throw new Error(`Invalid domain in worker URL: ${domainValue}`);
-	}
-	const variable = urlComponents.params.get('variable');
-	if (!variable) {
-		throw new Error('Variable is required but not defined');
-	}
-	// Reuse default render options (color scale, tile size, etc.) by re-running
-	// the default resolver against a synthetic baseUrl that the regex accepts.
-	const synthetic = {
-		...urlComponents,
-		baseUrl: urlComponents.baseUrl.replace(WORKER_DOMAIN_REGEX, `/data_spatial/${domainValue}/`)
-	};
-	const { renderOptions } = defaultResolveRequest(synthetic, settings);
-	return { dataOptions: { domain, variable, bounds: undefined }, renderOptions };
+	return defaultResolveRequest(urlComponents, settings);
 };
 
 /** Échelles de couleur « standard » de l'app (défaut du package + nos palettes
@@ -107,7 +87,11 @@ const cumulAwareResolveRequest: typeof defaultResolveRequest = (urlComponents, s
 export const standardColorScales = {
 	...defaultOmProtocolSettings.colorScales,
 	temperature: infoclimatTemperatureScale,
-	temperature_2m_anomaly: temperatureAnomalyScale
+	temperature_2m_anomaly: temperatureAnomalyScale,
+	// Clé exacte `precipitation_sum` : prioritaire sur la résolution par famille
+	// du package (qui mapperait sinon vers l'échelle `precipitation` saturant à
+	// 30 mm). Voir color-scales/precipitation-sum.ts.
+	precipitation_sum: precipitationSumScale
 };
 
 export const omProtocolSettings: Writable<OmProtocolSettings> = writable({
@@ -117,7 +101,7 @@ export const omProtocolSettings: Writable<OmProtocolSettings> = writable({
 		useSAB: true,
 		cache: createBlockCache()
 	},
-	resolveRequest: cumulAwareResolveRequest,
+	resolveRequest: customResolveRequest,
 
 	// dynamic (can be changed during runtime)
 	// `standardColorScales` (défaut + palettes infoclimat/anomalie) surchargé par
