@@ -46,4 +46,5 @@
 		SB = particule de surface · MU = la plus instable (θe max). CAPE/CIN en J/kg, cisaillement en
 		m/s.
 	</p>
+	<p class="text-right text-xs font-semibold text-slate-500">infoclimat.fr</p>
 </div>

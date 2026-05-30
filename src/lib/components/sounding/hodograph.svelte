@@ -41,4 +41,12 @@
 	<text x="6" y="13" font-size="9" font-family="ui-monospace, monospace" fill={legendText}>
 		Vent par niveau · cercles = m/s
 	</text>
+	<text
+		x={S - 4}
+		y={S - 5}
+		text-anchor="end"
+		font-size="9"
+		font-family="ui-monospace, monospace"
+		fill={legendText}>infoclimat.fr</text
+	>
 </svg>

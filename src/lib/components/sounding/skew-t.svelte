@@ -164,5 +164,13 @@
 			<text x="31" y="391" fill={legendText}>Particule</text>
 			<text x="10" y="405" fill={axis}>Pression en hPa · T inclinée</text>
 		</g>
+		<text
+			x={W - 4}
+			y="13"
+			text-anchor="end"
+			font-size="9"
+			font-family="ui-monospace, monospace"
+			fill={axis}>infoclimat.fr</text
+		>
 	</svg>
 </div>
