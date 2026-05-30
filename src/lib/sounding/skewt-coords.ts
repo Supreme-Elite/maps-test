@@ -16,11 +16,14 @@ export function pressureToY(pHPa: number, cfg: SkewTConfig): number {
 /** x normalisé d'une température (°C) à une pression donnée, avec skew. */
 export function tempToX(tC: number, pHPa: number, cfg: SkewTConfig): number {
 	const base = (tC - cfg.tMin) / (cfg.tMax - cfg.tMin);
-	return base + cfg.skew * pressureToY(pHPa, cfg);
+	// Skew : les isothermes s'inclinent vers la droite en altitude. Le terme
+	// s'annule au sol (yNorm = 1) — sinon l'air chaud de basses couches (base
+	// proche de 1) serait poussé hors du cadre — et vaut `skew` au sommet (yNorm = 0).
+	return base + cfg.skew * (1 - pressureToY(pHPa, cfg));
 }
 
 /** Inverse : température (°C) depuis (x, y) normalisés. */
 export function xyToTemp(x: number, y: number, cfg: SkewTConfig): number {
-	const base = x - cfg.skew * y;
+	const base = x - cfg.skew * (1 - y);
 	return base * (cfg.tMax - cfg.tMin) + cfg.tMin;
 }

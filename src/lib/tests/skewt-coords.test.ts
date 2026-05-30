@@ -24,4 +24,22 @@ describe('skewt-coords', () => {
 	it('skew : à pression donnée, T plus chaud → x plus à droite', () => {
 		expect(tempToX(10, 700, cfg)).toBeGreaterThan(tempToX(-10, 700, cfg));
 	});
+
+	it('régression : un profil chaud-au-sol / froid-en-altitude reste dans le cadre [0,1]', () => {
+		// Config de production (cf. skew-t.svelte). Régression du bug « émagramme chelou » :
+		// le skew poussait l'air chaud de basses couches hors du cadre (x > 1).
+		const prod: SkewTConfig = { pTop: 100, pBottom: 1050, tMin: -40, tMax: 40, skew: 0.55 };
+		const points: Array<[number, number]> = [
+			[29, 1000], // surface chaude
+			[0, 700],
+			[-13, 500],
+			[-58, 100], // sommet froid
+			[-74, 150] // point de rosée très froid en altitude
+		];
+		for (const [t, p] of points) {
+			const x = tempToX(t, p, prod);
+			expect(x).toBeGreaterThanOrEqual(0);
+			expect(x).toBeLessThanOrEqual(1);
+		}
+	});
 });

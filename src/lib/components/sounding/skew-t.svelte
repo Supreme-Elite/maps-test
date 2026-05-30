@@ -8,10 +8,10 @@
 
 	const W = 320;
 	const H = 420;
-	const cfg: SkewTConfig = { pTop: 100, pBottom: 1050, tMin: -90, tMax: 40, skew: 0.9 };
+	const cfg: SkewTConfig = { pTop: 100, pBottom: 1050, tMin: -40, tMax: 40, skew: 0.55 };
 
 	const isobars = [1000, 850, 700, 500, 400, 300, 200, 150, 100];
-	const isotherms = [-80, -60, -40, -20, 0, 20, 40];
+	const isotherms = [-60, -40, -20, 0, 20, 40];
 
 	const px = (t: number, p: number) => tempToX(t, p, cfg) * W;
 	const py = (p: number) => pressureToY(p, cfg) * H;
