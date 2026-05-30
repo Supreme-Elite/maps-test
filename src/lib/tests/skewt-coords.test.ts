@@ -1,7 +1,14 @@
 // src/lib/tests/skewt-coords.test.ts
 import { describe, expect, it } from 'vitest';
 
-import { type SkewTConfig, pressureToY, tempToX, xyToTemp } from '$lib/sounding/skewt-coords';
+import {
+	type SkewTConfig,
+	interpByPressure,
+	pressureToY,
+	tempToX,
+	xyToTemp,
+	yToPressure
+} from '$lib/sounding/skewt-coords';
 
 const cfg: SkewTConfig = { pTop: 100, pBottom: 1050, tMin: -90, tMax: 40, skew: 1 };
 
@@ -23,6 +30,23 @@ describe('skewt-coords', () => {
 
 	it('skew : à pression donnée, T plus chaud → x plus à droite', () => {
 		expect(tempToX(10, 700, cfg)).toBeGreaterThan(tempToX(-10, 700, cfg));
+	});
+
+	it('yToPressure : inverse de pressureToY (round-trip)', () => {
+		for (const p of [1000, 700, 500, 250]) {
+			expect(yToPressure(pressureToY(p, cfg), cfg)).toBeCloseTo(p, 3);
+		}
+	});
+
+	it('interpByPressure : interpole entre niveaux (pression décroissante) + clamp', () => {
+		const p = [1000, 850, 500];
+		const v = [20, 10, -10];
+		expect(interpByPressure(p, v, 1000)).toBe(20);
+		expect(interpByPressure(p, v, 500)).toBe(-10);
+		expect(interpByPressure(p, v, 925)).toBeCloseTo(15, 5); // milieu 1000–850
+		expect(interpByPressure(p, v, 2000)).toBe(20); // clamp sous le sol
+		expect(interpByPressure(p, v, 50)).toBe(-10); // clamp au-dessus du sommet
+		expect(interpByPressure([], [], 500)).toBeNaN();
 	});
 
 	it('régression : un profil chaud-au-sol / froid-en-altitude reste dans le cadre [0,1]', () => {

@@ -74,7 +74,7 @@
 
 {#if $sounding.open}
 	<div
-		class="sounding-panel fixed bottom-4 right-4 z-40 w-[340px] rounded-lg border bg-background shadow-lg"
+		class="sounding-panel fixed bottom-4 right-4 z-40 w-[380px] max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg"
 	>
 		<div class="flex items-center justify-between border-b p-2">
 			<div class="flex gap-1">
@@ -108,7 +108,7 @@
 				✕
 			</button>
 		</div>
-		<div class="h-[420px] p-2">
+		<div class="h-[460px] p-2">
 			{#if loading}
 				<p class="p-4 text-sm text-muted-foreground">Chargement du sondage…</p>
 			{:else if error}
