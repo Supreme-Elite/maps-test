@@ -1,0 +1,16 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "maps",
+	"compatibility_date": "2026-05-30",
+	// Déploiement statique (SvelteKit adapter-static → ./build). Pas de `main` :
+	// Worker "assets-only", aucun script serveur. La présence de ce fichier empêche
+	// `wrangler deploy` de lancer son auto-config SvelteKit-on-Workers (qui réécrivait
+	// le build en `wrangler types --check && vite build` → échec « worker-configuration.d.ts »).
+	"assets": {
+		"directory": "build",
+		"not_found_handling": "single-page-application"
+	},
+	"observability": {
+		"enabled": true
+	}
+}
