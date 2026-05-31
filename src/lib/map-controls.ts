@@ -21,6 +21,12 @@ export const setMapControlSettings = () => {
 	// Attribution en mode compact (bouton « i », texte au tap) pour ne pas encombrer
 	// le chrome ; l'attribution auto est désactivée dans les options de la carte.
 	map.addControl(new maplibregl.AttributionControl({ compact: true }));
+	// MapLibre l'ouvre (dépliée) au chargement → on la replie pour ne montrer que le « i ».
+	requestAnimationFrame(() => {
+		document
+			.querySelector('.maplibregl-ctrl-attrib.maplibregl-compact')
+			?.classList.remove('maplibregl-compact-show');
+	});
 	map.addControl(
 		new maplibregl.NavigationControl({ visualizePitch: true, showZoom: true, showCompass: true })
 	);
