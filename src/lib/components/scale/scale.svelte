@@ -11,7 +11,12 @@
 		omProtocolSettings,
 		standardColorScales
 	} from '$lib/stores/om-protocol-settings';
-	import { bottomChromeHeight, opacity, preferences } from '$lib/stores/preferences';
+	import {
+		bottomChromeHeight,
+		opacity,
+		preferences,
+		scaleCollapsed
+	} from '$lib/stores/preferences';
 	import {
 		convertValue,
 		getDisplayUnit,
@@ -128,120 +133,165 @@
 	const isMobile = $derived(!desktop.current);
 	const colorBlockHeight = $derived(isMobile && labeledColors.length >= 20 ? 10 : 20);
 	const totalHeight = $derived(colorBlockHeight * labeledColors.length);
+	// Bande repliée : hauteur de bloc réduite pour une légende compacte (~150px max).
+	const collapsedBlockHeight = $derived(
+		Math.min(colorBlockHeight, Math.max(4, Math.floor(150 / labeledColors.length)))
+	);
 </script>
 
 {#if $preferences.showScale}
-	<div
-		class="absolute z-60 {desktop.current
-			? 'bottom-2.5'
-			: ''} duration-500 left-2.5 z-10 select-none rounded-lg"
-		style="max-height: {totalHeight + 100}px;{!desktop.current
-			? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`
-			: ''}"
-	>
-		<div class="flex flex-col-reverse shadow-md">
-			<div class="flex flex-col-reverse bg-glass/45 backdrop-blur-md rounded-b-lg">
-				{#each labeledColors as lc, i (lc)}
+	{#if $scaleCollapsed}
+		<!-- Légende repliée : bande de couleur fine + unité, clic pour déplier -->
+		<button
+			type="button"
+			onclick={() => scaleCollapsed.set(false)}
+			aria-label="Déplier la légende"
+			title="Déplier la légende"
+			class="bg-glass/45 absolute left-2.5 z-60 flex cursor-pointer flex-col items-center overflow-hidden rounded-lg shadow-md backdrop-blur-md {desktop.current
+				? 'bottom-2.5'
+				: ''}"
+			style={!desktop.current ? `bottom: calc(${$bottomChromeHeight}px + 4.5rem);` : ''}
+		>
+			{#if colorScale.unit}
+				<span class="px-1 pt-0.5 text-[10px] leading-tight text-white/90">{displayUnit}</span>
+			{/if}
+			<div class="flex flex-col-reverse">
+				{#each labeledColors as lc (lc)}
 					{@const alphaValue = getAlpha(lc.color)}
+					<div
+						style="background: rgb({lc.color[0]}, {lc.color[1]}, {lc
+							.color[2]}); opacity: {(alphaValue * $opacity) /
+							100}; width: 16px; height: {collapsedBlockHeight}px;"
+					></div>
+				{/each}
+			</div>
+		</button>
+	{:else}
+		<div
+			class="absolute z-60 {desktop.current
+				? 'bottom-2.5'
+				: ''} duration-500 left-2.5 z-10 select-none rounded-lg"
+			style="max-height: {totalHeight + 100}px;{!desktop.current
+				? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`
+				: ''}"
+		>
+			<div class="flex flex-col-reverse shadow-md">
+				<div class="flex flex-col-reverse bg-glass/45 backdrop-blur-md rounded-b-lg">
+					{#each labeledColors as lc, i (lc)}
+						{@const alphaValue = getAlpha(lc.color)}
+						<button
+							type="button"
+							disabled={!editable && colorScale.type !== 'breakpoint'}
+							onclick={(e) => handleColorClick(i, e)}
+							style={`background: rgb({lc.color[0]}, {lc.color[1]}, {lc
+							.color[2]}); opacity: {alphaValue};min-width: 28px; width: ${labelWidth}px; height: ${colorBlockHeight}px;`}
+							class="relative border-none outline-none transition-all {editable
+								? 'cursor-pointer hover:brightness-110 hover:z-10 hover:ring-3 hover:ring-white/65'
+								: 'cursor-default'} {editingIndex === i ? 'ring-2 ring-white/40  z-20' : ''}"
+							title={editable
+								? `Cliquer pour changer la couleur (opacité : ${Math.round(alphaValue * 100)} %)`
+								: undefined}
+						>
+							<div
+								class="absolute inset-0 {i === 0 ? 'rounded-b-lg' : ''}"
+								style="background: rgb({lc.color[0]}, {lc.color[1]}, {lc
+									.color[2]}); opacity: {(alphaValue * $opacity) / 100};"
+							></div>
+						</button>
+						<!-- Color Picker Popover -->
+						{#if editingIndex === i}
+							<ColorPicker
+								color={rgbaToHex(lc.color)}
+								alpha={alphaValue}
+								onchange={handleColorChange}
+								onclose={closePicker}
+							/>
+						{/if}
+					{/each}
+				</div>
+
+				<!-- Labels column - positioned between buttons -->
+				<div class="flex flex-col-reverse" style="width: {labelWidth}px;">
+					{#each labeledColors as lc, i (lc)}
+						{#if i > 0 && !(labeledColors.length > 20 && i % 2 === 1 && !desktop.current)}
+							<div
+								class="absolute flex items-center justify-center text-xs z-20 pointer-events-none"
+								style={`bottom: ${i * colorBlockHeight - 6}px; height: 12px; width: ${labelWidth}px;
+							color: ${textWhite(lc.color, isDark, $opacity) ? 'white' : 'black'};`}
+							>
+								{formatValue(lc.value, digits)}
+							</div>
+						{/if}
+					{/each}
+				</div>
+
+				{#if colorScale.unit}
+					<div
+						class="bg-glass/45 backdrop-blur-md shadow-md h-6 w-full overflow-hidden text-center text-xs {editable
+							? ''
+							: 'rounded-t-lg'}"
+					>
+						{#if unitOptions}
+							<Select.Root
+								type="single"
+								value={displayUnit}
+								onValueChange={(v) => {
+									if (v) {
+										setUnitForCategory(colorScale.unit, v);
+										refreshPopup();
+									}
+								}}
+							>
+								<Select.Trigger
+									class="h-6! cursor-pointer w-full p-0 text-xs flex items-center justify-center px-1 py-0 gap-0.5 border-none bg-transparent shadow-none focus-visible:ring-0"
+									aria-label="Changer d'unité"
+									icon={false}
+								>
+									{displayUnit}
+								</Select.Trigger>
+								<Select.Content
+									side="top"
+									class="z-80 left-2.5 border-none bg-glass/45 backdrop-blur-md rounded-lg min-w-20"
+								>
+									{#each unitOptions as { value, label } (value)}
+										<Select.Item {value} {label} class="cursor-pointer text-xs" />
+									{/each}
+								</Select.Content>
+							</Select.Root>
+						{:else}
+							<span class="leading-6">{displayUnit}</span>
+						{/if}
+					</div>
+				{/if}
+
+				{#if editable}
 					<button
 						type="button"
-						disabled={!editable && colorScale.type !== 'breakpoint'}
-						onclick={(e) => handleColorClick(i, e)}
-						style={`background: rgb({lc.color[0]}, {lc.color[1]}, {lc
-							.color[2]}); opacity: {alphaValue};min-width: 28px; width: ${labelWidth}px; height: ${colorBlockHeight}px;`}
-						class="relative border-none outline-none transition-all {editable
-							? 'cursor-pointer hover:brightness-110 hover:z-10 hover:ring-3 hover:ring-white/65'
-							: 'cursor-default'} {editingIndex === i ? 'ring-2 ring-white/40  z-20' : ''}"
-						title={editable
-							? `Cliquer pour changer la couleur (opacité : ${Math.round(alphaValue * 100)} %)`
-							: undefined}
+						onclick={resetColorScale}
+						disabled={!hasCustomScale}
+						class="bg-glass/45 backdrop-blur-md shadow-md h-4 w-full text-center text-[11px] leading-4 {hasCustomScale
+							? 'hover:bg-glass/65 cursor-pointer'
+							: 'cursor-default opacity-40'}"
+						title={hasCustomScale
+							? 'Réinitialiser aux couleurs standard'
+							: 'Couleurs déjà standard'}
+						aria-label="Réinitialiser aux couleurs standard"
 					>
-						<div
-							class="absolute inset-0 {i === 0 ? 'rounded-b-lg' : ''}"
-							style="background: rgb({lc.color[0]}, {lc.color[1]}, {lc
-								.color[2]}); opacity: {(alphaValue * $opacity) / 100};"
-						></div>
+						↺
 					</button>
-					<!-- Color Picker Popover -->
-					{#if editingIndex === i}
-						<ColorPicker
-							color={rgbaToHex(lc.color)}
-							alpha={alphaValue}
-							onchange={handleColorChange}
-							onclose={closePicker}
-						/>
-					{/if}
-				{/each}
-			</div>
+				{/if}
 
-			<!-- Labels column - positioned between buttons -->
-			<div class="flex flex-col-reverse" style="width: {labelWidth}px;">
-				{#each labeledColors as lc, i (lc)}
-					{#if i > 0 && !(labeledColors.length > 20 && i % 2 === 1 && !desktop.current)}
-						<div
-							class="absolute flex items-center justify-center text-xs z-20 pointer-events-none"
-							style={`bottom: ${i * colorBlockHeight - 6}px; height: 12px; width: ${labelWidth}px;
-							color: ${textWhite(lc.color, isDark, $opacity) ? 'white' : 'black'};`}
-						>
-							{formatValue(lc.value, digits)}
-						</div>
-					{/if}
-				{/each}
-			</div>
-
-			{#if colorScale.unit}
-				<div
-					class="bg-glass/45 backdrop-blur-md shadow-md h-6 w-full overflow-hidden text-center text-xs {editable
-						? ''
-						: 'rounded-t-lg'}"
-				>
-					{#if unitOptions}
-						<Select.Root
-							type="single"
-							value={displayUnit}
-							onValueChange={(v) => {
-								if (v) {
-									setUnitForCategory(colorScale.unit, v);
-									refreshPopup();
-								}
-							}}
-						>
-							<Select.Trigger
-								class="h-6! cursor-pointer w-full p-0 text-xs flex items-center justify-center px-1 py-0 gap-0.5 border-none bg-transparent shadow-none focus-visible:ring-0"
-								aria-label="Changer d'unité"
-								icon={false}
-							>
-								{displayUnit}
-							</Select.Trigger>
-							<Select.Content
-								side="top"
-								class="z-80 left-2.5 border-none bg-glass/45 backdrop-blur-md rounded-lg min-w-20"
-							>
-								{#each unitOptions as { value, label } (value)}
-									<Select.Item {value} {label} class="cursor-pointer text-xs" />
-								{/each}
-							</Select.Content>
-						</Select.Root>
-					{:else}
-						<span class="leading-6">{displayUnit}</span>
-					{/if}
-				</div>
-			{/if}
-
-			{#if editable}
+				<!-- Bouton de repli (en haut de la légende) -->
 				<button
 					type="button"
-					onclick={resetColorScale}
-					disabled={!hasCustomScale}
-					class="bg-glass/45 rounded-t-lg backdrop-blur-md shadow-md h-4 w-full text-center text-[11px] leading-4 {hasCustomScale
-						? 'hover:bg-glass/65 cursor-pointer'
-						: 'cursor-default opacity-40'}"
-					title={hasCustomScale ? 'Réinitialiser aux couleurs standard' : 'Couleurs déjà standard'}
-					aria-label="Réinitialiser aux couleurs standard"
+					onclick={() => scaleCollapsed.set(true)}
+					class="bg-glass/45 hover:bg-glass/65 h-4 w-full cursor-pointer rounded-t-lg text-center text-[11px] leading-4 shadow-md backdrop-blur-md"
+					title="Replier la légende"
+					aria-label="Replier la légende"
 				>
-					↺
+					⌃
 				</button>
-			{/if}
+			</div>
 		</div>
-	</div>
+	{/if}
 {/if}
