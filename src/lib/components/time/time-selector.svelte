@@ -975,7 +975,7 @@
 					? 'background: linear-gradient(to right, rgba(15,15,15,1), rgba(15,15,15,0.95), rgba(15,15,15,0.9), rgba(15,15,15,0.5), rgba(15,15,15,0));'
 					: 'background: linear-gradient(to right, rgba(240,240,240,1), rgba(240,240,240,0.95), rgba(240,240,240,0.9), rgba(240,240,240,0.5), rgba(240,240,240,0));'}
 			class="absolute z-50 h-full flex items-center {desktop.current
-				? '-left-7 w-7 rounded-s-xl border-y border-l border-white/15 bg-glass/45 backdrop-blur-md'
+				? '-left-7 w-7 rounded-s-xl bg-glass/45 backdrop-blur-md'
 				: 'left-0 w-12 backdrop-blur-xxs'}"
 		>
 			<button
@@ -1007,7 +1007,7 @@
 					? 'background: linear-gradient(to left, rgba(15,15,15,1), rgba(15,15,15,0.95), rgba(15,15,15,0.9), rgba(15,15,15,0.5), rgba(15,15,15,0));'
 					: 'background: linear-gradient(to left, rgba(240,240,240,1), rgba(240,240,240,0.95), rgba(240,240,240,0.9), rgba(240,240,240,0.5), rgba(240,240,240,0));'}
 			class="absolute z-50 h-full flex items-center justify-end {desktop.current
-				? '-right-7 w-7 rounded-e-xl border-y border-r border-white/15 bg-glass/45 backdrop-blur-md'
+				? '-right-7 w-7 rounded-e-xl bg-glass/45 backdrop-blur-md'
 				: 'right-0 w-12 h-full backdrop-blur-xxs'}"
 		>
 			<button
@@ -1033,7 +1033,7 @@
 			</button>
 		</div>
 		<div
-			class="time-selector md:px-0 h-20 md:h-12.5 relative bg-glass/45 backdrop-blur-md rounded-xl border-y max-md:border-x border-white/15 duration-500"
+			class="time-selector md:px-0 h-20 md:h-12.5 relative bg-glass/45 backdrop-blur-md max-md:rounded-xl max-md:border max-md:border-white/15 duration-500"
 		>
 			{#if hoverX || currentDate.getTime() !== $time.getTime()}
 				<div
