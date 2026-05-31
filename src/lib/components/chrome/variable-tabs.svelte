@@ -181,6 +181,7 @@
 					? 'bg-glass/95! ring-1 ring-white/40'
 					: ''}"
 				aria-pressed={activeCategory === cat.key}
+				aria-label={cat.label}
 				onclick={() => selectVariable(first)}
 			>
 				<Icon class="size-4" />
@@ -236,9 +237,10 @@
 						<Command.Empty>Aucune variable trouvée.</Command.Empty>
 						<Command.Group>
 							{#each variableList as vr, i (i)}
-								{@const v = variableOptions.find(({ value }) => value === vr)
-									? variableOptions.find(({ value }) => value === vr)
-									: { value: vr, label: vr }}
+								{@const v = variableOptions.find(({ value }) => value === vr) ?? {
+									value: vr,
+									label: vr
+								}}
 								{#if levelGroupVariables.includes(vr)}
 									<Command.Item
 										value={v?.value}
@@ -263,26 +265,27 @@
 										</div>
 									</Command.Item>
 								{:else if !vr.includes('_v_') && !vr.includes('_direction')}
-									{@const vp = variableOptions.find(({ value }) => value === vr)
-										? variableOptions.find(({ value }) => value === vr)
-										: { value: vr, label: vr }}
+									{@const simpleVar = variableOptions.find(({ value }) => value === vr) ?? {
+										value: vr,
+										label: vr
+									}}
 
 									<Command.Item
-										value={vp?.value}
+										value={simpleVar?.value}
 										class="hover:bg-primary/20! cursor-pointer {$selectedVariable.value ===
-										vp?.value
+										simpleVar?.value
 											? 'bg-primary/10!'
 											: ''}"
 										onSelect={() => {
 											$levelGroupSelected = undefined;
-											$variable = vp?.value as string;
+											$variable = simpleVar?.value as string;
 											vSO.set(false);
 										}}
 									>
 										<div class="flex w-full items-center justify-between">
-											{vp?.label ? translateVariableLabel(vp.label) : ''}
+											{simpleVar?.label ? translateVariableLabel(simpleVar.label) : ''}
 											<CheckIcon
-												class="size-4 {$selectedVariable.value !== vp?.value
+												class="size-4 {$selectedVariable.value !== simpleVar?.value
 													? 'text-transparent'
 													: ''}"
 											/>
@@ -316,7 +319,7 @@
 							aria-expanded={pressureLevelSelectionOpen}
 						>
 							<span class="truncate">
-								{$level + ' ' + $unit || 'Choisir un niveau…'}
+								{$level && $unit ? `${$level} ${$unit}` : 'Choisir un niveau…'}
 							</span>
 							<ChevronsUpDownIcon class="size-4 shrink-0 opacity-50" />
 						</Button>
