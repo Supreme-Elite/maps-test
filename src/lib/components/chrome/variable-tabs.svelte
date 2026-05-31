@@ -8,7 +8,6 @@
 	import CloudRain from '@lucide/svelte/icons/cloud-rain';
 	import Gauge from '@lucide/svelte/icons/gauge';
 	import Layers from '@lucide/svelte/icons/layers';
-	import PlusIcon from '@lucide/svelte/icons/plus';
 	import Thermometer from '@lucide/svelte/icons/thermometer';
 	import Wind from '@lucide/svelte/icons/wind';
 	import {
@@ -36,12 +35,7 @@
 
 	import { VISIBLE_PRESSURE_LEVELS_HPA } from '$lib/constants';
 	import { localizeVariableOption, translateVariableLabel } from '$lib/i18n/variables-fr';
-	import {
-		CATEGORIES,
-		type Category,
-		type CategoryKey,
-		categorize
-	} from '$lib/variable-categories';
+	import { CATEGORIES, type CategoryKey, categorize } from '$lib/variable-categories';
 
 	const ICONS = {
 		temperature: Thermometer,
@@ -141,80 +135,55 @@
 		return value;
 	};
 
-	// Sélectionne une variable (gère branche groupe de niveaux vs variable simple).
-	const selectVariable = (vr: string) => {
-		const v = variableOptions.find(({ value }) => value === vr) ?? { value: vr, label: vr };
-		if (levelGroupVariables.includes(vr)) {
-			$levelGroupSelected = localizeVariableOption(v);
-			$variable = checkDefaultLevel(v.value);
-		} else {
-			$levelGroupSelected = undefined;
-			$variable = v.value;
-		}
-	};
-
-	// Catégories ayant au moins une variable disponible (hors composantes vectorielles brutes).
-	let availableCategories = $derived.by(() => {
-		if (!$metaJson) return [] as { cat: Category; first: string }[];
-		const result: { cat: Category; first: string }[] = [];
+	// Variables disponibles (préfixes de groupes + variables simples), groupées par
+	// catégorie pour une liste organisée dans le sélecteur.
+	let groupedVariables = $derived.by(() => {
+		const list = variableList ?? [];
+		const groups: { cat: (typeof CATEGORIES)[number]; items: string[] }[] = [];
 		for (const cat of CATEGORIES) {
-			const first = $metaJson.variables.find(
-				(v) => !v.includes('_v_') && !v.includes('_direction') && categorize(v) === cat.key
+			const items = list.filter(
+				(vr) => !vr.includes('_v_') && !vr.includes('_direction') && categorize(vr) === cat.key
 			);
-			if (first) result.push({ cat, first });
+			if (items.length) groups.push({ cat, items });
 		}
-		return result;
+		return groups;
 	});
 
-	// Catégorie active = celle de la variable (ou du groupe de niveaux) sélectionnée.
+	// Catégorie + libellé de la variable (ou groupe de niveaux) active.
 	let activeCategory = $derived<CategoryKey>(
 		categorize($levelGroupSelected?.value ?? $selectedVariable?.value ?? '')
+	);
+	let activeLabel = $derived(
+		$levelGroupSelected
+			? translateVariableLabel($levelGroupSelected.label)
+			: $selectedVariable?.label
+				? translateVariableLabel($selectedVariable.label)
+				: 'Variable…'
 	);
 </script>
 
 {#if $metaJson}
 	<div class="flex items-center gap-1.5">
-		<!-- Onglets imagés par catégorie -->
-		{#each availableCategories as { cat, first } (cat.key)}
-			{@const Icon = ICONS[cat.key]}
-			<button
-				type="button"
-				class="bg-glass/75 backdrop-blur-sm shadow-md hover:bg-glass/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 transition-colors duration-200 flex h-11 md:h-7.25 cursor-pointer items-center gap-1.5 rounded px-2.5 text-xs text-white {activeCategory ===
-				cat.key
-					? 'bg-glass/95! ring-1 ring-white/40'
-					: ''}"
-				aria-pressed={activeCategory === cat.key}
-				aria-label={cat.label}
-				title={cat.label}
-				onclick={() => selectVariable(first)}
-			>
-				<Icon class="size-4" aria-hidden="true" />
-				{#if activeCategory === cat.key}
-					<span>{cat.label}</span>
-				{/if}
-			</button>
-		{/each}
-
-		<!-- Bouton « + » : liste complète catégorisée des variables -->
-		<Popover.Root
-			bind:open={variableSelectionOpen}
-			onOpenChange={(e) => {
-				vSO.set(e);
-			}}
-		>
+		<!-- Sélecteur unique : affiche la variable active, ouvre la liste complète groupée -->
+		<Popover.Root bind:open={variableSelectionOpen} onOpenChange={(e) => vSO.set(e)}>
 			<Popover.Trigger>
 				{#snippet child({ props })}
+					{@const ActiveIcon = ICONS[activeCategory]}
 					<Button
 						{...props}
 						variant="outline"
-						class="bg-glass/75 dark:bg-glass/75 backdrop-blur-sm shadow-md {variableSelectionOpen
-							? 'bg-glass/95!'
-							: ''} hover:bg-glass/95! focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 h-11 w-11 md:h-7.25 md:w-7.25 cursor-pointer items-center justify-center rounded border-none p-0! text-white"
+						class="bg-glass/50 hover:bg-glass/70 {variableSelectionOpen
+							? 'bg-glass/70'
+							: ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 h-11 md:h-8 max-w-56 cursor-pointer justify-between gap-1.5 rounded-lg border border-white/20 px-3 text-white shadow-md backdrop-blur-md"
 						role="combobox"
 						aria-expanded={variableSelectionOpen}
-						aria-label="Toutes les variables"
+						aria-label="Choisir une variable"
 					>
-						<PlusIcon class="size-4" aria-hidden="true" />
+						<span class="flex items-center gap-1.5 truncate">
+							<ActiveIcon class="size-4 shrink-0" aria-hidden="true" />
+							<span class="truncate">{activeLabel}</span>
+						</span>
+						<ChevronsUpDownIcon class="size-4 shrink-0 opacity-60" aria-hidden="true" />
 					</Button>
 				{/snippet}
 			</Popover.Trigger>
@@ -226,80 +195,73 @@
 						'[data-value=' + $selectedVariable.value + ']'
 					) as HTMLElement;
 					if (query) {
-						const firstChild = query.querySelector(
-							'[data-value=' + $selectedVariable.value + ']'
-						) as HTMLElement;
-
-						firstChild.scrollIntoView({ block: 'center' });
-						firstChild.setAttribute('tabindex', '0');
-						firstChild.focus();
+						query.scrollIntoView({ block: 'center' });
+						query.setAttribute('tabindex', '0');
+						query.focus();
 					}
 				}}
-				class="z-80 w-62.5 rounded border-none bg-transparent! p-0"
+				class="bg-glass/85 z-80 w-62.5 rounded-lg border-none p-0 backdrop-blur-md"
 			>
-				<Command.Root class="bg-glass/85! backdrop-blur-sm rounded text-white">
+				<Command.Root class="bg-transparent text-white">
 					<Command.Input class="border-none ring-0" placeholder="Rechercher une variable…" />
 					<Command.List>
 						<Command.Empty>Aucune variable trouvée.</Command.Empty>
-						<Command.Group>
-							{#each variableList as vr, i (i)}
-								{@const v = variableOptions.find(({ value }) => value === vr) ?? {
-									value: vr,
-									label: vr
-								}}
-								{#if levelGroupVariables.includes(vr)}
-									<Command.Item
-										value={v?.value}
-										class="hover:bg-primary/15 cursor-pointer {$levelGroupSelected &&
-										$levelGroupSelected.value === v?.value
-											? 'bg-primary/10'
-											: ''}"
-										onSelect={() => {
-											$levelGroupSelected = localizeVariableOption(v);
-											$variable = checkDefaultLevel(v?.value as string);
-											vSO.set(false);
-										}}
-									>
-										<div class="flex w-full items-center justify-between">
-											{v?.label ? translateVariableLabel(v.label) : ''}
-											<CheckIcon
-												class="size-4 {!$levelGroupSelected ||
-												$levelGroupSelected?.value !== v?.value
-													? 'text-transparent'
-													: ''}"
-											/>
-										</div>
-									</Command.Item>
-								{:else if !vr.includes('_v_') && !vr.includes('_direction')}
-									{@const simpleVar = variableOptions.find(({ value }) => value === vr) ?? {
+						{#each groupedVariables as { cat, items } (cat.key)}
+							<Command.Group heading={cat.label}>
+								{#each items as vr (vr)}
+									{@const v = variableOptions.find(({ value }) => value === vr) ?? {
 										value: vr,
 										label: vr
 									}}
-
-									<Command.Item
-										value={simpleVar?.value}
-										class="hover:bg-primary/20! cursor-pointer {$selectedVariable.value ===
-										simpleVar?.value
-											? 'bg-primary/10!'
-											: ''}"
-										onSelect={() => {
-											$levelGroupSelected = undefined;
-											$variable = simpleVar?.value as string;
-											vSO.set(false);
-										}}
-									>
-										<div class="flex w-full items-center justify-between">
-											{simpleVar?.label ? translateVariableLabel(simpleVar.label) : ''}
-											<CheckIcon
-												class="size-4 {$selectedVariable.value !== simpleVar?.value
-													? 'text-transparent'
-													: ''}"
-											/>
-										</div>
-									</Command.Item>
-								{/if}
-							{/each}
-						</Command.Group>
+									{#if levelGroupVariables.includes(vr)}
+										<Command.Item
+											value={v.value}
+											class="hover:bg-primary/15 cursor-pointer {$levelGroupSelected &&
+											$levelGroupSelected.value === v.value
+												? 'bg-primary/10'
+												: ''}"
+											onSelect={() => {
+												$levelGroupSelected = localizeVariableOption(v);
+												$variable = checkDefaultLevel(v.value);
+												vSO.set(false);
+											}}
+										>
+											<div class="flex w-full items-center justify-between">
+												{translateVariableLabel(v.label)}
+												<CheckIcon
+													class="size-4 {!$levelGroupSelected ||
+													$levelGroupSelected?.value !== v.value
+														? 'text-transparent'
+														: ''}"
+												/>
+											</div>
+										</Command.Item>
+									{:else}
+										<Command.Item
+											value={v.value}
+											class="hover:bg-primary/20! cursor-pointer {$selectedVariable.value ===
+											v.value
+												? 'bg-primary/10!'
+												: ''}"
+											onSelect={() => {
+												$levelGroupSelected = undefined;
+												$variable = v.value;
+												vSO.set(false);
+											}}
+										>
+											<div class="flex w-full items-center justify-between">
+												{translateVariableLabel(v.label)}
+												<CheckIcon
+													class="size-4 {$selectedVariable.value !== v.value
+														? 'text-transparent'
+														: ''}"
+												/>
+											</div>
+										</Command.Item>
+									{/if}
+								{/each}
+							</Command.Group>
+						{/each}
 					</Command.List>
 				</Command.Root>
 			</Popover.Content>
@@ -318,21 +280,24 @@
 						<Button
 							{...props}
 							variant="outline"
-							class="bg-glass/75 dark:bg-glass/75 backdrop-blur-sm shadow-md {pressureLevelSelectionOpen
-								? 'bg-glass/95!'
-								: ''} hover:bg-glass/95! focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 h-11 md:h-7.25 cursor-pointer justify-between gap-1.5 rounded border-none px-2.5 text-xs text-white"
+							class="bg-glass/50 hover:bg-glass/70 {pressureLevelSelectionOpen
+								? 'bg-glass/70'
+								: ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 h-11 md:h-8 cursor-pointer justify-between gap-1.5 rounded-lg border border-white/20 px-3 text-white shadow-md backdrop-blur-md"
 							role="combobox"
 							aria-expanded={pressureLevelSelectionOpen}
 						>
 							<span class="truncate">
 								{$level && $unit ? `${$level} ${$unit}` : 'Choisir un niveau…'}
 							</span>
-							<ChevronsUpDownIcon class="size-4 shrink-0 opacity-50" aria-hidden="true" />
+							<ChevronsUpDownIcon class="size-4 shrink-0 opacity-60" aria-hidden="true" />
 						</Button>
 					{/snippet}
 				</Popover.Trigger>
-				<Popover.Content tabindex={0} class="z-80 w-62.5 rounded border-none bg-transparent! p-0">
-					<Command.Root class="bg-glass/85! backdrop-blur-sm rounded text-white">
+				<Popover.Content
+					tabindex={0}
+					class="bg-glass/85 z-80 w-62.5 rounded-lg border-none p-0 backdrop-blur-md"
+				>
+					<Command.Root class="bg-transparent text-white">
 						<Command.Input class="border-none ring-0" placeholder="Rechercher un niveau…" />
 						<Command.List>
 							<Command.Empty>Aucun niveau trouvé.</Command.Empty>
