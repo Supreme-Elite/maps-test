@@ -83,6 +83,31 @@ export const DEPARTMENTS_GEOJSON_URL = '/departements.geojson';
 // Les unités non-hPa (2m, 10m, 80m, 120m, 180m…) ne sont pas filtrées.
 export const VISIBLE_PRESSURE_LEVELS_HPA: readonly number[] = [925, 850, 700, 500, 300, 250, 200];
 
+// Niveaux de pression (hPa) lus pour reconstruire une colonne de sondage, du sol
+// vers le sommet. Distinct de VISIBLE_PRESSURE_LEVELS_HPA (filtre d'affichage du
+// sélecteur). Source-agnostique : voir SOUNDING_LEVELS_BY_DOMAIN pour les domaines
+// qui n'exposent qu'un sous-ensemble (ex. futur arome_om_reunion).
+export const SOUNDING_PRESSURE_LEVELS_HPA: readonly number[] = [
+	1000, 950, 925, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 275, 250, 225,
+	200, 175, 150, 125, 100
+];
+
+// Niveaux disponibles par domaine. Défaut = liste complète métropole. La Réunion
+// (arome_om_reunion) fournira sa propre liste quand les données seront produites.
+export const SOUNDING_LEVELS_BY_DOMAIN: Readonly<Record<string, readonly number[]>> = {
+	meteofrance_arome_france0025: SOUNDING_PRESSURE_LEVELS_HPA
+};
+
+export const soundingLevelsForDomain = (domain: string): readonly number[] =>
+	SOUNDING_LEVELS_BY_DOMAIN[domain] ?? SOUNDING_PRESSURE_LEVELS_HPA;
+
+// Un domaine ne supporte le sondage vertical que s'il diffuse des niveaux de
+// pression — c.-à-d. s'il est explicitement listé dans SOUNDING_LEVELS_BY_DOMAIN
+// (actuellement AROME 0,025° ; la Réunion s'ajoutera ici). Sert à n'afficher le
+// bouton « Sondage vertical » que sur ces modèles.
+export const isSoundingDomain = (domain: string): boolean =>
+	Object.prototype.hasOwnProperty.call(SOUNDING_LEVELS_BY_DOMAIN, domain);
+
 // Préset Infoclimat : sous-ensemble de modèles exposés dans le sélecteur de
 // domaine. Le reste de l'app (résolution d'URLs partagées, métadonnées) reste
 // indépendant — c'est purement un filtre d'affichage.

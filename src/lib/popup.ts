@@ -13,9 +13,12 @@ import { mode } from 'mode-watcher';
 
 import { map as m, popup as p, popupMode } from '$lib/stores/map';
 import { omProtocolSettings } from '$lib/stores/om-protocol-settings';
+import { sounding, soundingButtonEnabled } from '$lib/stores/sounding';
 import { convertValue, getDisplayUnit, unitPreferences } from '$lib/stores/units';
 import { selectedDomain, variable as v } from '$lib/stores/variables';
 import { windOverlayEnabled } from '$lib/stores/vector';
+
+import { isSoundingDomain } from '$lib/constants';
 
 import { textWhite } from './helpers';
 import { rasterManager, vectorManager } from './layers';
@@ -29,6 +32,8 @@ let valueSpan: HTMLSpanElement | undefined;
 let unitSpan: HTMLSpanElement | undefined;
 let elevationSpan: HTMLSpanElement | undefined;
 let windSpan: HTMLSpanElement | undefined;
+let soundingBtn: HTMLButtonElement | undefined;
+let lastCoords: maplibregl.LngLat | undefined;
 
 const WIND_VARIABLE_REGEX = /_(?:u|v)_component_/;
 
@@ -68,11 +73,29 @@ const initPopupDiv = (): void => {
 	contentDiv.append(elevationSpan);
 
 	wrapperDiv.append(contentDiv);
+
+	soundingBtn = document.createElement('button');
+	soundingBtn.className = 'popup-sounding-btn';
+	soundingBtn.innerText = 'Sondage vertical';
+	soundingBtn.addEventListener('click', () => {
+		if (lastCoords) sounding.open(lastCoords.lat, lastCoords.lng);
+	});
+	wrapperDiv.append(soundingBtn);
+
 	el.append(wrapperDiv);
 };
 
 /** Update the popup content for the given coordinates without moving the marker. */
 const updatePopupContent = async (coordinates: maplibregl.LngLat): Promise<void> => {
+	lastCoords = coordinates;
+
+	// Le bouton « Sondage vertical » n'apparaît que sur les modèles à niveaux de
+	// pression (AROME 0,025°) et si l'option est activée dans les réglages.
+	if (soundingBtn) {
+		const enabled = isSoundingDomain(get(selectedDomain).value) && get(soundingButtonEnabled);
+		soundingBtn.style.display = enabled ? '' : 'none';
+	}
+
 	if (!el || !contentDiv || !valueSpan || !unitSpan || !windSpan || !elevationSpan) return;
 
 	const map = get(m);

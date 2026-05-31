@@ -52,6 +52,7 @@
 	import VariableSelection from '$lib/components/selection/variable-selection.svelte';
 	import Settings from '$lib/components/settings/settings.svelte';
 	import SiteHeader from '$lib/components/site-header/site-header.svelte';
+	import SoundingPanel from '$lib/components/sounding/sounding-panel.svelte';
 	import TimeSelector from '$lib/components/time/time-selector.svelte';
 
 	import { DOMAIN_DEFAULT_VIEWS } from '$lib/constants';
@@ -342,6 +343,7 @@
 <TimeSelector />
 <Settings />
 <HelpDialog />
+<SoundingPanel />
 <KeyboardHandler />
 <Dropzone
 	ondrop={(features) => {
