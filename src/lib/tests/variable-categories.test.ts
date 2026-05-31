@@ -44,4 +44,22 @@ describe('categorize', () => {
 			'other'
 		]);
 	});
+
+	describe('anti-collision : limites de mots', () => {
+		it('terrain ne matche pas precipitation (rain substring)', () => {
+			expect(categorize('terrain')).toBe('other');
+		});
+
+		it('august_temperature matche temperature via _temperature', () => {
+			expect(categorize('august_temperature')).toBe('temperature');
+		});
+
+		it('wind_u_component_10m est classé wind', () => {
+			expect(categorize('wind_u_component_10m')).toBe('wind');
+		});
+
+		it('wind_v_component_10m est classé wind', () => {
+			expect(categorize('wind_v_component_10m')).toBe('wind');
+		});
+	});
 });

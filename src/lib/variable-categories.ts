@@ -23,14 +23,15 @@ export const CATEGORIES: Category[] = [
 	{ key: 'other', label: 'Autres', icon: 'layers' }
 ];
 
-// Règles ordonnées : première correspondance gagne. Volontairement permissif
-// (les variables Open-Meteo suivent des préfixes stables).
+// Règles ordonnées : première correspondance gagne. Chaque alternative est
+// ancrée à une limite de mot (début de chaîne ou underscore) pour éviter les
+// faux positifs (ex. « rain » dans « terrain », « gust » dans « august »).
 const RULES: { key: CategoryKey; test: RegExp }[] = [
-	{ key: 'temperature', test: /^(temperature|apparent_temperature|dew_?point|wet_bulb)/ },
-	{ key: 'precipitation', test: /(precipitation|rain|snow|showers|sleet)/ },
-	{ key: 'wind', test: /(wind|gust)/ },
-	{ key: 'clouds', test: /(cloud|visibility|fog)/ },
-	{ key: 'pressure', test: /(pressure|geopotential|msl|surface_pressure)/ }
+	{ key: 'temperature', test: /(^|_)(temperature|apparent_temperature|dew_?point|wet_bulb)/ },
+	{ key: 'precipitation', test: /(^|_)(precipitation|rain|snow|showers|sleet)/ },
+	{ key: 'wind', test: /(^|_)(wind|gust)/ },
+	{ key: 'clouds', test: /(^|_)(cloud|visibility|fog)/ },
+	{ key: 'pressure', test: /(^|_)(pressure|geopotential|msl|surface_pressure)/ }
 ];
 
 export function categorize(variable: string): CategoryKey {
