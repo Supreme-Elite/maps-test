@@ -185,10 +185,13 @@
 					: ''}"
 				aria-pressed={activeCategory === cat.key}
 				aria-label={cat.label}
+				title={cat.label}
 				onclick={() => selectVariable(first)}
 			>
 				<Icon class="size-4" aria-hidden="true" />
-				<span class="hidden sm:inline">{cat.label}</span>
+				{#if activeCategory === cat.key}
+					<span>{cat.label}</span>
+				{/if}
 			</button>
 		{/each}
 

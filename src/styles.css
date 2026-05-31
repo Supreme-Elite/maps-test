@@ -188,6 +188,15 @@
 	min-height: 100%;
 }
 
+/* Défilement horizontal possible sans barre de scroll visible (barre haute) */
+.no-scrollbar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}
+
 /* =============================================================================
    MapLibre Controls
    ============================================================================= */
