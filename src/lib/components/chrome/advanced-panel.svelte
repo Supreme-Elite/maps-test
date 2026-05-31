@@ -127,7 +127,7 @@
 {#if desktop.current}
 	{#if $advancedOpen}
 		<div
-			class="bg-glass/55 fixed top-16 right-2.5 z-60 max-h-[80vh] w-72 overflow-y-auto rounded-xl border border-white/15 p-3 text-white shadow-lg backdrop-blur-md"
+			class="bg-glass/85 fixed top-16 right-2.5 z-60 max-h-[80vh] w-72 overflow-y-auto rounded-xl border border-white/15 p-3 text-white shadow-lg backdrop-blur-xl"
 			in:fly={{ x: 16, duration: reduceMotion.current ? 0 : 200, easing: cubicOut }}
 			out:fly={{ x: 16, duration: reduceMotion.current ? 0 : 150, easing: cubicIn }}
 		>
@@ -140,7 +140,7 @@
 	<Sheet.Root bind:open={$advancedOpen}>
 		<Sheet.Content
 			side="bottom"
-			class="bg-glass/80 z-100 max-h-[85vh] border-none text-white backdrop-blur-sm"
+			class="bg-glass/90 z-100 max-h-[85vh] border-none text-white backdrop-blur-xl"
 		>
 			<div class="flex max-h-[85vh] flex-col gap-6 overflow-y-auto px-6 pt-10 pb-8">
 				{@render body()}
