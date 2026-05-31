@@ -25,9 +25,9 @@
 
 <!-- Dock bas : onglets variables défilants + accès avancé -->
 <div
-	class="bg-glass/45 fixed inset-x-2.5 z-60 flex items-center gap-2 overflow-x-auto rounded-xl border border-white/15 px-3 py-2 shadow-lg backdrop-blur-md"
+	class="bg-glass/45 fixed left-1/2 z-60 flex w-max max-w-[calc(100vw-1.25rem)] -translate-x-1/2 items-center gap-2 rounded-xl border border-white/15 px-3 py-2 shadow-lg backdrop-blur-md"
 	style="bottom: calc({$bottomChromeHeight}px + 0.5rem)"
 >
 	<VariableTabs />
-	<div class="ml-auto shrink-0">{@render advanced?.()}</div>
+	<div class="shrink-0">{@render advanced?.()}</div>
 </div>
