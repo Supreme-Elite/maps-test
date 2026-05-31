@@ -31,3 +31,7 @@ vite.config.ts.timestamp-*
 
 # Claude Code local (personal) settings
 .claude/settings.local.json
+
+# Python bytecode (skill scripts)
+__pycache__/
+*.pyc
