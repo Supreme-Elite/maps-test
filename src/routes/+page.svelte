@@ -43,6 +43,7 @@
 		LabelsButton,
 		SettingsButton
 	} from '$lib/components/buttons';
+	import Scrim from '$lib/components/chrome/scrim.svelte';
 	import ClippingPanel from '$lib/components/clipping/clipping-panel.svelte';
 	import Dropzone from '$lib/components/dropzone/dropzone.svelte';
 	import HelpDialog from '$lib/components/help/help-dialog.svelte';
@@ -276,6 +277,7 @@
 {/if}
 
 <div class="map maplibregl-map" id="#map_container" bind:this={mapContainer}></div>
+<Scrim />
 
 {#if $exportFrameVisible}
 	<!--
