@@ -109,7 +109,7 @@
 			// Attribution gérée manuellement en mode compact (voir setMapControlSettings),
 			// pour qu'elle reste un petit bouton « i » et ne passe pas derrière le chrome.
 			attributionControl: false,
-			// Required for canvas.toBlob() during playback pre-rendering — see playback-renderer.ts
+			// Required for canvas.toBlob() during PNG capture — see capture-flow.svelte
 			canvasContextAttributes: { preserveDrawingBuffer: true }
 		});
 

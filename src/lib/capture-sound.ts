@@ -77,17 +77,3 @@ export function playShutter(): void {
 	if (!ctx) return;
 	scheduleShutter(ctx, ctx.currentTime);
 }
-
-/** Identique au PNG simple : un clic pour annoncer le début de la rafale. */
-export function playSeriesStart(): void {
-	playShutter();
-}
-
-/** Double-clic rapide pour signaler la fin de l'export série (zip prêt). */
-export function playSeriesEnd(): void {
-	const ctx = getCtx();
-	if (!ctx) return;
-	const t = ctx.currentTime;
-	scheduleShutter(ctx, t);
-	scheduleShutter(ctx, t + 0.13);
-}

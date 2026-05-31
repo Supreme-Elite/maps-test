@@ -30,9 +30,14 @@ Single page app: `src/routes/+page.svelte` is the entry; `+layout.ts` opts out o
 
 The departments contour file is bundled (`static/departements.geojson`) to avoid CORS issues with third-party CDNs; the labels endpoint is dynamic (per-viewport fetches to `infoclimat-om-worker`).
 
-## Playback (diaporama)
+## Playback (diaporama) — retiré
 
-`src/lib/playback-renderer.ts` and `src/lib/playback.ts` implement a pre-rendered animation feature: frames are captured from the canvas (`preserveDrawingBuffer` is enabled on the map for this — see `+page.svelte`), decoded, and replayed via a `PlaybackOverlay`. State lives in `src/lib/stores/playback.ts` (fps, frames, currentIndex, prerenderProgress). The slot manager emits commit/error events (`slot-events.ts`) so playback can observe when a tile load completes. Playback locks map interaction (`MapInteractionLock`) during pre-render.
+Le player d'animation pré-rendu a été retiré (à reconstruire dans un module propre). Vestiges conservés :
+
+- `src/lib/playback-renderer.ts` ne contient plus que `waitForIdle(map, timeoutMs, signal?)`, utilisé par `capture-flow.svelte` pour attendre la mise au repos de la carte avant la capture PNG du canvas (`preserveDrawingBuffer` reste activé sur la map — voir `+page.svelte`).
+- `src/lib/slot-events.ts` continue d'émettre `commit`/`error` depuis le slot manager (`layers.ts`), mais plus aucun consommateur n'écoute ce bus — émission inoffensive, conservée pour le futur module d'animation.
+
+Supprimés : `src/lib/stores/playback.ts`, `src/lib/prefetch.ts`, les composants `playback-panel.svelte` / `prefetch-button.svelte`, et les exports `PlaybackOverlay` / `MapInteractionLock` / `captureFrame` / `decodeFrames` / `computeFrameIntervalMs` / `estimatePrerenderMs` / `isFailureRateExceeded` / `waitForCommit` de `playback-renderer.ts`.
 
 ## Domain allowlist (Infoclimat preset)
 

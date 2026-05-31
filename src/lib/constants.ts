@@ -184,16 +184,8 @@ export const MILLISECONDS_PER_WEEK = 7 * MILLISECONDS_PER_DAY; // 7 days in mill
 // Metadata refresh interval
 export const METADATA_REFRESH_INTERVAL = 5 * MILLISECONDS_PER_MINUTE; // 5 minutes in milliseconds
 
-// Playback (animation) frame interval in milliseconds (4 fps).
-export const PLAYBACK_FRAME_MS = 250;
-
-export const PLAYBACK_FPS_OPTIONS = [4, 6, 10, 15] as const;
-export type PlaybackFps = (typeof PLAYBACK_FPS_OPTIONS)[number];
-export const PLAYBACK_DEFAULT_FPS: PlaybackFps = 6;
-
+// Délai max d'attente de mise au repos de la carte avant capture du canvas (capture-flow).
 export const PRERENDER_FRAME_TIMEOUT_MS = 10_000;
-export const PRERENDER_MAX_FAILURE_RATIO = 0.2;
-export const PLAYBACK_WEBP_QUALITY = 0.85;
 
 // Calendar display constants
 export const DAY_NAMES = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];

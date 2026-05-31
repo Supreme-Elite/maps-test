@@ -10,7 +10,7 @@ Organized by feature under `src/lib/components/` (`chrome/`, `capture/`, `clippi
 
 **Primitives `ui/` personnalisées (à réappliquer après `npm run upgrade:ui`)** — le verre dépoli du chrome a modifié certaines primitives au-delà de la génération shadcn :
 
-- `ui/select/select-content.svelte` — fond verre translucide (`bg-glass/60 backdrop-blur-xl`, `border-none`, `rounded-lg`) au lieu de `bg-popover ... border shadow-md`, pour que les dropdowns `Select` (unités, run, fps…) s'accordent au reste du chrome verre. `text-popover-foreground` est conservé (adaptatif clair/sombre).
+- `ui/select/select-content.svelte` — fond verre translucide (`bg-glass/60 backdrop-blur-xl`, `border-none`, `rounded-lg`) au lieu de `bg-popover ... border shadow-md`, pour que les dropdowns `Select` (unités, run…) s'accordent au reste du chrome verre. `text-popover-foreground` est conservé (adaptatif clair/sombre).
 
 Si d'autres primitives `ui/` sont retouchées pour le style verre, les lister ici.
 
