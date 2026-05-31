@@ -11,7 +11,21 @@
 		advanced?: Snippet;
 	}
 	let { capture, advanced }: Props = $props();
+
+	const SITE_URL = 'https://www.infoclimat.fr';
+	const LOGO_URL = 'https://static.infoclimat.net/images/v5.1/logo_IC_5.1.png';
 </script>
+
+<!-- Logo Infoclimat, coin haut-gauche (lien vers le site) -->
+<a
+	href={SITE_URL}
+	title="Infoclimat"
+	rel="noopener"
+	aria-label="Infoclimat"
+	class="bg-glass/50 fixed top-2.5 left-2.5 z-60 flex h-11 items-center rounded-lg border border-white/20 px-2.5 shadow-md backdrop-blur-md"
+>
+	<img src={LOGO_URL} alt="Infoclimat" class="h-6 w-auto" crossorigin="anonymous" />
+</a>
 
 <!-- Pastille modèle, haut centre -->
 <div class="fixed inset-x-0 top-2.5 z-60 flex justify-center">
