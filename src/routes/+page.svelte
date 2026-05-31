@@ -43,6 +43,7 @@
 		LabelsButton,
 		SettingsButton
 	} from '$lib/components/buttons';
+	import AppChrome from '$lib/components/chrome/app-chrome.svelte';
 	import Scrim from '$lib/components/chrome/scrim.svelte';
 	import ClippingPanel from '$lib/components/clipping/clipping-panel.svelte';
 	import Dropzone from '$lib/components/dropzone/dropzone.svelte';
@@ -50,9 +51,7 @@
 	import KeyboardHandler from '$lib/components/keyboard/keyboard-handler.svelte';
 	import Spinner from '$lib/components/loading/spinner.svelte';
 	import Scale from '$lib/components/scale/scale.svelte';
-	import VariableSelection from '$lib/components/selection/variable-selection.svelte';
 	import Settings from '$lib/components/settings/settings.svelte';
-	import SiteHeader from '$lib/components/site-header/site-header.svelte';
 	import SoundingPanel from '$lib/components/sounding/sounding-panel.svelte';
 	import TimeSelector from '$lib/components/time/time-selector.svelte';
 
@@ -338,9 +337,8 @@
 	</div>
 {/if}
 
-<SiteHeader />
+<AppChrome />
 <Scale />
-<VariableSelection />
 <ClippingPanel bind:this={clippingPanel} />
 <TimeSelector />
 <Settings />
