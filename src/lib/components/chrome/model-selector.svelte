@@ -12,7 +12,7 @@
 	import * as Command from '$lib/components/ui/command';
 	import * as Popover from '$lib/components/ui/popover';
 
-	import { DOMAIN_ALLOWLIST } from '$lib/constants';
+	import { DOMAIN_ALLOWLIST, MODEL_DESCRIPTIONS } from '$lib/constants';
 
 	const visibleDomainOptions = domainOptions.filter((d: Domain) =>
 		DOMAIN_ALLOWLIST.includes(d.value)
@@ -42,7 +42,7 @@
 			</Button>
 		{/snippet}
 	</Popover.Trigger>
-	<Popover.Content class="bg-glass/85 z-80 w-64 rounded-lg border-none p-0 backdrop-blur-md">
+	<Popover.Content class="bg-glass/85 z-80 w-72 rounded-lg border-none p-0 backdrop-blur-md">
 		<Command.Root class="bg-transparent">
 			<Command.Input placeholder="Rechercher un modèle…" class="border-none ring-0" />
 			<Command.List>
@@ -59,10 +59,19 @@
 										dSO.set(false);
 									}}
 								>
-									<div class="flex w-full items-center justify-between">
-										{label}
+									<div class="flex w-full items-start justify-between gap-2">
+										<div class="min-w-0">
+											<div>{label}</div>
+											{#if MODEL_DESCRIPTIONS[value]}
+												<div class="text-xs leading-snug text-white/55">
+													{MODEL_DESCRIPTIONS[value]}
+												</div>
+											{/if}
+										</div>
 										<CheckIcon
-											class="size-4 {$selectedDomain.value !== value ? 'text-transparent' : ''}"
+											class="mt-0.5 size-4 shrink-0 {$selectedDomain.value !== value
+												? 'text-transparent'
+												: ''}"
 										/>
 									</div>
 								</Command.Item>

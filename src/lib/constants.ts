@@ -155,6 +155,25 @@ export const DOMAIN_ALLOWLIST: readonly string[] = [
 	// 'ecmwf_ec46_weekly'
 ];
 
+// Descriptions courtes par modèle, affichées sous le nom dans le sélecteur de modèle
+// pour aider à choisir (fournisseur · résolution/zone · échéance). Optionnel par domaine.
+export const MODEL_DESCRIPTIONS: Record<string, string> = {
+	anomaly_europe: 'Écart à la température normale 1991–2020 · Europe',
+	arome_om_reunion: 'Météo-France · Outre-mer, La Réunion · haute résolution',
+	meteofrance_arome_france_hd:
+		'Météo-France · ~1,5 km, France · détaille les phénomènes locaux · échéance ~2 j',
+	meteofrance_arome_france0025:
+		'Météo-France · 0,025° (~2,5 km), France · niveaux de pression (sondage) · ~2 j',
+	meteofrance_arpege_europe: 'Météo-France · ~11 km, Europe · échéance ~4 j',
+	meteofrance_arpege_world025: 'Météo-France · global 0,25° · échéance ~4 j',
+	ncep_gfs025: 'NOAA (USA) · global 0,25° · échéance ~16 j',
+	ecmwf_ifs: 'ECMWF (Europe) · global · référence moyenne échéance · ~15 j',
+	ecmwf_ifs025: 'ECMWF (Europe) · global 0,25° · référence fiable · ~15 j',
+	ecmwf_aifs025_single: 'ECMWF · modèle IA (AIFS) · global 0,25° · ~15 j',
+	dwd_icon_d2: 'DWD (Allemagne) · ~2 km, Europe centrale · échéance ~2 j',
+	dwd_icon_eu: 'DWD (Allemagne) · ~7 km, Europe · échéance ~5 j'
+};
+
 // Time constants
 export const MILLISECONDS_PER_SECOND = 1000; // 1 second in milliseconds
 export const MILLISECONDS_PER_MINUTE = 60 * MILLISECONDS_PER_SECOND; // 1 minute in milliseconds
