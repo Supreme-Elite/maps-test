@@ -64,8 +64,8 @@ export const opacity = persisted('opacity', DEFAULT_OPACITY);
 export const opacity2 = persisted('opacity2', 70);
 export const exportFrameVisible = persisted('export-frame-visible', false);
 
-// Légende couleur repliée (bande fine) — repliable par l'utilisateur, mémorisé.
-export const scaleCollapsed = persisted('scale-collapsed', false);
+// Légende couleur repliée (bande fine) — repliée par défaut, dépliable par l'utilisateur, mémorisé.
+export const scaleCollapsed = persisted('scale-collapsed', true);
 
 // Hauteur (en px) du chrome bas (la barre de temps) mesurée à l'exécution.
 // Sert au cadre d'export PNG/Série pour ne pas étendre le voile sombre par-dessus
