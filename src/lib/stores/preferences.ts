@@ -50,6 +50,7 @@ export const preferences = persisted('preferences', defaultPreferences);
 export const url: Writable<URL> = writable();
 
 export const sheet = writable(false);
+export const advancedOpen = writable(false);
 export const loading = writable(true);
 
 export const tileSize: Persisted<64 | 128 | 256 | 512 | 1024 | 2048> = persisted(

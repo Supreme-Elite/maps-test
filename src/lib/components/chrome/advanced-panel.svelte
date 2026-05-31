@@ -1,15 +1,191 @@
 <script lang="ts">
-	import SettingsIcon from '@lucide/svelte/icons/settings-2';
+	import { get } from 'svelte/store';
 
-	import { sheet } from '$lib/stores/preferences';
+	import SettingsIcon from '@lucide/svelte/icons/settings-2';
+	import maplibregl from 'maplibre-gl';
+	import { mode, setMode } from 'mode-watcher';
+
+	import { clippingPanelOpen } from '$lib/stores/clipping';
+	import { DEFAULT_SHOW_DEPARTMENTS, showDepartments } from '$lib/stores/departments';
+	import { DEFAULT_SHOW_LABELS, showLabels } from '$lib/stores/labels';
+	import { map } from '$lib/stores/map';
+	import {
+		advancedOpen,
+		defaultPreferences,
+		desktop,
+		helpOpen,
+		preferences
+	} from '$lib/stores/preferences';
+
+	import SecondaryLayerPanel from '$lib/components/secondary-layer/secondary-layer-panel.svelte';
+	import ArrowsSettings from '$lib/components/settings/arrows-settings.svelte';
+	import CacheSettings from '$lib/components/settings/cache-settings.svelte';
+	import ContourSettings from '$lib/components/settings/contour-settings.svelte';
+	import GridSettings from '$lib/components/settings/grid-settings.svelte';
+	import OpacitySetting from '$lib/components/settings/opacity-setting.svelte';
+	import PopupSettings from '$lib/components/settings/popup-settings.svelte';
+	import SoundingSettings from '$lib/components/settings/sounding-settings.svelte';
+	import StateSettings from '$lib/components/settings/state-settings.svelte';
+	import TileSizeSettings from '$lib/components/settings/tile-size-settings.svelte';
+	import UnitSettings from '$lib/components/settings/unit-settings.svelte';
+	import * as Sheet from '$lib/components/ui/sheet';
+	import WindOverlayPanel from '$lib/components/wind-overlay/wind-overlay-panel.svelte';
+
+	import { addHillshadeLayer, reloadStyles, terrainHandler } from '$lib/map-controls';
+	import { updateUrl } from '$lib/url';
+
+	import LayerToggle from './layer-toggle.svelte';
+
+	// Reactive snapshots driving the toggle UI.
+	const labelsOn = $derived($showLabels);
+	const departmentsOn = $derived($showDepartments);
+	const hillshadeOn = $derived($preferences.hillshade);
+	const darkOn = $derived(mode.current === 'dark');
+
+	// --- Terrain control lifecycle (ported from HillshadeButton) ---
+	let terrainControl: maplibregl.TerrainControl | undefined;
+
+	function addTerrainControl() {
+		const m = get(map);
+		if (!m || terrainControl) return;
+
+		terrainControl = new maplibregl.TerrainControl({
+			source: 'terrainSource2',
+			exaggeration: 1
+		});
+
+		m.addControl(terrainControl);
+
+		terrainControl._terrainButton.addEventListener('click', () => terrainHandler());
+
+		if (get(preferences).terrain) {
+			m.setTerrain({ source: 'terrainSource2' });
+		}
+	}
+
+	function removeTerrainControl() {
+		const m = get(map);
+		if (!m || !terrainControl) return;
+
+		if (m.hasControl(terrainControl)) {
+			m.removeControl(terrainControl);
+		}
+		terrainControl = undefined;
+		m.setTerrain(null);
+	}
+
+	// --- IControl behaviors ported to plain handlers ---
+	function toggleLabels(next: boolean) {
+		showLabels.set(next);
+		updateUrl('labels', String(next), String(DEFAULT_SHOW_LABELS));
+	}
+
+	function toggleDepartments(next: boolean) {
+		showDepartments.set(next);
+		updateUrl('departments', String(next), String(DEFAULT_SHOW_DEPARTMENTS));
+	}
+
+	function toggleDark(next: boolean) {
+		setMode(next ? 'dark' : 'light');
+		reloadStyles();
+	}
+
+	function toggleHillshade(next: boolean) {
+		const m = get(map);
+		preferences.update((p) => ({ ...p, hillshade: next }));
+
+		if (next) {
+			addHillshadeLayer();
+
+			m?.once('styledata', () => {
+				setTimeout(() => addTerrainControl(), 50);
+			});
+		} else {
+			if (m?.getLayer('hillshadeLayer')) {
+				m.removeLayer('hillshadeLayer');
+			}
+
+			m?.once('styledata', () => {
+				setTimeout(() => removeTerrainControl(), 50);
+			});
+		}
+		updateUrl('hillshade', String(next), String(defaultPreferences.hillshade));
+	}
 </script>
+
+{#snippet body()}
+	<section class="flex flex-col gap-1">
+		<h3 class="text-xs font-semibold tracking-wide text-white/60 uppercase">Calques carte</h3>
+		<WindOverlayPanel />
+		<ArrowsSettings />
+		<ContourSettings />
+		<LayerToggle label="Valeurs" checked={labelsOn} onCheckedChange={toggleLabels} />
+		<LayerToggle label="Départements" checked={departmentsOn} onCheckedChange={toggleDepartments} />
+		<LayerToggle label="Relief ombré" checked={hillshadeOn} onCheckedChange={toggleHillshade} />
+		<SecondaryLayerPanel />
+		<OpacitySetting />
+	</section>
+
+	<section class="flex flex-col gap-1">
+		<h3 class="text-xs font-semibold tracking-wide text-white/60 uppercase">Réglages</h3>
+		<UnitSettings />
+		<GridSettings />
+		<PopupSettings />
+		<TileSizeSettings />
+		<SoundingSettings />
+		<LayerToggle label="Mode sombre" checked={darkOn} onCheckedChange={toggleDark} />
+		<CacheSettings />
+		<StateSettings />
+	</section>
+
+	<section class="flex flex-col gap-1">
+		<h3 class="text-xs font-semibold tracking-wide text-white/60 uppercase">Outils</h3>
+		<button
+			type="button"
+			class="hover:bg-white/10 flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm"
+			onclick={() => clippingPanelOpen.set(!get(clippingPanelOpen))}
+		>
+			Découpe pays
+		</button>
+		<button
+			type="button"
+			class="hover:bg-white/10 flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm"
+			onclick={() => helpOpen.set(true)}
+		>
+			Aide
+		</button>
+	</section>
+{/snippet}
 
 <button
 	type="button"
-	onclick={() => sheet.set(true)}
+	onclick={() => advancedOpen.update((v) => !v)}
 	aria-label="Calques et réglages"
 	class="bg-glass/40 hover:bg-glass/60 flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 px-2.5 text-sm text-white backdrop-blur-md"
 >
 	<SettingsIcon class="size-4" />
 	<span class="hidden sm:inline">Calques &amp; réglages</span>
 </button>
+
+{#if desktop.current}
+	{#if $advancedOpen}
+		<div
+			class="bg-glass/55 fixed top-16 right-2.5 z-60 max-h-[80vh] w-72 overflow-y-auto rounded-xl border border-white/15 p-3 text-white shadow-lg backdrop-blur-md"
+		>
+			<div class="flex flex-col gap-6">
+				{@render body()}
+			</div>
+		</div>
+	{/if}
+{:else}
+	<Sheet.Root bind:open={$advancedOpen}>
+		<Sheet.Content
+			side="bottom"
+			class="bg-glass/80 z-100 max-h-[85vh] border-none text-white backdrop-blur-sm"
+		>
+			<div class="flex max-h-[85vh] flex-col gap-6 overflow-y-auto px-6 pt-10 pb-8">
+				{@render body()}
+			</div>
+		</Sheet.Content>
+	</Sheet.Root>
+{/if}
