@@ -49,7 +49,6 @@ export const preferences = persisted('preferences', defaultPreferences);
 // URL object containing current url states setings and flags
 export const url: Writable<URL> = writable();
 
-export const sheet = writable(false);
 export const advancedOpen = writable(false);
 export const loading = writable(true);
 
@@ -93,7 +92,6 @@ export const resetStates = async () => {
 	preferences.set(defaultPreferences);
 	vectorOptions.set(defaultVectorOptions);
 
-	sheet.set(false);
 	loading.set(false);
 
 	const currentTimeStep = new Date();

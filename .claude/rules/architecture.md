@@ -36,7 +36,7 @@ The departments contour file is bundled (`static/departements.geojson`) to avoid
 
 ## Domain allowlist (Infoclimat preset)
 
-`DOMAIN_ALLOWLIST` in `src/lib/constants.ts` filters the domain selector in `variable-selection.svelte` to the Infoclimat-relevant subset (MF AROME / ARPEGE, ECMWF IFS / AIFS, DWD ICON). This is **display-only**: URLs sharing a non-listed domain still resolve correctly (the rest of the app reads `domainOptions` from the package unfiltered). Add/remove entries in the list to expose more models in the UI.
+`DOMAIN_ALLOWLIST` in `src/lib/constants.ts` filters the domain selector in `model-selector.svelte` to the Infoclimat-relevant subset (MF AROME / ARPEGE, ECMWF IFS / AIFS, DWD ICON). This is **display-only**: URLs sharing a non-listed domain still resolve correctly (the rest of the app reads `domainOptions` from the package unfiltered). Add/remove entries in the list to expose more models in the UI.
 
 ## Sondage vertical (Skew-T)
 

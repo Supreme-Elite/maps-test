@@ -113,7 +113,7 @@ export const isSoundingDomain = (domain: string): boolean =>
 // indépendant — c'est purement un filtre d'affichage.
 //
 // Pour réactiver tous les modèles : passer la liste à `null` ou retirer le
-// filtre dans variable-selection.svelte.
+// filtre dans model-selector.svelte.
 export const DOMAIN_ALLOWLIST: readonly string[] = [
 	// Anomalies (pseudo-domaine, visible seulement si le bucket est configuré)
 	'anomaly_europe',
