@@ -7,6 +7,7 @@
 	import SplineIcon from '@lucide/svelte/icons/spline';
 	import SquareIcon from '@lucide/svelte/icons/square';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
+	import XIcon from '@lucide/svelte/icons/x';
 	import {
 		TerraDraw,
 		TerraDrawFreehandMode,
@@ -407,9 +408,19 @@
 
 {#if $clippingPanelOpen}
 	<div
-		class="fixed top-2.5 right-12.5 z-10 flex flex-col gap-2 rounded-sm bg-glass/80 p-3 shadow-lg backdrop-blur-sm"
+		class="fixed top-16 right-12.5 z-10 flex flex-col gap-2 rounded-sm bg-glass/80 p-3 shadow-lg backdrop-blur-sm md:right-auto md:left-2.5"
 	>
-		<p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Découpage</p>
+		<div class="flex items-center justify-between gap-2">
+			<p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Découpage</p>
+			<button
+				class="-mr-1 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+				aria-label="Fermer le panneau de découpage"
+				title="Fermer"
+				onclick={() => clippingPanelOpen.set(false)}
+			>
+				<XIcon class="h-4 w-4" />
+			</button>
+		</div>
 
 		<div class="mt-1 flex flex-col gap-1.5">
 			<div class="flex gap-1">
