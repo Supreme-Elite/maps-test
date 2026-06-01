@@ -140,10 +140,17 @@
 	const desktop = new MediaQuery('min-width: 768px');
 	const isMobile = $derived(!desktop.current);
 	const colorBlockHeight = $derived(isMobile && labeledColors.length >= 20 ? 10 : 20);
-	const totalHeight = $derived(colorBlockHeight * labeledColors.length);
+	// Catégories affichables dans la légende (code 0 « Aucune » = transparent, masqué).
+	const visibleCategoryEntries = $derived(categoryEntries.filter((e) => e.code !== 0));
+	// Nombre d'items réellement rendus dans la légende (catégoriel vs paliers numériques) —
+	// pilote la hauteur du panneau et la bande repliée.
+	const legendItemCount = $derived(
+		categorical ? visibleCategoryEntries.length : labeledColors.length
+	);
+	const totalHeight = $derived((categorical ? 30 : colorBlockHeight) * legendItemCount);
 	// Bande repliée : hauteur de bloc réduite pour une légende compacte (~150px max).
 	const collapsedBlockHeight = $derived(
-		Math.min(colorBlockHeight, Math.max(4, Math.floor(150 / labeledColors.length)))
+		Math.min(colorBlockHeight, Math.max(4, Math.floor(150 / Math.max(1, legendItemCount))))
 	);
 </script>
 
@@ -164,14 +171,24 @@
 				<span class="px-1 pt-0.5 text-[10px] leading-tight text-white/90">{displayUnit}</span>
 			{/if}
 			<div class="flex flex-col-reverse">
-				{#each labeledColors as lc (lc)}
-					{@const alphaValue = getAlpha(lc.color)}
-					<div
-						style="background: rgb({lc.color[0]}, {lc.color[1]}, {lc
-							.color[2]}); opacity: {(alphaValue * $opacity) /
-							100}; width: 16px; height: {collapsedBlockHeight}px;"
-					></div>
-				{/each}
+				{#if categorical}
+					{#each visibleCategoryEntries as entry (entry.code)}
+						{@const a = entry.color[3] ?? 1}
+						<div
+							style="background: rgb({entry.color[0]}, {entry.color[1]}, {entry
+								.color[2]}); opacity: {(a * $opacity) / 100}; width: 16px; height: {collapsedBlockHeight}px;"
+						></div>
+					{/each}
+				{:else}
+					{#each labeledColors as lc (lc)}
+						{@const alphaValue = getAlpha(lc.color)}
+						<div
+							style="background: rgb({lc.color[0]}, {lc.color[1]}, {lc
+								.color[2]}); opacity: {(alphaValue * $opacity) /
+								100}; width: 16px; height: {collapsedBlockHeight}px;"
+						></div>
+					{/each}
+				{/if}
 			</div>
 		</button>
 	{:else}
