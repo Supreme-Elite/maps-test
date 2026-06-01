@@ -26,17 +26,22 @@ Single page app: `src/routes/+page.svelte` is the entry; `+layout.ts` opts out o
 
 ## GeoJSON overlays
 
-`src/lib/labels-layer.ts` (valeurs numériques au-dessus de la carte) and `src/lib/departments-layer.ts` (contours des départements français) share the same pattern: a single `geojson` source + a MapLibre layer placed below `BEFORE_LAYER_VECTOR`, toggled by a persisted store (`showLabels`, `showDepartments`). Both expose `ensure<Name>Layer()` (idempotent registration) and `refresh<Name>()` (data update, possibly fetching). Reuse this pattern for any new overlay (régions, communes, etc.) rather than wiring sources/layers from `+page.svelte` directly.
+`src/lib/departments-layer.ts` (contours des départements français) suit ce pattern : un seul `geojson` source + un layer MapLibre placé sous `BEFORE_LAYER_VECTOR`, togglé par un store persisté (`showDepartments`). Il expose `ensureDepartmentsLayer()` (enregistrement idempotent) et `refreshDepartments()` (mise à jour des données). Réutiliser ce pattern pour tout nouvel overlay (régions, communes, etc.) plutôt que de câbler sources/layers depuis `+page.svelte` directement.
 
-The departments contour file is bundled (`static/departements.geojson`) to avoid CORS issues with third-party CDNs; the labels endpoint is dynamic (per-viewport fetches to `infoclimat-om-worker`).
+The departments contour file is bundled (`static/departements.geojson`) to avoid CORS issues with third-party CDNs.
 
-## Playback (diaporama)
+## Playback (diaporama) — retiré
 
-`src/lib/playback-renderer.ts` and `src/lib/playback.ts` implement a pre-rendered animation feature: frames are captured from the canvas (`preserveDrawingBuffer` is enabled on the map for this — see `+page.svelte`), decoded, and replayed via a `PlaybackOverlay`. State lives in `src/lib/stores/playback.ts` (fps, frames, currentIndex, prerenderProgress). The slot manager emits commit/error events (`slot-events.ts`) so playback can observe when a tile load completes. Playback locks map interaction (`MapInteractionLock`) during pre-render.
+Le player d'animation pré-rendu a été retiré (à reconstruire dans un module propre). Vestiges conservés :
+
+- `src/lib/playback-renderer.ts` ne contient plus que `waitForIdle(map, timeoutMs, signal?)`, utilisé par `capture-flow.svelte` pour attendre la mise au repos de la carte avant la capture PNG du canvas (`preserveDrawingBuffer` reste activé sur la map — voir `+page.svelte`).
+- `src/lib/slot-events.ts` continue d'émettre `commit`/`error` depuis le slot manager (`layers.ts`), mais plus aucun consommateur n'écoute ce bus — émission inoffensive, conservée pour le futur module d'animation.
+
+Supprimés : `src/lib/stores/playback.ts`, `src/lib/prefetch.ts`, les composants `playback-panel.svelte` / `prefetch-button.svelte`, et les exports `PlaybackOverlay` / `MapInteractionLock` / `captureFrame` / `decodeFrames` / `computeFrameIntervalMs` / `estimatePrerenderMs` / `isFailureRateExceeded` / `waitForCommit` de `playback-renderer.ts`.
 
 ## Domain allowlist (Infoclimat preset)
 
-`DOMAIN_ALLOWLIST` in `src/lib/constants.ts` filters the domain selector in `variable-selection.svelte` to the Infoclimat-relevant subset (MF AROME / ARPEGE, ECMWF IFS / AIFS, DWD ICON). This is **display-only**: URLs sharing a non-listed domain still resolve correctly (the rest of the app reads `domainOptions` from the package unfiltered). Add/remove entries in the list to expose more models in the UI.
+`DOMAIN_ALLOWLIST` in `src/lib/constants.ts` filters the domain selector in `model-selector.svelte` to the Infoclimat-relevant subset (MF AROME / ARPEGE, ECMWF IFS / AIFS, DWD ICON). This is **display-only**: URLs sharing a non-listed domain still resolve correctly (the rest of the app reads `domainOptions` from the package unfiltered). Add/remove entries in the list to expose more models in the UI.
 
 ## Sondage vertical (Skew-T)
 
@@ -52,4 +57,4 @@ Le bouton « Sondage vertical » du popup n'est affiché que si `isSoundingDomai
 
 ## infoclimat-om-worker integration
 
-The worker URL (`getOmWorkerUrl()`, read from `VITE_OM_WORKER_URL` at build time or `/runtime-config.js` for Docker runtime templating) backs two features: the basemap tile-proxy (`map-controls.ts`) and the labels overlay (`labels-layer.ts`, per-viewport numeric value fetches). When the URL is unset, those features are disabled.
+The worker URL (`getOmWorkerUrl()`, read from `VITE_OM_WORKER_URL` at build time or `/runtime-config.js` for Docker runtime templating) backs the basemap tile-proxy (`map-controls.ts`). When the URL is unset, that feature is disabled.

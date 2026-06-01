@@ -13,8 +13,6 @@
 	import { inProgress, latest, modelRun, now, time } from '$lib/stores/time';
 	import { selectedDomain } from '$lib/stores/variables';
 
-	import PlaybackPanel from '$lib/components/time/playback-panel.svelte';
-	import PrefetchButton from '$lib/components/time/prefetch-button.svelte';
 	import * as Select from '$lib/components/ui/select';
 
 	import {
@@ -715,10 +713,10 @@
 		if (resizeTimeout) clearTimeout(resizeTimeout);
 	});
 
-	// Mesure dynamique de la hauteur visible du chrome bas (TimeSelector + PlaybackPanel)
-	// pour que le cadre d'export PNG/Série puisse arrêter son voile sombre juste au-dessus.
-	// On utilise la position visuelle la plus haute parmi les enfants (le PlaybackPanel
-	// est positionné en absolute -top-4.5, donc il dépasse au-dessus du wrapper fixe).
+	// Mesure dynamique de la hauteur visible du chrome bas (la barre de temps)
+	// pour que le cadre d'export PNG puisse arrêter son voile sombre juste au-dessus.
+	// On utilise la position visuelle la plus haute parmi les enfants (le sélecteur de
+	// run est positionné en absolute -top-4.5, donc il dépasse au-dessus du wrapper fixe).
 	let chromeWrapper: HTMLDivElement | null = $state(null);
 
 	$effect(() => {
@@ -861,9 +859,6 @@
 			bind:clientWidth={runControlsWidth}
 			class="-top-4.5 h-4.5 z-10 right-0 absolute flex rounded-t-lg items-center px-2 gap-0.5 bg-glass/65 backdrop-blur-sm"
 		>
-			<PrefetchButton />
-			<PlaybackPanel />
-
 			<Select.Root
 				type="single"
 				value={$modelRun ? $modelRun.getTime().toString() : ''}
@@ -980,7 +975,7 @@
 					? 'background: linear-gradient(to right, rgba(15,15,15,1), rgba(15,15,15,0.95), rgba(15,15,15,0.9), rgba(15,15,15,0.5), rgba(15,15,15,0));'
 					: 'background: linear-gradient(to right, rgba(240,240,240,1), rgba(240,240,240,0.95), rgba(240,240,240,0.9), rgba(240,240,240,0.5), rgba(240,240,240,0));'}
 			class="absolute z-50 h-full flex items-center {desktop.current
-				? '-left-7 w-7 rounded-s-xl bg-glass/75 backdrop-blur-sm'
+				? '-left-7 w-7 rounded-s-xl bg-glass/45 backdrop-blur-md'
 				: 'left-0 w-12 backdrop-blur-xxs'}"
 		>
 			<button
@@ -1012,7 +1007,7 @@
 					? 'background: linear-gradient(to left, rgba(15,15,15,1), rgba(15,15,15,0.95), rgba(15,15,15,0.9), rgba(15,15,15,0.5), rgba(15,15,15,0));'
 					: 'background: linear-gradient(to left, rgba(240,240,240,1), rgba(240,240,240,0.95), rgba(240,240,240,0.9), rgba(240,240,240,0.5), rgba(240,240,240,0));'}
 			class="absolute z-50 h-full flex items-center justify-end {desktop.current
-				? '-right-7 w-7 rounded-e-xl bg-glass/75 backdrop-blur-sm'
+				? '-right-7 w-7 rounded-e-xl bg-glass/45 backdrop-blur-md'
 				: 'right-0 w-12 h-full backdrop-blur-xxs'}"
 		>
 			<button
@@ -1038,7 +1033,7 @@
 			</button>
 		</div>
 		<div
-			class="time-selector md:px-0 h-20 md:h-12.5 relative bg-glass/75 backdrop-blur-sm duration-500"
+			class="time-selector md:px-0 h-20 md:h-12.5 relative bg-glass/45 backdrop-blur-md max-md:rounded-xl max-md:border max-md:border-white/15 duration-500"
 		>
 			{#if hoverX || currentDate.getTime() !== $time.getTime()}
 				<div

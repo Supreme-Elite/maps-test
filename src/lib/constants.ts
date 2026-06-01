@@ -32,7 +32,7 @@ export const DEFAULT_VECTOR_OPTIONS = {
 export const DEFAULT_PREFERENCES = {
 	globe: false,
 	terrain: false,
-	hillshade: false,
+	hillshade: true,
 	clipWater: false,
 	showScale: true
 };
@@ -71,7 +71,7 @@ export const COMPLETE_DEFAULT_VALUES: { [key: string]: boolean | string | number
 	wind_overlay: 'false',
 	wind_overlay_level: '10m',
 	labels: 'false',
-	departments: 'false'
+	departments: 'true'
 };
 
 // Contours administratifs FR — GeoJSON simplifié (~550 KB / ~80 KB gzip),
@@ -113,7 +113,7 @@ export const isSoundingDomain = (domain: string): boolean =>
 // indépendant — c'est purement un filtre d'affichage.
 //
 // Pour réactiver tous les modèles : passer la liste à `null` ou retirer le
-// filtre dans variable-selection.svelte.
+// filtre dans model-selector.svelte.
 export const DOMAIN_ALLOWLIST: readonly string[] = [
 	// Anomalies (pseudo-domaine, visible seulement si le bucket est configuré)
 	'anomaly_europe',
@@ -155,6 +155,25 @@ export const DOMAIN_ALLOWLIST: readonly string[] = [
 	// 'ecmwf_ec46_weekly'
 ];
 
+// Descriptions courtes par modèle, affichées sous le nom dans le sélecteur de modèle
+// pour aider à choisir (fournisseur · résolution/zone · échéance). Optionnel par domaine.
+export const MODEL_DESCRIPTIONS: Record<string, string> = {
+	anomaly_europe: 'Écart à la température normale 1991–2020 · Europe',
+	arome_om_reunion: 'Météo-France · Outre-mer, La Réunion · haute résolution',
+	meteofrance_arome_france_hd:
+		'Météo-France · ~1,5 km, France · détaille les phénomènes locaux · échéance ~2 j',
+	meteofrance_arome_france0025:
+		'Météo-France · 0,025° (~2,5 km), France · niveaux de pression (sondage) · ~2 j',
+	meteofrance_arpege_europe: 'Météo-France · ~11 km, Europe · échéance ~4 j',
+	meteofrance_arpege_world025: 'Météo-France · global 0,25° · échéance ~4 j',
+	ncep_gfs025: 'NOAA (USA) · global 0,25° · échéance ~16 j',
+	ecmwf_ifs: 'ECMWF (Europe) · global · référence moyenne échéance · ~15 j',
+	ecmwf_ifs025: 'ECMWF (Europe) · global 0,25° · référence fiable · ~15 j',
+	ecmwf_aifs025_single: 'ECMWF · modèle IA (AIFS) · global 0,25° · ~15 j',
+	dwd_icon_d2: 'DWD (Allemagne) · ~2 km, Europe centrale · échéance ~2 j',
+	dwd_icon_eu: 'DWD (Allemagne) · ~7 km, Europe · échéance ~5 j'
+};
+
 // Time constants
 export const MILLISECONDS_PER_SECOND = 1000; // 1 second in milliseconds
 export const MILLISECONDS_PER_MINUTE = 60 * MILLISECONDS_PER_SECOND; // 1 minute in milliseconds
@@ -165,16 +184,8 @@ export const MILLISECONDS_PER_WEEK = 7 * MILLISECONDS_PER_DAY; // 7 days in mill
 // Metadata refresh interval
 export const METADATA_REFRESH_INTERVAL = 5 * MILLISECONDS_PER_MINUTE; // 5 minutes in milliseconds
 
-// Playback (animation) frame interval in milliseconds (4 fps).
-export const PLAYBACK_FRAME_MS = 250;
-
-export const PLAYBACK_FPS_OPTIONS = [4, 6, 10, 15] as const;
-export type PlaybackFps = (typeof PLAYBACK_FPS_OPTIONS)[number];
-export const PLAYBACK_DEFAULT_FPS: PlaybackFps = 6;
-
+// Délai max d'attente de mise au repos de la carte avant capture du canvas (capture-flow).
 export const PRERENDER_FRAME_TIMEOUT_MS = 10_000;
-export const PRERENDER_MAX_FAILURE_RATIO = 0.2;
-export const PLAYBACK_WEBP_QUALITY = 0.85;
 
 // Calendar display constants
 export const DAY_NAMES = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];

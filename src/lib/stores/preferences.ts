@@ -9,12 +9,15 @@ import {
 	COMPLETE_DEFAULT_VALUES,
 	DEFAULT_CACHE_BLOCK_SIZE_KB,
 	DEFAULT_CACHE_MAX_BYTES_MB,
+	DEFAULT_DOMAIN,
 	DEFAULT_OPACITY,
 	DEFAULT_PREFERENCES,
-	DEFAULT_TILE_SIZE
+	DEFAULT_TILE_SIZE,
+	DEFAULT_VARIABLE
 } from '$lib/constants';
 import { getInitialMetaData, getMetaData } from '$lib/metadata';
 
+import { DEFAULT_SHOW_DEPARTMENTS, showDepartments } from './departments';
 import { cacheBlockSizeKb, cacheMaxBytesMb, customColorScales } from './om-protocol-settings';
 import { inProgress, latest, metaJson, modelRun, modelRunLocked, now, time } from './time';
 import {
@@ -49,7 +52,7 @@ export const preferences = persisted('preferences', defaultPreferences);
 // URL object containing current url states setings and flags
 export const url: Writable<URL> = writable();
 
-export const sheet = writable(false);
+export const advancedOpen = writable(false);
 export const loading = writable(true);
 
 export const tileSize: Persisted<64 | 128 | 256 | 512 | 1024 | 2048> = persisted(
@@ -64,7 +67,10 @@ export const opacity = persisted('opacity', DEFAULT_OPACITY);
 export const opacity2 = persisted('opacity2', 70);
 export const exportFrameVisible = persisted('export-frame-visible', false);
 
-// Hauteur (en px) du chrome bas (TimeSelector + PlaybackPanel) mesurée à l'exécution.
+// Légende couleur repliée (bande fine) — repliée par défaut, dépliable par l'utilisateur, mémorisé.
+export const scaleCollapsed = persisted('scale-collapsed', true);
+
+// Hauteur (en px) du chrome bas (la barre de temps) mesurée à l'exécution.
 // Sert au cadre d'export PNG/Série pour ne pas étendre le voile sombre par-dessus
 // la barre du temps. Valeur initiale prudente (~120px) ; le composant la met à jour.
 export const bottomChromeHeight = writable(120);
@@ -91,8 +97,8 @@ export const resetStates = async () => {
 
 	preferences.set(defaultPreferences);
 	vectorOptions.set(defaultVectorOptions);
+	showDepartments.set(DEFAULT_SHOW_DEPARTMENTS);
 
-	sheet.set(false);
 	loading.set(false);
 
 	const currentTimeStep = new Date();
@@ -100,8 +106,8 @@ export const resetStates = async () => {
 	now.set(new Date());
 	time.set(new Date(currentTimeStep));
 
-	domain.set('dwd_icon');
-	variable.set('temperature_2m');
+	domain.set(DEFAULT_DOMAIN);
+	variable.set(DEFAULT_VARIABLE);
 
 	domainSelectionOpen.set(false);
 	variableSelectionOpen.set(false);
@@ -122,8 +128,9 @@ export const resetStates = async () => {
 	windSpeedUnit.set(DEFAULT_WIND_SPEED_UNIT);
 
 	helpOpen.set(false);
+	scaleCollapsed.set(true);
 
-	setMode('system');
+	setMode('dark');
 
 	await clearBlockCache();
 };

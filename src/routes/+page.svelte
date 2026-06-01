@@ -16,7 +16,6 @@
 	import { version } from '$app/environment';
 
 	import { showDepartments } from '$lib/stores/departments';
-	import { showLabels } from '$lib/stores/labels';
 	import { map } from '$lib/stores/map';
 	import { omProtocolSettings } from '$lib/stores/om-protocol-settings';
 	import { currentOmUrl } from '$lib/stores/om-url';
@@ -34,31 +33,21 @@
 	import { domain, selectedDomain, selectedVariable, variable } from '$lib/stores/variables';
 	import { windOverlayEnabled, windOverlayLevel } from '$lib/stores/vector';
 
-	import {
-		ClippingButton,
-		DarkModeButton,
-		DepartmentsButton,
-		HelpButton,
-		HillshadeButton,
-		LabelsButton,
-		SettingsButton
-	} from '$lib/components/buttons';
+	import AppChrome from '$lib/components/chrome/app-chrome.svelte';
+	import Scrim from '$lib/components/chrome/scrim.svelte';
 	import ClippingPanel from '$lib/components/clipping/clipping-panel.svelte';
 	import Dropzone from '$lib/components/dropzone/dropzone.svelte';
 	import HelpDialog from '$lib/components/help/help-dialog.svelte';
 	import KeyboardHandler from '$lib/components/keyboard/keyboard-handler.svelte';
 	import Spinner from '$lib/components/loading/spinner.svelte';
 	import Scale from '$lib/components/scale/scale.svelte';
-	import VariableSelection from '$lib/components/selection/variable-selection.svelte';
-	import Settings from '$lib/components/settings/settings.svelte';
-	import SiteHeader from '$lib/components/site-header/site-header.svelte';
 	import SoundingPanel from '$lib/components/sounding/sounding-panel.svelte';
 	import TimeSelector from '$lib/components/time/time-selector.svelte';
 
 	import { DOMAIN_DEFAULT_VIEWS } from '$lib/constants';
 	import { ensureDepartmentsLayer, refreshDepartments } from '$lib/departments-layer';
 	import { checkHighDefinition } from '$lib/helpers';
-	import { ensureLabelsLayer, refreshLabels } from '$lib/labels-layer';
+	import { initHillshadeFromPrefs } from '$lib/hillshade';
 	import { addOmFileLayers, changeOMfileURL } from '$lib/layers';
 	import { addTerrainSource, getStyle, setMapControlSettings } from '$lib/map-controls';
 	import { getInitialMetaData, getMetaData, matchVariableOrFirst } from '$lib/metadata';
@@ -115,7 +104,10 @@
 			keyboard: false,
 			hash: true,
 			maxPitch: 85,
-			// Required for canvas.toBlob() during playback pre-rendering — see playback-renderer.ts
+			// Attribution gérée manuellement en mode compact (voir setMapControlSettings),
+			// pour qu'elle reste un petit bouton « i » et ne passe pas derrière le chrome.
+			attributionControl: false,
+			// Required for canvas.toBlob() during PNG capture — see capture-flow.svelte
 			canvasContextAttributes: { preserveDrawingBuffer: true }
 		});
 
@@ -130,30 +122,18 @@
 		});
 
 		$map.on('load', async () => {
-			$map.addControl(new DarkModeButton());
-			$map.addControl(new SettingsButton());
-			$map.addControl(new HelpButton());
-			$map.addControl(new ClippingButton());
-
 			if (getInitialMetaDataPromise) await getInitialMetaDataPromise;
 
 			addTerrainSource($map);
 			addTerrainSource($map, 'terrainSource2');
-			$map.addControl(new HillshadeButton());
-			$map.addControl(new LabelsButton());
-			$map.addControl(new DepartmentsButton());
+			initHillshadeFromPrefs();
 			clippingPanel?.initTerraDraw();
 
 			addOmFileLayers();
 			addPopup();
 			changeOMfileURL();
 
-			ensureLabelsLayer();
 			ensureDepartmentsLayer();
-			$map.on('moveend', () => {
-				if (get(showLabels)) refreshLabels();
-			});
-			refreshLabels();
 			refreshDepartments();
 		});
 	});
@@ -223,12 +203,6 @@
 	});
 
 	$effect(() => {
-		// Pass deps so the effect re-runs whenever any of them changes —
-		// refreshLabels itself reads the current store values via get().
-		refreshLabels([$showLabels, $variable, $time, $domain, $modelRun]);
-	});
-
-	$effect(() => {
 		refreshDepartments([$showDepartments]);
 	});
 
@@ -276,6 +250,7 @@
 {/if}
 
 <div class="map maplibregl-map" id="#map_container" bind:this={mapContainer}></div>
+<Scrim />
 
 {#if $exportFrameVisible}
 	<!--
@@ -336,12 +311,10 @@
 	</div>
 {/if}
 
-<SiteHeader />
+<AppChrome />
 <Scale />
-<VariableSelection />
 <ClippingPanel bind:this={clippingPanel} />
 <TimeSelector />
-<Settings />
 <HelpDialog />
 <SoundingPanel />
 <KeyboardHandler />

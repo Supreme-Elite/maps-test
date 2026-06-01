@@ -148,7 +148,9 @@
 		ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
 		'Noto Color Emoji';
 
-	color-scheme: light dark;
+	/* Dark mode forcé sur toute l'app : on fige color-scheme en dark (scrollbars,
+	   inputs natifs…) et on ne suit plus prefers-color-scheme de l'OS. */
+	color-scheme: dark;
 	color: rgba(255, 255, 255, 0.87);
 	background-color: rgb(2, 8, 23);
 
@@ -158,21 +160,26 @@
 	-moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: light) {
-	:root {
-		color: #213547;
-		background-color: #ffffff;
-	}
-}
-
 /* =============================================================================
    Base / Root Styles
    ============================================================================= */
 
 @layer base {
+	html {
+		height: 100%;
+	}
+
 	body {
 		margin: 0;
-		max-height: 100%;
+		/* Épingle l'app à la zone réellement visible. `100dvh` suit la hauteur du
+		   viewport dynamique (barre d'URL iOS/Android qui apparaît/disparaît) ;
+		   `100vh` est le fallback pour les navigateurs sans `dvh`. `overflow:hidden`
+		   + `overscroll-behavior:none` empêchent le scroll/rubber-band qui faisait
+		   « sortir » l'app du plein écran et déborder la barre de temps en bas. */
+		height: 100vh;
+		height: 100dvh;
+		overflow: hidden;
+		overscroll-behavior: none;
 	}
 }
 
@@ -222,7 +229,9 @@
 /* Control positioning */
 .maplibregl-ctrl-bottom-right {
 	transition-duration: 500ms;
-	z-index: 0;
+	/* Au-dessus du chrome (dock z-60) pour que l'attribution dépliée reste lisible
+	   et ne passe pas derrière, mais sous les feuilles/dialogues (z-100). */
+	z-index: 65;
 }
 
 @media (max-width: 768px) {
@@ -420,4 +429,22 @@
 	top: 7px !important;
 	border: none !important;
 	background: none !important;
+}
+
+/* =============================================================================
+   Reduced motion
+   ============================================================================= */
+
+/* Neutralise les transitions/animations CSS (et Svelte CSS) pour les
+   utilisateurs qui préfèrent moins de mouvement. Les transitions Svelte JS
+   (fly) sont gérées séparément via MediaQuery côté composant. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
 }
