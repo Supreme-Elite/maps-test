@@ -69,30 +69,30 @@ Points d'intégration repérés, qui servent de modèle :
 
 ## Les 9 variables
 
-| om_name | grandeur | unité | plage typique | colormap |
-|---|---|---|---|---|
-| `radar_reflectivity` | réflectivité radar simulée (max colonne) | dBZ | −10 → 70 | échelle radar NWS (bleu→vert→jaune→rouge→magenta), seuils ~5/20/35/50/65 ; transparent <5 dBZ |
-| `brightness_temperature` | temp. brillance IR fenêtre (sommet nuage) | °C | −80 → +40 | IR « enhanced » : gris pour ciel clair (chaud), couleurs froides accentuées <−40 °C |
-| `brightness_temperature_wv` | temp. brillance IR vapeur d'eau 6.2 µm | °C | −70 → −10 | palette vapeur d'eau (brun/sec → bleu/humide) |
-| `cape` | énergie convective disponible | J/kg | 0 → 4000+ | 0 transparent, vert→jaune→orange→rouge→violet (seuils ~500/1000/2000/3000) |
-| `convective_inhibition` | inhibition convective | J/kg (négatif) | −1000 → 0 | palette « couvercle » (plus négatif = plus marqué) |
-| `visibility` | visibilité minimale 60 min | m | 0 → 20000 (plafonné 20 km) | rouge <1 km → orange → jaune → transparent au-delà ~10 km |
-| `lightning_density` | densité de foudre (moyenne 3 h) | densité | 0 → ~5 | 0 transparent, jaune→orange→rouge/violet ; **présent seulement H+3→H+51** |
-| `precipitation_type` | type de précip le plus **fréquent** | code catégoriel | voir table | colormap discrète |
-| `precipitation_type_severe` | type de précip le plus **dangereux** | code catégoriel | voir table | même colormap discrète |
+| om_name                     | grandeur                                  | unité           | plage typique              | colormap                                                                                      |
+| --------------------------- | ----------------------------------------- | --------------- | -------------------------- | --------------------------------------------------------------------------------------------- |
+| `radar_reflectivity`        | réflectivité radar simulée (max colonne)  | dBZ             | −10 → 70                   | échelle radar NWS (bleu→vert→jaune→rouge→magenta), seuils ~5/20/35/50/65 ; transparent <5 dBZ |
+| `brightness_temperature`    | temp. brillance IR fenêtre (sommet nuage) | °C              | −80 → +40                  | IR « enhanced » : gris pour ciel clair (chaud), couleurs froides accentuées <−40 °C           |
+| `brightness_temperature_wv` | temp. brillance IR vapeur d'eau 6.2 µm    | °C              | −70 → −10                  | palette vapeur d'eau (brun/sec → bleu/humide)                                                 |
+| `cape`                      | énergie convective disponible             | J/kg            | 0 → 4000+                  | 0 transparent, vert→jaune→orange→rouge→violet (seuils ~500/1000/2000/3000)                    |
+| `convective_inhibition`     | inhibition convective                     | J/kg (négatif)  | −1000 → 0                  | palette « couvercle » (plus négatif = plus marqué)                                            |
+| `visibility`                | visibilité minimale 60 min                | m               | 0 → 20000 (plafonné 20 km) | rouge <1 km → orange → jaune → transparent au-delà ~10 km                                     |
+| `lightning_density`         | densité de foudre (moyenne 3 h)           | densité         | 0 → ~5                     | 0 transparent, jaune→orange→rouge/violet ; **présent seulement H+3→H+51**                     |
+| `precipitation_type`        | type de précip le plus **fréquent**       | code catégoriel | voir table                 | colormap discrète                                                                             |
+| `precipitation_type_severe` | type de précip le plus **dangereux**      | code catégoriel | voir table                 | même colormap discrète                                                                        |
 
 ### Codes `precipitation_type*`
 
-| code | type | code | type |
-|---|---|---|---|
-| 0 | aucune (transparent) | 11 | bruine |
-| 1 | pluie | 12 | bruine verglaçante |
-| 3 | pluie verglaçante | 193 | neige fondante |
-| 5 | neige sèche | 201 | pluie intermittente |
-| 6 | neige humide | 205 | neige sèche interm. |
-| 7 | pluie + neige | 206 | neige humide interm. |
-| 8 | granules de glace | 207 | pluie+neige interm. |
-| 10 | grêle | | |
+| code | type                 | code | type                 |
+| ---- | -------------------- | ---- | -------------------- |
+| 0    | aucune (transparent) | 11   | bruine               |
+| 1    | pluie                | 12   | bruine verglaçante   |
+| 3    | pluie verglaçante    | 193  | neige fondante       |
+| 5    | neige sèche          | 201  | pluie intermittente  |
+| 6    | neige humide         | 205  | neige sèche interm.  |
+| 7    | pluie + neige        | 206  | neige humide interm. |
+| 8    | granules de glace    | 207  | pluie+neige interm.  |
+| 10   | grêle                |      |                      |
 
 Variantes ≥193 = « intermittent / fondante » : regroupées visuellement avec leur type de base
 (même teinte, opacité réduite) pour limiter le nombre de couleurs distinctes.
@@ -105,23 +105,26 @@ Variantes ≥193 = « intermittent / fondante » : regroupées visuellement avec
 
 ```ts
 const aromeFranceConvectionDomain: Domain = {
-  value: AROME_FRANCE_CONVECTION_DOMAIN,        // 'arome_france_convection'
-  label: 'AROME Convection France',
-  grid: {
-    type: 'regular',
-    nx: 1121, ny: 717,
-    latMin: 37.5, lonMin: -12,
-    dx: 0.025, dy: 0.025,
-    zoom: 5.2
-  },
-  time_interval: 'hourly',
-  model_interval: '3_hourly'
+	value: AROME_FRANCE_CONVECTION_DOMAIN, // 'arome_france_convection'
+	label: 'AROME Convection France',
+	grid: {
+		type: 'regular',
+		nx: 1121,
+		ny: 717,
+		latMin: 37.5,
+		lonMin: -12,
+		dx: 0.025,
+		dy: 0.025,
+		zoom: 5.2
+	},
+	time_interval: 'hourly',
+	model_interval: '3_hourly'
 };
 
 export function registerAromeFranceConvectionDomain(): void {
-  if (!getModelsBucketUrl()) return;                 // gating bucket
-  // groupe sélecteur dédié (pas de préfixe partagé avec un autre domaine)
-  // push idempotent dans domainGroups + domainOptions
+	if (!getModelsBucketUrl()) return; // gating bucket
+	// groupe sélecteur dédié (pas de préfixe partagé avec un autre domaine)
+	// push idempotent dans domainGroups + domainOptions
 }
 ```
 
@@ -131,6 +134,7 @@ Le sélecteur range un domaine sous un groupe via `domain.value.startsWith(group
 domaine pour que `startsWith` matche sans capturer d'autres domaines `arome_france*` du package.)
 
 **`src/lib/constants.ts`** :
+
 - `export const AROME_FRANCE_CONVECTION_DOMAIN = 'arome_france_convection';`
 - `DOMAIN_DEFAULT_VIEWS[AROME_FRANCE_CONVECTION_DOMAIN] = { center: [2.3, 46.6], zoom: 5 };`
 - `DOMAIN_ALLOWLIST` : ajouter `'arome_france_convection'`.
@@ -158,14 +162,17 @@ dont la variable est valide pour le domaine.
 ```ts
 import type { BreakpointColorScale } from '@openmeteo/weather-map-layer';
 
-export interface CategoryEntry { code: number; label: string }
+export interface CategoryEntry {
+	code: number;
+	label: string;
+}
 
 /** Colormap discrète : un BreakpointColorScale dont les breakpoints sont les codes
  *  catégoriels, plus un champ `categories` aligné index-par-index sur breakpoints/colors
  *  pour piloter la légende. Le moteur ignore `categories` (objet renvoyé tel quel par
  *  getColorScale/resolveColorScale), donc le rendu carte reste un breakpoint standard. */
 export interface CategoricalColorScale extends BreakpointColorScale {
-  categories: CategoryEntry[];
+	categories: CategoryEntry[];
 }
 ```
 
@@ -195,12 +202,15 @@ par nos versions dédiées).
 
 ```ts
 export type LegendEntry = { color: RGBA; label: string } | { color: RGBA; value: number };
-export function isCategorical(scale): scale is CategoricalColorScale { return 'categories' in scale; }
-export function legendEntriesFor(scale): LegendEntry[];   // catégoriel → {color,label} ; sinon paliers numériques existants
+export function isCategorical(scale): scale is CategoricalColorScale {
+	return 'categories' in scale;
+}
+export function legendEntriesFor(scale): LegendEntry[]; // catégoriel → {color,label} ; sinon paliers numériques existants
 ```
 
 **`scale.svelte`** : remplacer `getLabeledColorsForLegend` par un appel à `legendEntriesFor` et
 brancher l'affichage :
+
 - catégoriel → afficher `entry.label` (nom de catégorie), pas de `formatValue`, pas de
   sélecteur d'unité (`unit` vide), pas de conversion. L'entrée code 0 (transparent) est
   masquée de la légende.
@@ -213,6 +223,7 @@ nos colors sont des `RGBA[]` plats sans variantes light/dark). L'édition de cou
 ### Unité 5 — Labels FR
 
 `src/lib/i18n/variables-fr.ts`, table `EXPLICIT` :
+
 - Clés snake_case (variables absentes des `variableOptions` package) :
   `radar_reflectivity: 'Réflectivité radar'`,
   `brightness_temperature: 'Température de brillance (IR fenêtre)'`,

@@ -15,6 +15,7 @@
 ## File Structure
 
 **Créés :**
+
 - `src/lib/arome-france-convection-domain.ts` — enregistrement du domaine (objet `Domain` + groupe + gating bucket).
 - `src/lib/color-scales/types.ts` — type app-local `CategoricalColorScale` + `CategoryEntry`.
 - `src/lib/color-scales/radar-reflectivity.ts`
@@ -33,6 +34,7 @@
 - `src/lib/tests/match-variable.test.ts`
 
 **Modifiés :**
+
 - `src/lib/constants.ts` — constante domaine, `DOMAIN_DEFAULT_VIEWS`, `DOMAIN_ALLOWLIST`, `MODEL_DESCRIPTIONS`, nouvelle table `DOMAIN_DEFAULT_VARIABLES`.
 - `src/lib/helpers.ts` — `BUCKET_DOMAINS`.
 - `src/lib/stores/variables.ts` — appel `registerAromeFranceConvectionDomain()`.
@@ -47,6 +49,7 @@
 ## Task 1: Constante de domaine + table des variables par défaut
 
 **Files:**
+
 - Modify: `src/lib/constants.ts`
 
 - [ ] **Step 1: Ajouter la constante et les entrées de config**
@@ -111,6 +114,7 @@ git commit -m "feat(arome-convection): déclare la constante de domaine et sa co
 ## Task 2: Enregistrement du domaine
 
 **Files:**
+
 - Create: `src/lib/arome-france-convection-domain.ts`
 - Test: `src/lib/tests/arome-france-convection-domain.test.ts`
 - Modify: `src/lib/stores/variables.ts`
@@ -134,9 +138,8 @@ describe('registerAromeFranceConvectionDomain', () => {
 
 	it('registers a dedicated selector group so the domain is shown', async () => {
 		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
-		const { registerAromeFranceConvectionDomain } = await import(
-			'$lib/arome-france-convection-domain'
-		);
+		const { registerAromeFranceConvectionDomain } =
+			await import('$lib/arome-france-convection-domain');
 		registerAromeFranceConvectionDomain();
 		expect(domainGroups.filter((g) => g.value === 'arome_france_convection').length).toBe(1);
 		// Le lien groupe↔domaine repose sur startsWith.
@@ -145,9 +148,8 @@ describe('registerAromeFranceConvectionDomain', () => {
 
 	it('pushes arome_france_convection with the producer grid dimensions', async () => {
 		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
-		const { registerAromeFranceConvectionDomain } = await import(
-			'$lib/arome-france-convection-domain'
-		);
+		const { registerAromeFranceConvectionDomain } =
+			await import('$lib/arome-france-convection-domain');
 		registerAromeFranceConvectionDomain();
 		const d = domainOptions.find((x) => x.value === 'arome_france_convection');
 		expect(d).toBeDefined();
@@ -167,9 +169,8 @@ describe('registerAromeFranceConvectionDomain', () => {
 
 	it('is idempotent (no duplicate push)', async () => {
 		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
-		const { registerAromeFranceConvectionDomain } = await import(
-			'$lib/arome-france-convection-domain'
-		);
+		const { registerAromeFranceConvectionDomain } =
+			await import('$lib/arome-france-convection-domain');
 		registerAromeFranceConvectionDomain();
 		registerAromeFranceConvectionDomain();
 		expect(domainOptions.filter((x) => x.value === 'arome_france_convection').length).toBe(1);
@@ -177,9 +178,8 @@ describe('registerAromeFranceConvectionDomain', () => {
 
 	it('does not push when bucket URL is empty', async () => {
 		vi.stubEnv('VITE_MODELS_BUCKET_URL', '');
-		const { registerAromeFranceConvectionDomain } = await import(
-			'$lib/arome-france-convection-domain'
-		);
+		const { registerAromeFranceConvectionDomain } =
+			await import('$lib/arome-france-convection-domain');
 		registerAromeFranceConvectionDomain();
 		expect(domainOptions.find((x) => x.value === 'arome_france_convection')).toBeUndefined();
 	});
@@ -283,6 +283,7 @@ git commit -m "feat(arome-convection): enregistre le domaine (gating bucket R2)"
 ## Task 3: Routage du host vers le bucket R2
 
 **Files:**
+
 - Modify: `src/lib/helpers.ts`
 - Modify: `src/lib/tests/url-builder.test.ts`
 
@@ -291,14 +292,14 @@ git commit -m "feat(arome-convection): enregistre le domaine (gating bucket R2)"
 Dans `src/lib/tests/url-builder.test.ts`, ajouter ce cas dans le `describe('getOMUrlFor', ...)` :
 
 ```ts
-	it('routes arome_france_convection to the R2 bucket data_spatial path', () => {
-		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
-		d.set('arome_france_convection');
-		const url = getOMUrlFor('radar_reflectivity');
-		expect(url).toContain('https://bucket.test/data_spatial/arome_france_convection/');
-		expect(url).toContain('variable=radar_reflectivity');
-		expect(url).not.toContain('map-tiles.open-meteo.com');
-	});
+it('routes arome_france_convection to the R2 bucket data_spatial path', () => {
+	vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
+	d.set('arome_france_convection');
+	const url = getOMUrlFor('radar_reflectivity');
+	expect(url).toContain('https://bucket.test/data_spatial/arome_france_convection/');
+	expect(url).toContain('variable=radar_reflectivity');
+	expect(url).not.toContain('map-tiles.open-meteo.com');
+});
 ```
 
 - [ ] **Step 2: Lancer le test pour vérifier l'échec**
@@ -311,7 +312,11 @@ Expected: FAIL — l'URL pointe vers `map-tiles.open-meteo.com` (domaine pas enc
 Dans `src/lib/helpers.ts`, modifier l'import et le set :
 
 ```ts
-import { ANOMALY_DOMAIN, AROME_FRANCE_CONVECTION_DOMAIN, AROME_OM_REUNION_DOMAIN } from '$lib/constants';
+import {
+	ANOMALY_DOMAIN,
+	AROME_FRANCE_CONVECTION_DOMAIN,
+	AROME_OM_REUNION_DOMAIN
+} from '$lib/constants';
 ```
 
 ```ts
@@ -339,6 +344,7 @@ git commit -m "feat(arome-convection): route le domaine vers le bucket R2"
 ## Task 4: Variable par défaut du domaine (`matchVariableOrFirst`)
 
 **Files:**
+
 - Modify: `src/lib/metadata.ts`
 - Test: `src/lib/tests/match-variable.test.ts`
 
@@ -452,6 +458,7 @@ git commit -m "feat(arome-convection): variable par défaut radar_reflectivity s
 ## Task 5: Type catégoriel + colormaps continues
 
 **Files:**
+
 - Create: `src/lib/color-scales/types.ts`
 - Create: `src/lib/color-scales/radar-reflectivity.ts`
 - Create: `src/lib/color-scales/brightness-temperature.ts`
@@ -467,7 +474,6 @@ git commit -m "feat(arome-convection): variable par défaut radar_reflectivity s
 Créer `src/lib/tests/convection-color-scales.test.ts` :
 
 ```ts
-import type { BreakpointColorScale } from '@openmeteo/weather-map-layer';
 import { describe, expect, it } from 'vitest';
 
 import { brightnessTemperatureScale } from '$lib/color-scales/brightness-temperature';
@@ -477,6 +483,8 @@ import { convectiveInhibitionScale } from '$lib/color-scales/convective-inhibiti
 import { lightningDensityScale } from '$lib/color-scales/lightning-density';
 import { radarReflectivityScale } from '$lib/color-scales/radar-reflectivity';
 import { visibilityScale } from '$lib/color-scales/visibility';
+
+import type { BreakpointColorScale } from '@openmeteo/weather-map-layer';
 
 const continuous: [string, BreakpointColorScale][] = [
 	['radar', radarReflectivityScale],
@@ -751,6 +759,7 @@ git commit -m "feat(arome-convection): colormaps continues + type catégoriel"
 ## Task 6: Colormap catégorielle `precipitation_type`
 
 **Files:**
+
 - Create: `src/lib/color-scales/precipitation-type.ts`
 - Modify: `src/lib/tests/convection-color-scales.test.ts`
 
@@ -888,6 +897,7 @@ git commit -m "feat(arome-convection): colormap catégorielle precipitation_type
 ## Task 7: Helper de légende (pur)
 
 **Files:**
+
 - Create: `src/lib/color-scales/legend.ts`
 - Test: `src/lib/tests/legend.test.ts`
 
@@ -898,9 +908,9 @@ Créer `src/lib/tests/legend.test.ts` :
 ```ts
 import { describe, expect, it } from 'vitest';
 
+import { categoricalLegendEntries, isCategorical } from '$lib/color-scales/legend';
 import { precipitationTypeScale } from '$lib/color-scales/precipitation-type';
 import { radarReflectivityScale } from '$lib/color-scales/radar-reflectivity';
-import { categoricalLegendEntries, isCategorical } from '$lib/color-scales/legend';
 
 describe('isCategorical', () => {
 	it('detects a categorical scale', () => {
@@ -935,11 +945,9 @@ Expected: FAIL — `Cannot find module '$lib/color-scales/legend'`.
 Créer `src/lib/color-scales/legend.ts` :
 
 ```ts
-import type { RenderableColorScale } from '@openmeteo/weather-map-layer';
-
 import type { RGBA } from '$lib/color';
-
 import type { CategoricalColorScale } from './types';
+import type { RenderableColorScale } from '@openmeteo/weather-map-layer';
 
 export interface CategoricalLegendEntry {
 	color: RGBA;
@@ -990,6 +998,7 @@ git commit -m "feat(arome-convection): helper de légende catégorielle"
 ## Task 8: Enregistrer les colormaps dans `standardColorScales`
 
 **Files:**
+
 - Modify: `src/lib/stores/om-protocol-settings.ts`
 
 - [ ] **Step 1: Ajouter les imports**
@@ -1063,6 +1072,7 @@ git commit -m "feat(arome-convection): enregistre les 9 colormaps dans standardC
 ## Task 9: Légende discrète dans l'UI
 
 **Files:**
+
 - Create: `src/lib/components/scale/categorical-legend.svelte`
 - Modify: `src/lib/components/scale/scale.svelte`
 
@@ -1072,8 +1082,9 @@ Créer `src/lib/components/scale/categorical-legend.svelte`. Il rend la pile de 
 
 ```svelte
 <script lang="ts">
-	import type { CategoricalLegendEntry } from '$lib/color-scales/legend';
 	import { textWhite } from '$lib/helpers';
+
+	import type { CategoricalLegendEntry } from '$lib/color-scales/legend';
 
 	interface Props {
 		entries: CategoricalLegendEntry[];
@@ -1153,6 +1164,7 @@ Expected: PASS.
 - [ ] **Step 4: Vérification manuelle dans l'app**
 
 Run: `npm run dev`, puis ouvrir (bucket R2 requis dans `.env.local` : `VITE_MODELS_BUCKET_URL=...`) :
+
 - Basculer sur le modèle « AROME Convection France ». Vérifier : la carte centre sur la métropole, la variable par défaut est « Réflectivité radar », la légende dBZ s'affiche (transparent sous 5 dBZ).
 - Choisir « Type de précipitations » → la légende affiche des noms de catégories (Pluie, Neige sèche, Grêle…), pas de sélecteur d'unité.
 - Choisir CAPE, Visibilité, Foudre → légendes continues correctes.
@@ -1171,6 +1183,7 @@ git commit -m "feat(arome-convection): légende discrète pour precipitation_typ
 ## Task 10: Libellés FR
 
 **Files:**
+
 - Modify: `src/lib/i18n/variables-fr.ts`
 
 - [ ] **Step 1: Ajouter les libellés à la table EXPLICIT**
@@ -1232,6 +1245,7 @@ Expected: build réussi (`./build` généré).
 - [ ] **Step 4: Vérification manuelle de bout en bout**
 
 Avec `VITE_MODELS_BUCKET_URL` configuré et le bucket peuplé, lancer `npm run preview` et valider le scénario complet de la Task 9 Step 4, plus :
+
 - URL partagée avec `?domain=arome_france_convection&variable=cape` → ouvre directement sur CAPE.
 - Bascule vers un autre domaine puis retour → vue et variable par défaut réappliquées.
 - Sans `VITE_MODELS_BUCKET_URL` → le modèle n'apparaît pas dans le sélecteur (gating).
