@@ -14,6 +14,8 @@
 const EXPLICIT: Record<string, string> = {
 	'Aerosol Optical Depth': 'Profondeur optique des aérosols',
 	Albedo: 'Albédo',
+	brightness_temperature: 'Température de brillance (IR fenêtre)',
+	brightness_temperature_wv: "Température de brillance (vapeur d'eau)",
 	'Alder Pollen': "Pollen d'aulne",
 	Ammonia: 'Ammoniac',
 	'Birch Pollen': 'Pollen de bouleau',
@@ -72,7 +74,9 @@ const EXPLICIT: Record<string, string> = {
 	'Precipitation Probability': 'Probabilité de précipitations',
 	'Precipitation SOT90': 'Précipitations (SOT90)',
 	'Precipitation Type': 'Type de précipitations',
+	precipitation_type_severe: 'Type de précip. (le plus sévère)',
 	'Pressure Mean Sea Level': 'Pression au niveau de la mer',
+	radar_reflectivity: 'Réflectivité radar',
 	'Ragweed Pollen': "Pollen d'ambroisie",
 	Rain: 'Pluie',
 	'Rain Probability': 'Probabilité de pluie',
