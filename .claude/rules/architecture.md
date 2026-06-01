@@ -26,9 +26,9 @@ Single page app: `src/routes/+page.svelte` is the entry; `+layout.ts` opts out o
 
 ## GeoJSON overlays
 
-`src/lib/labels-layer.ts` (valeurs numériques au-dessus de la carte) and `src/lib/departments-layer.ts` (contours des départements français) share the same pattern: a single `geojson` source + a MapLibre layer placed below `BEFORE_LAYER_VECTOR`, toggled by a persisted store (`showLabels`, `showDepartments`). Both expose `ensure<Name>Layer()` (idempotent registration) and `refresh<Name>()` (data update, possibly fetching). Reuse this pattern for any new overlay (régions, communes, etc.) rather than wiring sources/layers from `+page.svelte` directly.
+`src/lib/departments-layer.ts` (contours des départements français) suit ce pattern : un seul `geojson` source + un layer MapLibre placé sous `BEFORE_LAYER_VECTOR`, togglé par un store persisté (`showDepartments`). Il expose `ensureDepartmentsLayer()` (enregistrement idempotent) et `refreshDepartments()` (mise à jour des données). Réutiliser ce pattern pour tout nouvel overlay (régions, communes, etc.) plutôt que de câbler sources/layers depuis `+page.svelte` directement.
 
-The departments contour file is bundled (`static/departements.geojson`) to avoid CORS issues with third-party CDNs; the labels endpoint is dynamic (per-viewport fetches to `infoclimat-om-worker`).
+The departments contour file is bundled (`static/departements.geojson`) to avoid CORS issues with third-party CDNs.
 
 ## Playback (diaporama) — retiré
 
@@ -57,4 +57,4 @@ Le bouton « Sondage vertical » du popup n'est affiché que si `isSoundingDomai
 
 ## infoclimat-om-worker integration
 
-The worker URL (`getOmWorkerUrl()`, read from `VITE_OM_WORKER_URL` at build time or `/runtime-config.js` for Docker runtime templating) backs two features: the basemap tile-proxy (`map-controls.ts`) and the labels overlay (`labels-layer.ts`, per-viewport numeric value fetches). When the URL is unset, those features are disabled.
+The worker URL (`getOmWorkerUrl()`, read from `VITE_OM_WORKER_URL` at build time or `/runtime-config.js` for Docker runtime templating) backs the basemap tile-proxy (`map-controls.ts`). When the URL is unset, that feature is disabled.

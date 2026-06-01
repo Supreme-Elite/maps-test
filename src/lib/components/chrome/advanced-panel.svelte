@@ -8,7 +8,6 @@
 
 	import { clippingPanelOpen } from '$lib/stores/clipping';
 	import { DEFAULT_SHOW_DEPARTMENTS, showDepartments } from '$lib/stores/departments';
-	import { DEFAULT_SHOW_LABELS, showLabels } from '$lib/stores/labels';
 	import {
 		advancedOpen,
 		defaultPreferences,
@@ -37,16 +36,10 @@
 	import LayerToggle from './layer-toggle.svelte';
 
 	// Reactive snapshots driving the toggle UI.
-	const labelsOn = $derived($showLabels);
 	const departmentsOn = $derived($showDepartments);
 	const hillshadeOn = $derived($preferences.hillshade);
 
 	// --- IControl behaviors ported to plain handlers ---
-	function toggleLabels(next: boolean) {
-		showLabels.set(next);
-		updateUrl('labels', String(next), String(DEFAULT_SHOW_LABELS));
-	}
-
 	function toggleDepartments(next: boolean) {
 		showDepartments.set(next);
 		updateUrl('departments', String(next), String(DEFAULT_SHOW_DEPARTMENTS));
@@ -79,7 +72,6 @@
 		<WindOverlayPanel />
 		<ArrowsSettings />
 		<ContourSettings />
-		<LayerToggle label="Valeurs" checked={labelsOn} onCheckedChange={toggleLabels} />
 		<LayerToggle label="Départements" checked={departmentsOn} onCheckedChange={toggleDepartments} />
 		<LayerToggle label="Relief ombré" checked={hillshadeOn} onCheckedChange={toggleHillshade} />
 		<SecondaryLayerPanel />

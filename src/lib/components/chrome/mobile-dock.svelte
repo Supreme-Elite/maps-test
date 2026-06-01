@@ -20,6 +20,7 @@
 <a
 	href={SITE_URL}
 	title="Infoclimat"
+	target="_blank"
 	rel="noopener"
 	aria-label="Infoclimat"
 	class="bg-glass/50 fixed top-2.5 left-2.5 z-60 flex h-11 items-center rounded-lg border border-white/20 px-2.5 shadow-md backdrop-blur-md"
@@ -28,8 +29,10 @@
 </a>
 
 <!-- Pastille modèle, haut centre -->
-<div class="fixed inset-x-0 top-2.5 z-60 flex justify-center">
-	<ModelSelector />
+<!-- pointer-events-none sur le conteneur pleine largeur : sans ça, sa zone vide
+     recouvre le logo (même top/z-index) et capte les taps destinés au logo. -->
+<div class="pointer-events-none fixed inset-x-0 top-2.5 z-60 flex justify-center">
+	<div class="pointer-events-auto"><ModelSelector /></div>
 </div>
 
 <!-- FAB capture, côté pouce, au-dessus du dock -->

@@ -13,7 +13,6 @@ import { mode } from 'mode-watcher';
 import { replaceState } from '$app/navigation';
 
 import { DEFAULT_SHOW_DEPARTMENTS, showDepartments } from '$lib/stores/departments';
-import { showLabels } from '$lib/stores/labels';
 import { map as m } from '$lib/stores/map';
 import {
 	type Preferences,
@@ -179,13 +178,6 @@ export const urlParamsToPreferences = () => {
 		windOverlayLevel.set(windOverlayLevelRaw);
 	} else if (get(windOverlayLevel) !== '10m') {
 		url.searchParams.set('wind_overlay_level', get(windOverlayLevel));
-	}
-
-	const labelsRaw = params.get('labels');
-	if (labelsRaw !== null) {
-		showLabels.set(labelsRaw === 'true');
-	} else if (get(showLabels)) {
-		url.searchParams.set('labels', 'true');
 	}
 
 	const departmentsRaw = params.get('departments');
