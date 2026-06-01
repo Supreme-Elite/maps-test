@@ -185,7 +185,7 @@
 		>
 			<div class="flex flex-col-reverse shadow-md">
 				{#if categorical}
-					<CategoricalLegend entries={categoryEntries} opacity={$opacity} {isDark} />
+					<CategoricalLegend entries={categoryEntries} opacity={$opacity} />
 				{:else}
 					<div class="flex flex-col-reverse bg-glass/45 backdrop-blur-md rounded-b-lg">
 						{#each labeledColors as lc, i (lc)}

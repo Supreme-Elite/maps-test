@@ -4,10 +4,9 @@
 	interface Props {
 		entries: CategoricalLegendEntry[];
 		opacity: number;
-		isDark: boolean;
 	}
 
-	let { entries, opacity, isDark: _isDark }: Props = $props();
+	let { entries, opacity }: Props = $props();
 
 	// Code 0 (« Aucune » = transparent) masqué de la liste : rien à montrer.
 	const visible = $derived(entries.filter((e) => e.code !== 0));
