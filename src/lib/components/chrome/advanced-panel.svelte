@@ -96,7 +96,7 @@
 			class="hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 md:min-h-0 w-full items-center rounded-md px-2 py-3 md:py-1.5 text-left text-sm"
 			onclick={() => clippingPanelOpen.set(!get(clippingPanelOpen))}
 		>
-			Découpe pays
+			Découpage
 		</button>
 		<button
 			type="button"
