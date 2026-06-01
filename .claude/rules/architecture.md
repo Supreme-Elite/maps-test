@@ -43,6 +43,12 @@ Supprimés : `src/lib/stores/playback.ts`, `src/lib/prefetch.ts`, les composants
 
 `DOMAIN_ALLOWLIST` in `src/lib/constants.ts` filters the domain selector in `model-selector.svelte` to the Infoclimat-relevant subset (MF AROME / ARPEGE, ECMWF IFS / AIFS, DWD ICON). This is **display-only**: URLs sharing a non-listed domain still resolve correctly (the rest of the app reads `domainOptions` from the package unfiltered). Add/remove entries in the list to expose more models in the UI.
 
+## Pseudo-domaines servis depuis le bucket R2
+
+Certains domaines ne viennent pas d'Open-Meteo mais d'un bucket R2 (`VITE_MODELS_BUCKET_URL`, voir `getModelsBucketUrl()`) : ils sont listés dans `BUCKET_DOMAINS` (`src/lib/helpers.ts → getBaseUri()`) et enregistrés via un module dédié appelé depuis `stores/variables.ts`, **gated** sur la présence du bucket (invisibles dans le sélecteur sinon). Aujourd'hui : `anomaly_europe` (`anomaly-domain.ts`, layout `/anomaly/…` → resolver custom dans `om-protocol-settings.ts`), `arome_om_reunion` (`arome-om-domain.ts`) et `arome_france_convection` (`arome-france-convection-domain.ts`). Les deux derniers utilisent le layout `data_spatial/{domain}/…` standard → resolver par défaut, aucune modif du protocole.
+
+`arome_france_convection` (AROME France métropole, convection/orage) expose 9 variables avec colormaps dédiées dans `src/lib/color-scales/` (7 continues + 1 catégorielle partagée par `precipitation_type`/`precipitation_type_severe`, type `CategoricalColorScale` rendu par `components/scale/categorical-legend.svelte`). La variable affichée par défaut sur bascule de domaine est pilotée par `DOMAIN_DEFAULT_VARIABLES` (`constants.ts`), consultée par `matchVariableOrFirst()` (`metadata.ts`).
+
 ## Sondage vertical (Skew-T)
 
 `src/lib/sounding/` implémente un sondage atmosphérique client-side en trois couches indépendantes :
