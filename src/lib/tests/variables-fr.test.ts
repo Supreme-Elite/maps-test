@@ -17,7 +17,7 @@ describe('translateVariableLabel — convection variables', () => {
 	});
 
 	it('translates the package English labels', () => {
-		expect(translateVariableLabel('Lightning Density')).toBe('Densité de foudre');
+		expect(translateVariableLabel('Lightning Density')).toBe('Densité de foudre (moy. 3 h)');
 		expect(translateVariableLabel('Convective Inhibition')).toBe('Inhibition convective (CIN)');
 		expect(translateVariableLabel('Visibility')).toBe('Visibilité');
 	});
