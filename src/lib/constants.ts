@@ -32,6 +32,17 @@ export const DOMAIN_DEFAULT_VARIABLES: Record<string, string> = {
 	[AROME_FRANCE_CONVECTION_DOMAIN]: 'radar_reflectivity'
 };
 
+/** Variables masquées du sélecteur (display-only), même si publiées dans le
+ *  meta.json du domaine. Filtré par `variable-tabs.svelte`. Une URL partagée
+ *  ciblant l'une d'elles résout toujours (comme `DOMAIN_ALLOWLIST` pour les modèles).
+ *
+ *  `precipitation_type` / `precipitation_type_severe` : variables catégorielles
+ *  rendues incorrectement par `@openmeteo/weather-map-layer` (échantillonnage
+ *  bilinéaire des données → halos de catégorie parasite en lisière, valeurs non
+ *  entières au survol ; aucun mode nearest-neighbor exposé). Masquées en attendant
+ *  une refacto / un correctif amont du package. Suivi : issue #35. */
+export const HIDDEN_VARIABLES: readonly string[] = ['precipitation_type', 'precipitation_type_severe'];
+
 // Vector options defaults
 export const DEFAULT_VECTOR_OPTIONS = {
 	grid: false,

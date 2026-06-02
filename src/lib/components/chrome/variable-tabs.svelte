@@ -33,7 +33,7 @@
 	import * as Command from '$lib/components/ui/command';
 	import * as Popover from '$lib/components/ui/popover';
 
-	import { VISIBLE_PRESSURE_LEVELS_HPA } from '$lib/constants';
+	import { HIDDEN_VARIABLES, VISIBLE_PRESSURE_LEVELS_HPA } from '$lib/constants';
 	import { localizeVariableOption, translateVariableLabel } from '$lib/i18n/variables-fr';
 	import { CATEGORIES, type CategoryKey, categorize } from '$lib/variable-categories';
 
@@ -51,6 +51,8 @@
 		if ($metaJson) {
 			const variables: string[] = [];
 			for (let mjVariable of $metaJson.variables) {
+				// Variables masquées du sélecteur (rendu cassé en attente de refacto).
+				if (HIDDEN_VARIABLES.includes(mjVariable)) continue;
 				let match = mjVariable.match(LEVEL_REGEX);
 				if (match) {
 					const prefixMatch = mjVariable.match(LEVEL_PREFIX);
