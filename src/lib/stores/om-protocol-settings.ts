@@ -136,10 +136,15 @@ export const omProtocolSettings: Writable<OmProtocolSettings> = writable({
 		const nextOmUrls = getNextOmUrls(state.omFileUrl, get(selectedDomain), get(metaJson));
 		for (const nextOmUrl of nextOmUrls) {
 			if (nextOmUrl === undefined) continue;
-			omFileReader.setToOmFile(nextOmUrl);
-			// This will trigger a request to the tail of the file and cache it
-			// Not requesting a real variable ensures that we don't request any additional data.
-			omFileReader.prefetchVariable('not_a_real_variable');
+			// Préchargement best-effort : on enchaîne le prefetch après l'ouverture du
+			// fichier, et on avale les rejets — un 404 en lisière d'horizon (pas de
+			// frame suivante) ne doit pas remonter en rejet de promesse non capturé.
+			void omFileReader
+				.setToOmFile(nextOmUrl)
+				// Requête sur la queue du fichier pour la mettre en cache. Demander une
+				// variable inexistante évite de télécharger des données supplémentaires.
+				.then(() => omFileReader.prefetchVariable('not_a_real_variable'))
+				.catch(() => {});
 		}
 		if (
 			state.dataOptions.domain.value === 'ecmwf_ifs' &&
