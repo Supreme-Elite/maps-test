@@ -85,8 +85,24 @@ export const variableSelectionOpen = writable(false);
 export const pressureLevelsSelectionOpen = writable(false);
 export const variableSelectionExtended: Persisted<boolean | undefined> = persisted(
 	'variables_open',
-	undefined
-); // undefined so it can be set to true on desktop on first load
+	undefined, // undefined so it can be set to true on desktop on first load
+	{
+		// `JSON.stringify(undefined)` renvoie la valeur `undefined`, que
+		// `localStorage.setItem` coerce en chaîne littérale "undefined" — illisible
+		// par `JSON.parse` au rechargement (cf. `resetStates()` qui set `undefined`).
+		// On sérialise donc l'état "non décidé" en `null` (JSON valide) et on le
+		// re-mappe vers `undefined` à la lecture.
+		serializer: {
+			stringify: (value) => JSON.stringify(value ?? null),
+			parse: (text) => {
+				// Tolère les "undefined" déjà persistés par les versions antérieures.
+				if (text === 'undefined') return undefined;
+				const parsed = JSON.parse(text);
+				return parsed === null ? undefined : parsed;
+			}
+		}
+	}
+);
 
 export const variable2 = persisted('variable2', 'precipitation');
 export const layer2Enabled = persisted('layer2Enabled', false);
