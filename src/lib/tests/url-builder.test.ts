@@ -28,6 +28,15 @@ describe('getOMUrlFor', () => {
 		expect(getOMUrl()).toContain('variable=temperature_2m');
 	});
 
+	it('routes arome_france_convection to the R2 bucket data_spatial path', () => {
+		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
+		d.set('arome_france_convection');
+		const url = getOMUrlFor('radar_reflectivity');
+		expect(url).toContain('https://bucket.test/data_spatial/arome_france_convection/');
+		expect(url).toContain('variable=radar_reflectivity');
+		expect(url).not.toContain('map-tiles.open-meteo.com');
+	});
+
 	it('routes precipitation_sum to the upstream data_spatial path, NOT the worker', () => {
 		// `precipitation_sum` (cumul depuis le début du run) est une variable
 		// first-class du domaine arome_om_reunion : elle doit être lue comme un

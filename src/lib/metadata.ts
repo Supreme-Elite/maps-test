@@ -6,6 +6,8 @@ import { loading } from '$lib/stores/preferences';
 import { inProgress as iP, latest as l, metaJson as mJ, modelRun as mR } from '$lib/stores/time';
 import { domain as d, selectedDomain, variable as v } from '$lib/stores/variables';
 
+import { DOMAIN_DEFAULT_VARIABLES } from '$lib/constants';
+
 import { fmtModelRun, getBaseUri } from './helpers';
 
 export const getInitialMetaData = async () => {
@@ -85,6 +87,13 @@ export const matchVariableOrFirst = () => {
 
 	if (prefix) {
 		matched = metaJson.variables.find((mv) => mv.startsWith(prefix));
+	}
+
+	// Défaut par domaine (ex. arome_france_convection → radar_reflectivity) avant le
+	// fallback `variables[0]`, à condition que la variable préférée soit publiée.
+	const domainDefault = DOMAIN_DEFAULT_VARIABLES[get(d)];
+	if (!matched && domainDefault && metaJson.variables.includes(domainDefault)) {
+		matched = domainDefault;
 	}
 
 	v.set(matched ?? metaJson.variables[0]);

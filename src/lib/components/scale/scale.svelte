@@ -29,10 +29,12 @@
 	import * as Select from '$lib/components/ui/select';
 
 	import { getAlpha, hexToRgba, rgbaToHex } from '$lib/color';
+	import { categoricalLegendEntries, isCategorical } from '$lib/color-scales/legend';
 	import { textWhite } from '$lib/helpers';
 	import { changeOMfileURL } from '$lib/layers';
 	import { refreshPopup } from '$lib/popup';
 
+	import CategoricalLegend from './categorical-legend.svelte';
 	import ColorPicker from './color-picker.svelte';
 
 	interface Props {
@@ -47,6 +49,12 @@
 	);
 	// Use custom scale if available, otherwise use base
 	const colorScale = $derived($customColorScales[$variable] ?? baseColorScale);
+
+	const categorical = $derived(isCategorical(colorScale));
+	// isCategorical(colorScale) inline narrows colorScale to CategoricalColorScale for the call.
+	const categoryEntries = $derived(
+		isCategorical(colorScale) ? categoricalLegendEntries(colorScale) : []
+	);
 
 	let editingIndex: number | null = $state(null);
 
@@ -132,10 +140,17 @@
 	const desktop = new MediaQuery('min-width: 768px');
 	const isMobile = $derived(!desktop.current);
 	const colorBlockHeight = $derived(isMobile && labeledColors.length >= 20 ? 10 : 20);
-	const totalHeight = $derived(colorBlockHeight * labeledColors.length);
+	// Catégories affichables dans la légende (code 0 « Aucune » = transparent, masqué).
+	const visibleCategoryEntries = $derived(categoryEntries.filter((e) => e.code !== 0));
+	// Nombre d'items réellement rendus dans la légende (catégoriel vs paliers numériques) —
+	// pilote la hauteur du panneau et la bande repliée.
+	const legendItemCount = $derived(
+		categorical ? visibleCategoryEntries.length : labeledColors.length
+	);
+	const totalHeight = $derived((categorical ? 30 : colorBlockHeight) * legendItemCount);
 	// Bande repliée : hauteur de bloc réduite pour une légende compacte (~150px max).
 	const collapsedBlockHeight = $derived(
-		Math.min(colorBlockHeight, Math.max(4, Math.floor(150 / labeledColors.length)))
+		Math.min(colorBlockHeight, Math.max(4, Math.floor(150 / Math.max(1, legendItemCount))))
 	);
 </script>
 
@@ -156,14 +171,25 @@
 				<span class="px-1 pt-0.5 text-[10px] leading-tight text-white/90">{displayUnit}</span>
 			{/if}
 			<div class="flex flex-col-reverse">
-				{#each labeledColors as lc (lc)}
-					{@const alphaValue = getAlpha(lc.color)}
-					<div
-						style="background: rgb({lc.color[0]}, {lc.color[1]}, {lc
-							.color[2]}); opacity: {(alphaValue * $opacity) /
-							100}; width: 16px; height: {collapsedBlockHeight}px;"
-					></div>
-				{/each}
+				{#if categorical}
+					{#each visibleCategoryEntries as entry (entry.code)}
+						{@const a = entry.color[3] ?? 1}
+						<div
+							style="background: rgb({entry.color[0]}, {entry.color[1]}, {entry
+								.color[2]}); opacity: {(a * $opacity) /
+								100}; width: 16px; height: {collapsedBlockHeight}px;"
+						></div>
+					{/each}
+				{:else}
+					{#each labeledColors as lc (lc)}
+						{@const alphaValue = getAlpha(lc.color)}
+						<div
+							style="background: rgb({lc.color[0]}, {lc.color[1]}, {lc
+								.color[2]}); opacity: {(alphaValue * $opacity) /
+								100}; width: 16px; height: {collapsedBlockHeight}px;"
+						></div>
+					{/each}
+				{/if}
 			</div>
 		</button>
 	{:else}
@@ -176,54 +202,58 @@
 				: ''}"
 		>
 			<div class="flex flex-col-reverse shadow-md">
-				<div class="flex flex-col-reverse bg-glass/45 backdrop-blur-md rounded-b-lg">
-					{#each labeledColors as lc, i (lc)}
-						{@const alphaValue = getAlpha(lc.color)}
-						<button
-							type="button"
-							disabled={!editable && colorScale.type !== 'breakpoint'}
-							onclick={(e) => handleColorClick(i, e)}
-							style={`background: rgb({lc.color[0]}, {lc.color[1]}, {lc
-							.color[2]}); opacity: {alphaValue};min-width: 28px; width: ${labelWidth}px; height: ${colorBlockHeight}px;`}
-							class="relative border-none outline-none transition-all {editable
-								? 'cursor-pointer hover:brightness-110 hover:z-10 hover:ring-3 hover:ring-white/65'
-								: 'cursor-default'} {editingIndex === i ? 'ring-2 ring-white/40  z-20' : ''}"
-							title={editable
-								? `Cliquer pour changer la couleur (opacité : ${Math.round(alphaValue * 100)} %)`
-								: undefined}
-						>
-							<div
-								class="absolute inset-0 {i === 0 ? 'rounded-b-lg' : ''}"
-								style="background: rgb({lc.color[0]}, {lc.color[1]}, {lc
-									.color[2]}); opacity: {(alphaValue * $opacity) / 100};"
-							></div>
-						</button>
-						<!-- Color Picker Popover -->
-						{#if editingIndex === i}
-							<ColorPicker
-								color={rgbaToHex(lc.color)}
-								alpha={alphaValue}
-								onchange={handleColorChange}
-								onclose={closePicker}
-							/>
-						{/if}
-					{/each}
-				</div>
-
-				<!-- Labels column - positioned between buttons -->
-				<div class="flex flex-col-reverse" style="width: {labelWidth}px;">
-					{#each labeledColors as lc, i (lc)}
-						{#if i > 0 && !(labeledColors.length > 20 && i % 2 === 1 && !desktop.current)}
-							<div
-								class="absolute flex items-center justify-center text-xs z-20 pointer-events-none"
-								style={`bottom: ${i * colorBlockHeight - 6}px; height: 12px; width: ${labelWidth}px;
-							color: ${textWhite(lc.color, isDark, $opacity) ? 'white' : 'black'};`}
+				{#if categorical}
+					<CategoricalLegend entries={categoryEntries} opacity={$opacity} />
+				{:else}
+					<div class="flex flex-col-reverse bg-glass/45 backdrop-blur-md rounded-b-lg">
+						{#each labeledColors as lc, i (lc)}
+							{@const alphaValue = getAlpha(lc.color)}
+							<button
+								type="button"
+								disabled={!editable && colorScale.type !== 'breakpoint'}
+								onclick={(e) => handleColorClick(i, e)}
+								style={`background: rgb({lc.color[0]}, {lc.color[1]}, {lc
+								.color[2]}); opacity: {alphaValue};min-width: 28px; width: ${labelWidth}px; height: ${colorBlockHeight}px;`}
+								class="relative border-none outline-none transition-all {editable
+									? 'cursor-pointer hover:brightness-110 hover:z-10 hover:ring-3 hover:ring-white/65'
+									: 'cursor-default'} {editingIndex === i ? 'ring-2 ring-white/40  z-20' : ''}"
+								title={editable
+									? `Cliquer pour changer la couleur (opacité : ${Math.round(alphaValue * 100)} %)`
+									: undefined}
 							>
-								{formatValue(lc.value, digits)}
-							</div>
-						{/if}
-					{/each}
-				</div>
+								<div
+									class="absolute inset-0 {i === 0 ? 'rounded-b-lg' : ''}"
+									style="background: rgb({lc.color[0]}, {lc.color[1]}, {lc
+										.color[2]}); opacity: {(alphaValue * $opacity) / 100};"
+								></div>
+							</button>
+							<!-- Color Picker Popover -->
+							{#if editingIndex === i}
+								<ColorPicker
+									color={rgbaToHex(lc.color)}
+									alpha={alphaValue}
+									onchange={handleColorChange}
+									onclose={closePicker}
+								/>
+							{/if}
+						{/each}
+					</div>
+
+					<!-- Labels column - positioned between buttons -->
+					<div class="flex flex-col-reverse" style="width: {labelWidth}px;">
+						{#each labeledColors as lc, i (lc)}
+							{#if i > 0 && !(labeledColors.length > 20 && i % 2 === 1 && !desktop.current)}
+								<div
+									class="absolute flex items-center justify-center text-xs z-20 pointer-events-none"
+									style={`bottom: ${i * colorBlockHeight - 6}px; height: 12px; width: ${labelWidth}px;
+								color: ${textWhite(lc.color, isDark, $opacity) ? 'white' : 'black'};`}
+								>
+									{formatValue(lc.value, digits)}
+								</div>
+							{/if}
+						{/each}
+					</div>
+				{/if}
 
 				{#if colorScale.unit}
 					<div
@@ -264,7 +294,7 @@
 					</div>
 				{/if}
 
-				{#if editable}
+				{#if editable && !categorical}
 					<button
 						type="button"
 						onclick={resetColorScale}
