@@ -11,6 +11,7 @@ import { type Persisted, persisted } from 'svelte-persisted-store';
 
 import { registerAnomalyDomain } from '$lib/anomaly-domain';
 import { registerAromeFranceConvectionDomain } from '$lib/arome-france-convection-domain';
+import { registerAromeFranceDomain } from '$lib/arome-france-domain';
 import { registerAromeOmDomain } from '$lib/arome-om-domain';
 import { DEFAULT_DOMAIN, DEFAULT_VARIABLE } from '$lib/constants';
 
@@ -18,6 +19,7 @@ import { DEFAULT_DOMAIN, DEFAULT_VARIABLE } from '$lib/constants';
 registerAnomalyDomain();
 registerAromeOmDomain();
 registerAromeFranceConvectionDomain();
+registerAromeFranceDomain();
 
 export const defaultDomain = DEFAULT_DOMAIN;
 export const domain = persisted('domain', defaultDomain);

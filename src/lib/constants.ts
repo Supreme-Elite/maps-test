@@ -1,5 +1,5 @@
 // Domain and variable defaults
-export const DEFAULT_DOMAIN = 'meteofrance_arome_france0025';
+export const DEFAULT_DOMAIN = 'arome_france';
 export const DEFAULT_VARIABLE = 'temperature_2m';
 
 /** Pseudo-domaine des anomalies de température (servi depuis le bucket R2). */
@@ -16,20 +16,28 @@ export const AROME_OM_REUNION_DOMAIN = 'arome_om_reunion';
  *  `arome_france` général d'Open-Meteo (le suffixe `_convection` lève la collision). */
 export const AROME_FRANCE_CONVECTION_DOMAIN = 'arome_france_convection';
 
+/** Pseudo-domaine AROME France métropole **surface** (12 variables standard
+ *  Open-Meteo), servi depuis le bucket maison par le pipeline `arome-france-forecast`.
+ *  Distinct de `arome_france_convection` (orienté convection/orage) et des AROME
+ *  d'Open-Meteo (`meteofrance_arome_france*`). */
+export const AROME_FRANCE_DOMAIN = 'arome_france';
+
 /** Vue de carte recommandée par domaine — appliquée via `flyTo` quand l'utilisateur
  *  bascule manuellement sur le domaine. Utile pour les pseudo-domaines régionaux
  *  dont le centre de grille tombe sur une zone océan/peu lisible.
  *  Format MapLibre : `{ center: [lon, lat], zoom }`. */
 export const DOMAIN_DEFAULT_VIEWS: Record<string, { center: [number, number]; zoom: number }> = {
 	[AROME_OM_REUNION_DOMAIN]: { center: [50.2, -15.97], zoom: 4.47 },
-	[AROME_FRANCE_CONVECTION_DOMAIN]: { center: [2.3, 46.6], zoom: 5 }
+	[AROME_FRANCE_CONVECTION_DOMAIN]: { center: [2.3, 46.6], zoom: 5 },
+	[AROME_FRANCE_DOMAIN]: { center: [2.3, 46.6], zoom: 5 }
 };
 
 /** Variable affichée par défaut quand l'utilisateur bascule sur un domaine et que
  *  la variable courante n'existe pas dans son meta.json. Consulté par
  *  `matchVariableOrFirst()` avant le fallback `variables[0]`. */
 export const DOMAIN_DEFAULT_VARIABLES: Record<string, string> = {
-	[AROME_FRANCE_CONVECTION_DOMAIN]: 'radar_reflectivity'
+	[AROME_FRANCE_CONVECTION_DOMAIN]: 'radar_reflectivity',
+	[AROME_FRANCE_DOMAIN]: 'temperature_2m'
 };
 
 /** Variables masquées du sélecteur (display-only), même si publiées dans le
@@ -41,7 +49,10 @@ export const DOMAIN_DEFAULT_VARIABLES: Record<string, string> = {
  *  bilinéaire des données → halos de catégorie parasite en lisière, valeurs non
  *  entières au survol ; aucun mode nearest-neighbor exposé). Masquées en attendant
  *  une refacto / un correctif amont du package. Suivi : issue #35. */
-export const HIDDEN_VARIABLES: readonly string[] = ['precipitation_type', 'precipitation_type_severe'];
+export const HIDDEN_VARIABLES: readonly string[] = [
+	'precipitation_type',
+	'precipitation_type_severe'
+];
 
 // Vector options defaults
 export const DEFAULT_VECTOR_OPTIONS = {
@@ -148,9 +159,14 @@ export const DOMAIN_ALLOWLIST: readonly string[] = [
 	// AROME Convection France (pseudo-domaine, visible seulement si le bucket est configuré)
 	'arome_france_convection',
 
-	// Cœur français
-	'meteofrance_arome_france_hd',
-	'meteofrance_arome_france0025',
+	// AROME France surface (pseudo-domaine, visible seulement si le bucket est configuré)
+	'arome_france',
+
+	// Cœur français — AROME France servi par le modèle infoclimat maison
+	// (`arome_france` + `arome_france_convection`), donc l'AROME d'Open-Meteo
+	// (HD 1,5 km + 0025 2,5 km) est débranché du sélecteur. Les URLs partagées
+	// ciblant ces domaines OM résolvent toujours (l'allowlist ne filtre que
+	// l'affichage du sélecteur, pas le routing).
 	'meteofrance_arpege_europe',
 
 	// Référence globale + Europe
@@ -189,6 +205,7 @@ export const MODEL_DESCRIPTIONS: Record<string, string> = {
 	arome_om_reunion: 'Météo-France · Outre-mer, La Réunion · haute résolution',
 	arome_france_convection:
 		'Infoclimat · 0,025° (~2,5 km), France métropole · convection / orage · ~51 h',
+	arome_france: 'Infoclimat · 0,025° (~2,5 km), France métropole · surface · ~51 h',
 	meteofrance_arome_france_hd:
 		'Météo-France · ~1,5 km, France · détaille les phénomènes locaux · échéance ~2 j',
 	meteofrance_arome_france0025:
