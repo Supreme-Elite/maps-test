@@ -351,8 +351,8 @@ export const getNextOmUrls = (
 	}
 
 	// Respecte le routing bucket (`getBaseUri`) : les pseudo-domaines servis depuis
-	// R2 (arome_france_convection, arome_om_reunion) ne sont pas sur open-meteo —
-	// hardcoder l'hôte produisait un 404 systématique au préchargement.
+	// R2 (arome_france, arome_france_convection, arome_om_reunion) ne sont pas sur
+	// open-meteo — hardcoder l'hôte produisait un 404 systématique au préchargement.
 	const base = `${getBaseUri(domain.value)}/data_spatial/${domain.value}`;
 
 	let prevDate: Date;
