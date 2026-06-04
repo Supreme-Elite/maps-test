@@ -1,18 +1,14 @@
-import { type Domain, domainGroups, domainOptions } from '@openmeteo/weather-map-layer';
+import { type Domain, domainOptions } from '@openmeteo/weather-map-layer';
 
+import { ensureAromeFranceGroup } from '$lib/arome-france-domain';
 import { AROME_FRANCE_CONVECTION_DOMAIN } from '$lib/constants';
 import { getModelsBucketUrl } from '$lib/runtime-env';
-
-/** Groupe (fournisseur) dédié sous lequel le sélecteur range le domaine convection.
- *  Le sélecteur affiche un domaine sous un groupe si `domain.value` commence par
- *  `group.value`. On prend la valeur de domaine entière comme valeur de groupe pour
- *  ne capturer aucun autre domaine `arome_france*` du package. */
-const AROME_FRANCE_CONVECTION_GROUP = AROME_FRANCE_CONVECTION_DOMAIN;
 
 /** Domaine AROME France métropole orienté convection / chasse à l'orage.
  *  Grille 1121×717 à 0.025°, métropole (lon −12→16, lat 37.5→55.4).
  *  Runs toutes les 3 h, horizon 51 h. Voir spec
- *  `2026-06-01-arome-france-convection-design.md`. */
+ *  `2026-06-01-arome-france-convection-design.md`. Regroupé dans le sélecteur
+ *  sous le groupe partagé « AROME France (Infoclimat) » (voir `arome-france-domain.ts`). */
 const aromeFranceConvectionDomain: Domain = {
 	value: AROME_FRANCE_CONVECTION_DOMAIN,
 	label: 'AROME Convection France',
@@ -38,9 +34,7 @@ const aromeFranceConvectionDomain: Domain = {
  */
 export function registerAromeFranceConvectionDomain(): void {
 	if (!getModelsBucketUrl()) return;
-	if (!domainGroups.some((g) => g.value === AROME_FRANCE_CONVECTION_GROUP)) {
-		domainGroups.push({ value: AROME_FRANCE_CONVECTION_GROUP, label: 'AROME Convection' });
-	}
+	ensureAromeFranceGroup();
 	if (domainOptions.some((d) => d.value === AROME_FRANCE_CONVECTION_DOMAIN)) return;
 	domainOptions.push(aromeFranceConvectionDomain);
 }

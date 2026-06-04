@@ -5,21 +5,26 @@ describe('registerAromeFranceConvectionDomain', () => {
 	beforeEach(() => {
 		const idx = domainOptions.findIndex((d) => d.value === 'arome_france_convection');
 		if (idx >= 0) domainOptions.splice(idx, 1);
-		const gidx = domainGroups.findIndex((g) => g.value === 'arome_france_convection');
-		if (gidx >= 0) domainGroups.splice(gidx, 1);
+		for (const value of ['arome_france', 'arome_france_convection']) {
+			const gidx = domainGroups.findIndex((g) => g.value === value);
+			if (gidx >= 0) domainGroups.splice(gidx, 1);
+		}
 		vi.resetModules();
+		vi.unstubAllEnvs();
 	});
 
-	it('registers a dedicated selector group so the domain is shown', async () => {
+	it('range la convection sous le groupe partagé « arome_france »', async () => {
 		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
 		const { registerAromeFranceConvectionDomain } =
 			await import('$lib/arome-france-convection-domain');
 		registerAromeFranceConvectionDomain();
-		expect(domainGroups.filter((g) => g.value === 'arome_france_convection').length).toBe(1);
-		expect('arome_france_convection'.startsWith('arome_france_convection')).toBe(true);
+		expect(domainGroups.filter((g) => g.value === 'arome_france').length).toBe(1);
+		// Plus de groupe propre `arome_france_convection` (évite le doublon dans le menu).
+		expect(domainGroups.find((g) => g.value === 'arome_france_convection')).toBeUndefined();
+		expect('arome_france_convection'.startsWith('arome_france')).toBe(true);
 	});
 
-	it('pushes arome_france_convection with the producer grid dimensions', async () => {
+	it('pousse arome_france_convection avec la grille producteur', async () => {
 		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
 		const { registerAromeFranceConvectionDomain } =
 			await import('$lib/arome-france-convection-domain');
@@ -40,17 +45,17 @@ describe('registerAromeFranceConvectionDomain', () => {
 		expect(d?.model_interval).toBe('3_hourly');
 	});
 
-	it('is idempotent (no duplicate push)', async () => {
+	it('est idempotent (pas de double push)', async () => {
 		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
 		const { registerAromeFranceConvectionDomain } =
 			await import('$lib/arome-france-convection-domain');
 		registerAromeFranceConvectionDomain();
 		registerAromeFranceConvectionDomain();
 		expect(domainOptions.filter((x) => x.value === 'arome_france_convection').length).toBe(1);
-		expect(domainGroups.filter((g) => g.value === 'arome_france_convection').length).toBe(1);
+		expect(domainGroups.filter((g) => g.value === 'arome_france').length).toBe(1);
 	});
 
-	it('does not push when bucket URL is empty', async () => {
+	it('ne pousse rien quand le bucket est vide', async () => {
 		vi.stubEnv('VITE_MODELS_BUCKET_URL', '');
 		const { registerAromeFranceConvectionDomain } =
 			await import('$lib/arome-france-convection-domain');
