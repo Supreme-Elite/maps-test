@@ -22,7 +22,7 @@ Les managers utilisent un commit **opt-in différé** (`deferCommit: true`) : au
 
 Le style des contours et des flèches n'est plus codé en dur : il est défini dans `src/lib/vector-styles.ts` (builders data-driven) alimentés par les stores persistés `contourStyle`/`arrowStyle` (`src/lib/stores/vector-styles.ts`), éditables dans le drawer réglages. `reloadVectorStyle()` reconstruit les couches vectorielles en place après une modification de style (tuiles en cache → coût réseau quasi nul).
 
-`changeOMfileURL()` short-circuits when `getOMUrl()` equals `currentOmUrl` — any code that should force a reload must either invalidate `currentOmUrl` or change a parameter that flows into `getOMUrl()`.
+`changeOMfileURL()` ne recharge le **primaire** (raster + vecteur) que si `getOMUrl()` diffère de `currentOmUrl` ; la **couche 2** a sa propre déduplication (`currentOmUrl2 !== omUrl2`) et se rafraîchit indépendamment, même quand le primaire n'a pas bougé (changement de variable/activation de l'overlay). Pour forcer un rechargement primaire, invalider `currentOmUrl` (le mettre à `''`) ou changer un paramètre qui alimente `getOMUrl()`.
 
 ## Routes
 

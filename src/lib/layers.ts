@@ -395,29 +395,38 @@ export const changeOMfileURL = (vectorOnly = false, rasterOnly = false): void =>
 	if (!map) return;
 
 	const omUrl = getOMUrl();
-	if (get(currentOmUrl) == omUrl || !omUrl) return;
-	currentOmUrl.set(omUrl);
+	if (!omUrl) return;
 
-	loading.set(true);
-
-	const preferences = get(p);
-	vectorManager?.setBeforeLayer(resolveVectorBeforeLayer(map, preferences.clipWater));
-	rasterManager?.setBeforeLayer(preferences.hillshade ? HILLSHADE_LAYER : BEFORE_LAYER_RASTER);
+	// Le primaire (raster + vecteur) ne se recharge que si SON URL a changé. On ne
+	// court-circuite plus toute la fonction ici : la couche 2 a sa propre
+	// déduplication (`currentOmUrl2 !== omUrl2`) plus bas et doit pouvoir se
+	// rafraîchir même quand seul l'overlay change (variable/activation) — sinon il
+	// reste figé sur l'ancienne donnée jusqu'au prochain changement de pas de temps.
+	const primaryChanged = get(currentOmUrl) !== omUrl;
 
 	const group: SlotManager[] = [];
 	let rasterUrl: string | undefined;
 	let vectorUrl: string | undefined;
 	let raster2Url: string | undefined;
 
-	if (!vectorOnly && rasterManager) {
-		rasterUrl = omUrl;
-		group.push(rasterManager);
+	if (primaryChanged) {
+		currentOmUrl.set(omUrl);
+
+		const preferences = get(p);
+		vectorManager?.setBeforeLayer(resolveVectorBeforeLayer(map, preferences.clipWater));
+		rasterManager?.setBeforeLayer(preferences.hillshade ? HILLSHADE_LAYER : BEFORE_LAYER_RASTER);
+
+		if (!vectorOnly && rasterManager) {
+			rasterUrl = omUrl;
+			group.push(rasterManager);
+		}
+		if (!rasterOnly && vectorManager) {
+			const windUrl = getWindOverlayUrl();
+			vectorUrl = windUrl ?? omUrl;
+			group.push(vectorManager);
+		}
 	}
-	if (!rasterOnly && vectorManager) {
-		const windUrl = getWindOverlayUrl();
-		vectorUrl = windUrl ?? omUrl;
-		group.push(vectorManager);
-	}
+
 	if (!vectorOnly) {
 		if (get(layer2Enabled)) {
 			if (!rasterManager2) rasterManager2 = buildRasterManager2(map);
@@ -434,6 +443,10 @@ export const changeOMfileURL = (vectorOnly = false, rasterOnly = false): void =>
 		}
 	}
 
+	// Rien à recharger (ni primaire ni overlay) : on s'arrête sans toucher au spinner.
+	if (group.length === 0) return;
+
+	loading.set(true);
 	beginCommitGroup(group);
 	if (rasterUrl) rasterManager?.update('om://' + rasterUrl);
 	if (vectorUrl) vectorManager?.update('om://' + vectorUrl);
