@@ -3,14 +3,25 @@
 
 	import { metaJson } from '$lib/stores/time';
 	import { vectorOptions, windOverlayEnabled, windOverlayLevel } from '$lib/stores/vector';
+	import { arrowStyle } from '$lib/stores/vector-styles';
 
+	import ColorPicker from '$lib/components/scale/color-picker.svelte';
+	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import * as Select from '$lib/components/ui/select';
 	import { Switch } from '$lib/components/ui/switch';
 
 	import { VISIBLE_PRESSURE_LEVELS_HPA } from '$lib/constants';
-	import { changeOMfileURL } from '$lib/layers';
+	import { changeOMfileURL, reloadVectorStyle } from '$lib/layers';
 	import { updateUrl } from '$lib/url';
+	import {
+		defaultArrowStyle,
+		hexToRgbaString,
+		parseRgbaOpacity,
+		rgbaStringToHex
+	} from '$lib/vector-styles';
+
+	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 
 	// Niveau du vent dessiné par les flèches :
 	//  - DISPLAYED → suit la variable affichée (overlay off, comportement historique)
@@ -74,6 +85,33 @@
 		}
 		changeOMfileURL();
 	}
+
+	let editing: { index: number; field: 'lightColor' | 'darkColor'; rect: DOMRect } | null =
+		$state(null);
+
+	function setColor(index: number, field: 'lightColor' | 'darkColor', hex: string, alpha: number) {
+		arrowStyle.update((s) => ({
+			...s,
+			levels: s.levels.map((l, i) =>
+				i === index ? { ...l, [field]: hexToRgbaString(hex, alpha) } : l
+			)
+		}));
+		reloadVectorStyle();
+	}
+
+	function setWidth(index: number, width: number) {
+		if (!Number.isFinite(width) || width < 0) return;
+		arrowStyle.update((s) => ({
+			...s,
+			levels: s.levels.map((l, i) => (i === index ? { ...l, width } : l))
+		}));
+		reloadVectorStyle();
+	}
+
+	function resetArrowStyle() {
+		arrowStyle.set(structuredClone(defaultArrowStyle));
+		reloadVectorStyle();
+	}
 </script>
 
 <div>
@@ -112,6 +150,80 @@
 					{/each}
 				</Select.Content>
 			</Select.Root>
+		</div>
+		<div class="mt-2 flex flex-col gap-1.5 border-t border-white/10 pt-2 pl-1">
+			<div class="flex items-center justify-between">
+				<span class="text-xs text-white/70">Style des flèches</span>
+				<button
+					type="button"
+					class="flex cursor-pointer items-center gap-1 text-xs text-white/50 hover:text-white/80"
+					onclick={resetArrowStyle}
+				>
+					<RotateCcwIcon class="size-3" /> Réinitialiser
+				</button>
+			</div>
+			{#each $arrowStyle.levels as level, i (level.label)}
+				<div class="flex items-center gap-2">
+					<span class="w-10 shrink-0 text-xs text-white/60">{level.label}</span>
+					<div class="relative">
+						<button
+							type="button"
+							aria-label={`Couleur (clair) ${level.label}`}
+							class="size-5 cursor-pointer rounded border border-white/20"
+							style="background: {level.lightColor};"
+							onclick={(e) =>
+								(editing = {
+									index: i,
+									field: 'lightColor',
+									rect: e.currentTarget.getBoundingClientRect()
+								})}
+						></button>
+						{#if editing?.index === i && editing.field === 'lightColor'}
+							<ColorPicker
+								color={rgbaStringToHex(level.lightColor)}
+								alpha={parseRgbaOpacity(level.lightColor)}
+								onchange={(hex, alpha) => setColor(i, 'lightColor', hex, alpha)}
+								onclose={() => (editing = null)}
+								portalToBody
+								anchorRect={editing.rect}
+							/>
+						{/if}
+					</div>
+					<div class="relative">
+						<button
+							type="button"
+							aria-label={`Couleur (sombre) ${level.label}`}
+							class="size-5 cursor-pointer rounded border border-white/20"
+							style="background: {level.darkColor};"
+							onclick={(e) =>
+								(editing = {
+									index: i,
+									field: 'darkColor',
+									rect: e.currentTarget.getBoundingClientRect()
+								})}
+						></button>
+						{#if editing?.index === i && editing.field === 'darkColor'}
+							<ColorPicker
+								color={rgbaStringToHex(level.darkColor)}
+								alpha={parseRgbaOpacity(level.darkColor)}
+								onchange={(hex, alpha) => setColor(i, 'darkColor', hex, alpha)}
+								onclose={() => (editing = null)}
+								portalToBody
+								anchorRect={editing.rect}
+							/>
+						{/if}
+					</div>
+					<Input
+						class="h-7 w-16 shrink-0 bg-background/60"
+						type="number"
+						step="0.1"
+						min="0"
+						value={level.width}
+						onchange={(e) => setWidth(i, Number(e.currentTarget.value))}
+						aria-label={`Largeur ${level.label}`}
+					/>
+				</div>
+			{/each}
 		</div>
 	{/if}
 </div>
