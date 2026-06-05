@@ -143,6 +143,7 @@ export class SlotManager {
 		this.forceRemoveSlot('B');
 		this.activeSlot = null;
 		this.pendingSlot = null;
+		this.deferredCommit = null;
 	}
 
 	private sourceId(slot: Slot): string {
@@ -223,6 +224,7 @@ export class SlotManager {
 
 	private commit(nextSlot: Slot, previousSlot: Slot | null): void {
 		if (this.opts.deferCommit) {
+			// assigné avant onReady pour que isReady() soit déjà true dans le callback
 			this.deferredCommit = { nextSlot, previousSlot };
 			this.opts.onReady?.();
 			return;
