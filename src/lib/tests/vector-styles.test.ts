@@ -50,7 +50,7 @@ describe('buildContourColorExpr (default, light)', () => {
 	const expr = buildContourColorExpr(defaultContourStyle, false);
 	it('×100 → 0.6', () => expect(evalExpr(expr, 100)).toBe('rgba(0,0,0, 0.6)'));
 	it('×50 → 0.5', () => expect(evalExpr(expr, 50)).toBe('rgba(0,0,0, 0.5)'));
-	it('×10 → 0.4', () => expect(evalExpr(expr, 20)).toBe('rgba(0,0,0, 0.4)'));
+	it('×10 → 0.4', () => expect(evalExpr(expr, 10)).toBe('rgba(0,0,0, 0.4)'));
 	it('other → fallback 0.3', () => expect(evalExpr(expr, 7)).toBe('rgba(0,0,0, 0.3)'));
 });
 
@@ -77,6 +77,12 @@ describe('buildArrowColorExpr (default, light)', () => {
 	it('>5 → 0.6', () => expect(evalExpr(expr, 7)).toBe('rgba(0,0,0, 0.6)'));
 	it('>10 → 0.7', () => expect(evalExpr(expr, 15)).toBe('rgba(0,0,0, 0.7)'));
 	it('>20 → still 0.7', () => expect(evalExpr(expr, 25)).toBe('rgba(0,0,0, 0.7)'));
+});
+
+describe('buildArrowColorExpr (default, dark)', () => {
+	const expr = buildArrowColorExpr(defaultArrowStyle, true);
+	it('≤2 → base 0.2 white', () => expect(evalExpr(expr, 1)).toBe('rgba(255,255,255, 0.2)'));
+	it('>10 → 0.7 white', () => expect(evalExpr(expr, 15)).toBe('rgba(255,255,255, 0.7)'));
 });
 
 describe('buildArrowWidthExpr (default)', () => {

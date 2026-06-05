@@ -209,7 +209,7 @@ export function rgbaStringToHex(rgba: string): string {
 	return `#${[r, g, b].map((x) => Math.round(x).toString(16).padStart(2, '0')).join('')}`;
 }
 
-/** ('#0a141e', 0.4) → 'rgba(10, 20, 30, 0.4)' (pour réécrire dans le style). */
+/** ('#0a141e', 0.4) → 'rgba(10, 20, 30, 0.4)'. `hex` doit être en 6 chiffres (pas de short-hand `#fff`). */
 export function hexToRgbaString(hex: string, alpha: number): string {
 	const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
 	if (!m) return `rgba(0, 0, 0, ${alpha})`;
