@@ -218,6 +218,46 @@ const vectorContourLabelsLayer = (): SlotLayer => ({
 });
 
 // =============================================================================
+// Coordinateur de commit : fade-in synchronisé des couches actives
+// =============================================================================
+
+/** Managers dont on attend le commit groupé pour le tick courant. */
+let commitGroup: Set<SlotManager> | null = null;
+
+/** Démarre un nouveau groupe : appeler AVANT les `update()` correspondants. */
+const beginCommitGroup = (managers: SlotManager[]): void => {
+	commitGroup = managers.length > 0 ? new Set(managers) : null;
+	if (!commitGroup) loading.set(false);
+};
+
+/** Appelé par chaque manager (onReady) : committe tout le groupe quand tous sont prêts. */
+const tryFlushGroup = (): void => {
+	if (!commitGroup) return;
+	const members = [...commitGroup];
+	if (members.every((mgr) => mgr.isReady())) {
+		for (const mgr of members) mgr.commitNow();
+		commitGroup = null;
+		loading.set(false);
+		refreshPopup();
+	}
+};
+
+/** Appelé par un manager en erreur : on le retire du groupe pour ne pas bloquer les autres. */
+const dropFromGroup = (mgr: SlotManager): void => {
+	if (!commitGroup) {
+		loading.set(false);
+		return;
+	}
+	commitGroup.delete(mgr);
+	if (commitGroup.size === 0) {
+		commitGroup = null;
+		loading.set(false);
+		return;
+	}
+	tryFlushGroup();
+};
+
+// =============================================================================
 // Manager instances
 // =============================================================================
 
@@ -236,8 +276,10 @@ const buildRasterManager2 = (map: maplibregl.Map): SlotManager =>
 		// (ex. arome_france_convection → 404), on efface la couche au lieu de
 		// laisser celle du modèle précédent figée. Cf. vectorManager.
 		clearOnError: true,
-		onCommit: () => refreshPopup(),
-		onError: () => {},
+		deferCommit: true,
+		onReady: tryFlushGroup,
+		onCommit: () => {},
+		onError: () => dropFromGroup(rasterManager2!),
 		slowLoadWarningMs: 10000,
 		onSlowLoad: () => {}
 	});
@@ -269,13 +311,11 @@ export const createManagers = (): void => {
 		}),
 		removeDelayMs: 300,
 		// Both raster and vector fire commit on slotEvents (bus conservé, sans consommateur actuel).
-		onCommit: () => {
-			loading.set(false);
-			refreshPopup();
-			slotEvents.dispatchEvent(new Event(SLOT_EVENT_COMMIT));
-		},
+		deferCommit: true,
+		onReady: tryFlushGroup,
+		onCommit: () => slotEvents.dispatchEvent(new Event(SLOT_EVENT_COMMIT)),
 		onError: () => {
-			loading.set(false);
+			dropFromGroup(rasterManager!);
 			slotEvents.dispatchEvent(new Event(SLOT_EVENT_ERROR));
 		},
 		slowLoadWarningMs: 10000,
@@ -302,8 +342,13 @@ export const createManagers = (): void => {
 		// comme arome_france_convection → 404), on efface les flèches au lieu de
 		// laisser celles du modèle précédent figées à l'écran.
 		clearOnError: true,
+		deferCommit: true,
+		onReady: tryFlushGroup,
 		onCommit: () => slotEvents.dispatchEvent(new Event(SLOT_EVENT_COMMIT)),
-		onError: () => slotEvents.dispatchEvent(new Event(SLOT_EVENT_ERROR))
+		onError: () => {
+			dropFromGroup(vectorManager!);
+			slotEvents.dispatchEvent(new Event(SLOT_EVENT_ERROR));
+		}
 	});
 };
 
@@ -316,18 +361,28 @@ export const addOmFileLayers = (): void => {
 	if (!map) return;
 	const omUrl = getOMUrl();
 	createManagers();
-	if (omUrl) rasterManager?.update('om://' + omUrl);
-	if (omUrl) {
-		const windUrl = getWindOverlayUrl();
-		vectorManager?.update('om://' + (windUrl ?? omUrl));
-	}
+	if (!omUrl) return;
+
+	const group: SlotManager[] = [];
+	if (rasterManager) group.push(rasterManager);
+	if (vectorManager) group.push(vectorManager);
+
+	const windUrl = getWindOverlayUrl();
+	let raster2Url: string | undefined;
 	if (get(layer2Enabled)) {
 		const omUrl2 = getOMUrlFor(get(variable2));
 		if (omUrl2) {
 			currentOmUrl2.set(omUrl2);
-			rasterManager2?.update('om://' + omUrl2);
+			raster2Url = omUrl2;
+			if (rasterManager2) group.push(rasterManager2);
 		}
 	}
+
+	loading.set(true);
+	beginCommitGroup(group);
+	rasterManager?.update('om://' + omUrl);
+	vectorManager?.update('om://' + (windUrl ?? omUrl));
+	if (raster2Url) rasterManager2?.update('om://' + raster2Url);
 };
 
 export const changeOMfileURL = (vectorOnly = false, rasterOnly = false): void => {
@@ -344,27 +399,28 @@ export const changeOMfileURL = (vectorOnly = false, rasterOnly = false): void =>
 	vectorManager?.setBeforeLayer(resolveVectorBeforeLayer(map, preferences.clipWater));
 	rasterManager?.setBeforeLayer(preferences.hillshade ? HILLSHADE_LAYER : BEFORE_LAYER_RASTER);
 
-	if (!vectorOnly) rasterManager?.update('om://' + omUrl);
-	if (!rasterOnly) {
-		const windUrl = getWindOverlayUrl();
-		if (windUrl) {
-			vectorManager?.update('om://' + windUrl);
-		} else {
-			// Legacy behavior: vector is rendered if the primary variable is itself a wind variable.
-			vectorManager?.update('om://' + omUrl);
-		}
-	}
+	const group: SlotManager[] = [];
+	let rasterUrl: string | undefined;
+	let vectorUrl: string | undefined;
+	let raster2Url: string | undefined;
 
+	if (!vectorOnly && rasterManager) {
+		rasterUrl = omUrl;
+		group.push(rasterManager);
+	}
+	if (!rasterOnly && vectorManager) {
+		const windUrl = getWindOverlayUrl();
+		vectorUrl = windUrl ?? omUrl;
+		group.push(vectorManager);
+	}
 	if (!vectorOnly) {
 		if (get(layer2Enabled)) {
-			const map = get(m);
-			if (map && !rasterManager2) {
-				rasterManager2 = buildRasterManager2(map);
-			}
+			if (!rasterManager2) rasterManager2 = buildRasterManager2(map);
 			const omUrl2 = getOMUrlFor(get(variable2));
 			if (omUrl2 && get(currentOmUrl2) !== omUrl2) {
 				currentOmUrl2.set(omUrl2);
-				rasterManager2?.update('om://' + omUrl2);
+				raster2Url = omUrl2;
+				if (rasterManager2) group.push(rasterManager2);
 			}
 		} else {
 			rasterManager2?.destroy();
@@ -372,4 +428,9 @@ export const changeOMfileURL = (vectorOnly = false, rasterOnly = false): void =>
 			currentOmUrl2.set('');
 		}
 	}
+
+	beginCommitGroup(group);
+	if (rasterUrl) rasterManager?.update('om://' + rasterUrl);
+	if (vectorUrl) vectorManager?.update('om://' + vectorUrl);
+	if (raster2Url) rasterManager2?.update('om://' + raster2Url);
 };
