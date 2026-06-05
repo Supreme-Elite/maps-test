@@ -292,6 +292,10 @@ const buildRasterManager2 = (map: maplibregl.Map): SlotManager =>
 		layerFactory: () => [rasterLayer2()],
 		sourceSpec: (sourceUrl) => ({ url: sourceUrl, type: 'raster', maxzoom: 14 }),
 		removeDelayMs: 300,
+		// Overlay optionnel : si la variable choisie n'existe pas pour le domaine
+		// (ex. arome_france_convection → 404), on efface la couche au lieu de
+		// laisser celle du modèle précédent figée. Cf. vectorManager.
+		clearOnError: true,
 		onCommit: () => refreshPopup(),
 		onError: () => {},
 		slowLoadWarningMs: 10000,
@@ -354,6 +358,10 @@ export const createManagers = (): void => {
 		],
 		sourceSpec: (sourceUrl) => ({ url: sourceUrl, type: 'vector' }),
 		removeDelayMs: 250,
+		// Si la source vectorielle échoue (ex. domaine sans `wind_u_component_*`,
+		// comme arome_france_convection → 404), on efface les flèches au lieu de
+		// laisser celles du modèle précédent figées à l'écran.
+		clearOnError: true,
 		onCommit: () => slotEvents.dispatchEvent(new Event(SLOT_EVENT_COMMIT)),
 		onError: () => slotEvents.dispatchEvent(new Event(SLOT_EVENT_ERROR))
 	});

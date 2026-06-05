@@ -6,19 +6,16 @@
 	import { reloadStyles } from '$lib/map-controls';
 </script>
 
-<div>
-	<h2 class="text-lg font-bold">Opacité raster</h2>
-	<div class="mt-3 flex gap-3">
-		<Label for="interval">Opacité :</Label>
-		<input
-			id="interval_slider"
-			class="w-[100px] delay-75 duration-200"
-			type="range"
-			min="0"
-			max="100"
-			onchange={reloadStyles}
-			bind:value={$opacity}
-		/>
-		{$opacity}
-	</div>
+<div class="flex items-center gap-3">
+	<Label class="shrink-0 text-sm" for="raster-opacity">Opacité raster</Label>
+	<input
+		id="raster-opacity"
+		class="min-w-0 flex-1 delay-75 duration-200"
+		type="range"
+		min="0"
+		max="100"
+		onchange={reloadStyles}
+		bind:value={$opacity}
+	/>
+	<span class="w-9 shrink-0 text-right text-sm tabular-nums">{$opacity}%</span>
 </div>

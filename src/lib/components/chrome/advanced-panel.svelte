@@ -5,6 +5,7 @@
 	import { fly } from 'svelte/transition';
 
 	import SettingsIcon from '@lucide/svelte/icons/settings-2';
+	import XIcon from '@lucide/svelte/icons/x';
 
 	import { clippingPanelOpen } from '$lib/stores/clipping';
 	import { DEFAULT_SHOW_DEPARTMENTS, showDepartments } from '$lib/stores/departments';
@@ -28,7 +29,6 @@
 	import TileSizeSettings from '$lib/components/settings/tile-size-settings.svelte';
 	import UnitSettings from '$lib/components/settings/unit-settings.svelte';
 	import * as Sheet from '$lib/components/ui/sheet';
-	import WindOverlayPanel from '$lib/components/wind-overlay/wind-overlay-panel.svelte';
 
 	import { setHillshadeEnabled } from '$lib/hillshade';
 	import { updateUrl } from '$lib/url';
@@ -58,23 +58,42 @@
 	// haute est neutralisé par le navigateur, donc le flou ne s'appliquerait pas.
 	function portal(node: HTMLElement) {
 		document.body.appendChild(node);
+		measureControls(); // cale le top dès le montage, avant la 1re peinture
 		return {
 			destroy() {
 				node.parentNode?.removeChild(node);
 			}
 		};
 	}
+
+	// Les contrôles MapLibre (zoom, boussole, géoloc, globe) s'empilent en haut-droit.
+	// On mesure le bas réel de leur conteneur pour ouvrir le panneau juste en dessous
+	// (plutôt qu'un offset codé en dur, fragile au nombre de contrôles / version MapLibre).
+	const TOP_FALLBACK = 64; // sous la barre haute si les contrôles sont absents
+	let controlsBottom = $state(TOP_FALLBACK);
+
+	function measureControls() {
+		const el = document.querySelector('.maplibregl-ctrl-top-right');
+		controlsBottom = el ? Math.round(el.getBoundingClientRect().bottom) : TOP_FALLBACK;
+	}
+
+	$effect(() => {
+		if (!desktop.current || !$advancedOpen) return;
+		measureControls();
+		window.addEventListener('resize', measureControls);
+		return () => window.removeEventListener('resize', measureControls);
+	});
 </script>
 
 {#snippet body()}
 	<section class="flex flex-col gap-1">
 		<h3 class="text-xs font-semibold tracking-wide text-white/60 uppercase">Calques carte</h3>
-		<WindOverlayPanel />
 		<ArrowsSettings />
 		<ContourSettings />
+		<div class="my-1 h-px bg-white/10"></div>
+		<SecondaryLayerPanel />
 		<LayerToggle label="Départements" checked={departmentsOn} onCheckedChange={toggleDepartments} />
 		<LayerToggle label="Relief ombré" checked={hillshadeOn} onCheckedChange={toggleHillshade} />
-		<SecondaryLayerPanel />
 		<OpacitySetting />
 	</section>
 
@@ -124,10 +143,23 @@
 		     (même voile que la barre haute). -->
 		<div
 			use:portal
-			class="bg-glass/45 fixed top-16 right-2.5 z-60 max-h-[80vh] w-72 overflow-y-auto rounded-xl border border-white/15 p-3 text-white shadow-lg backdrop-blur-md"
+			class="bg-glass/45 scrollbar-thin fixed right-2.5 z-60 w-72 overflow-x-hidden overflow-y-auto rounded-xl border border-white/15 p-3 text-white shadow-lg backdrop-blur-md"
+			style="top: {controlsBottom + 8}px; max-height: calc(100dvh - {controlsBottom + 24}px);"
 			in:fly={{ x: 16, duration: reduceMotion.current ? 0 : 200, easing: cubicOut }}
 			out:fly={{ x: 16, duration: reduceMotion.current ? 0 : 150, easing: cubicIn }}
 		>
+			<div class="mb-3 flex items-center justify-between">
+				<h2 class="text-sm font-semibold">Calques &amp; réglages</h2>
+				<button
+					type="button"
+					onclick={() => advancedOpen.set(false)}
+					aria-label="Fermer"
+					title="Fermer"
+					class="hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 -mr-1 inline-flex size-7 cursor-pointer items-center justify-center rounded-md text-white/70 hover:text-white"
+				>
+					<XIcon class="size-4" aria-hidden="true" />
+				</button>
+			</div>
 			<div class="flex flex-col gap-6">
 				{@render body()}
 			</div>
