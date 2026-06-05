@@ -34,7 +34,8 @@
 		}
 	};
 
-	let editing: { index: number; field: 'lightColor' | 'darkColor' } | null = $state(null);
+	let editing: { index: number; field: 'lightColor' | 'darkColor'; rect: DOMRect } | null =
+		$state(null);
 
 	function setColor(index: number, field: 'lightColor' | 'darkColor', hex: string, alpha: number) {
 		contourStyle.update((s) => ({
@@ -47,6 +48,7 @@
 	}
 
 	function setWidth(index: number, width: number) {
+		if (!Number.isFinite(width) || width < 0) return;
 		contourStyle.update((s) => ({
 			...s,
 			levels: s.levels.map((l, i) => (i === index ? { ...l, width } : l))
@@ -145,7 +147,12 @@
 								aria-label={`Couleur (clair) ${level.label}`}
 								class="size-5 cursor-pointer rounded border border-white/20"
 								style="background: {level.lightColor};"
-								onclick={() => (editing = { index: i, field: 'lightColor' })}
+								onclick={(e) =>
+									(editing = {
+										index: i,
+										field: 'lightColor',
+										rect: e.currentTarget.getBoundingClientRect()
+									})}
 							></button>
 							{#if editing?.index === i && editing.field === 'lightColor'}
 								<ColorPicker
@@ -153,6 +160,8 @@
 									alpha={parseRgbaOpacity(level.lightColor)}
 									onchange={(hex, alpha) => setColor(i, 'lightColor', hex, alpha)}
 									onclose={() => (editing = null)}
+									portalToBody
+									anchorRect={editing.rect}
 								/>
 							{/if}
 						</div>
@@ -162,7 +171,12 @@
 								aria-label={`Couleur (sombre) ${level.label}`}
 								class="size-5 cursor-pointer rounded border border-white/20"
 								style="background: {level.darkColor};"
-								onclick={() => (editing = { index: i, field: 'darkColor' })}
+								onclick={(e) =>
+									(editing = {
+										index: i,
+										field: 'darkColor',
+										rect: e.currentTarget.getBoundingClientRect()
+									})}
 							></button>
 							{#if editing?.index === i && editing.field === 'darkColor'}
 								<ColorPicker
@@ -170,6 +184,8 @@
 									alpha={parseRgbaOpacity(level.darkColor)}
 									onchange={(hex, alpha) => setColor(i, 'darkColor', hex, alpha)}
 									onclose={() => (editing = null)}
+									portalToBody
+									anchorRect={editing.rect}
 								/>
 							{/if}
 						</div>
