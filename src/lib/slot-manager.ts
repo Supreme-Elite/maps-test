@@ -130,6 +130,9 @@ export class SlotManager {
 			}
 			this.activeSlot = null;
 			this.pendingSlot = null;
+			// La source n'a pas pu être enregistrée : signaler l'échec pour que le
+			// coordinateur retire ce manager du groupe (sinon `loading` reste bloqué).
+			this.opts.onError?.();
 			return;
 		}
 
