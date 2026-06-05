@@ -9,8 +9,7 @@ import {
 	defaultContourStyle,
 	hexToRgbaString,
 	parseRgbaOpacity,
-	rgbaStringToHex,
-	setRgbaOpacity
+	rgbaStringToHex
 } from '$lib/vector-styles';
 
 /**
@@ -99,8 +98,6 @@ describe('buildArrowWidthExpr (default)', () => {
 describe('rgba helpers', () => {
 	it('parses opacity', () => expect(parseRgbaOpacity('rgba(0,0,0, 0.4)')).toBe(0.4));
 	it('defaults to 1 when no alpha', () => expect(parseRgbaOpacity('rgb(0,0,0)')).toBe(1));
-	it('sets opacity', () =>
-		expect(setRgbaOpacity('rgba(10, 20, 30, 0.4)', 0.7)).toBe('rgba(10, 20, 30, 0.7)'));
 	it('rgba string → hex', () => expect(rgbaStringToHex('rgba(10, 20, 30, 0.4)')).toBe('#0a141e'));
 	it('rgba string → hex (no alpha)', () =>
 		expect(rgbaStringToHex('rgb(255, 0, 128)')).toBe('#ff0080'));

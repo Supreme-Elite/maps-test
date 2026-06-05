@@ -195,12 +195,6 @@ export function parseRgbaOpacity(rgba: string): number {
 	return parseFloat(parts[3]);
 }
 
-export function setRgbaOpacity(rgba: string, newOpacity: number): string {
-	const parts = rgba.match(/[\d.]+/g);
-	if (!parts || parts.length < 3) return rgba;
-	return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${newOpacity})`;
-}
-
 /** 'rgba(10, 20, 30, 0.4)' → '#0a141e' (hex sans alpha, pour le ColorPicker). */
 export function rgbaStringToHex(rgba: string): string {
 	const parts = rgba.match(/[\d.]+/g);

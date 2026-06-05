@@ -241,6 +241,12 @@ const tryFlushGroup = (): void => {
 	}
 };
 
+/** Ajoute un manager au groupe de commit courant, ou démarre un groupe s'il n'y en a pas. */
+const addToCommitGroup = (mgr: SlotManager): void => {
+	if (commitGroup) commitGroup.add(mgr);
+	else commitGroup = new Set([mgr]);
+};
+
 /** Appelé par un manager en erreur : on le retire du groupe pour ne pas bloquer les autres. */
 const dropFromGroup = (mgr: SlotManager): void => {
 	if (!commitGroup) {
@@ -444,6 +450,8 @@ export const reloadVectorStyle = (): void => {
 	const url = vectorManager?.getActiveSourceUrl();
 	if (!url || !vectorManager) return;
 	loading.set(true);
-	beginCommitGroup([vectorManager]);
+	// Fusionne dans un éventuel groupe en vol (ne pas écraser : sinon raster/raster2
+	// resteraient différés indéfiniment, figés sur l'ancienne donnée).
+	addToCommitGroup(vectorManager);
 	vectorManager.update(url);
 };
