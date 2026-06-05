@@ -7,9 +7,15 @@ export const ANOMALY_DOMAIN = 'anomaly_europe';
 /** Variable unique exposée par le pseudo-domaine anomalie. */
 export const ANOMALY_VARIABLE = 'temperature_2m_anomaly';
 
-/** Pseudo-domaine AROME-OM Réunion / Océan Indien (servi depuis le bucket R2,
- *  produit par le pipeline `arome-om-forecast`). */
+/** Pseudo-domaines AROME-OM (servis depuis le bucket R2, produits par le pipeline
+ *  `arome-om-forecast`). Cinq territoires d'outre-mer, même modèle Météo-France
+ *  0,025° (~2,5 km), mêmes 12 variables de surface — ils ne diffèrent que par leur
+ *  emprise géographique (cf. `arome-om-domain.ts` pour les grilles). */
 export const AROME_OM_REUNION_DOMAIN = 'arome_om_reunion';
+export const AROME_OM_ANTILLES_DOMAIN = 'arome_om_antilles';
+export const AROME_OM_GUYANE_DOMAIN = 'arome_om_guyane';
+export const AROME_OM_NCALEDONIE_DOMAIN = 'arome_om_ncaledonie';
+export const AROME_OM_POLYNESIE_DOMAIN = 'arome_om_polynesie';
 
 /** Pseudo-domaine AROME France métropole orienté convection/orage (servi depuis
  *  le bucket R2, produit par le pipeline `arome-france-forecast`). Distinct du
@@ -28,6 +34,10 @@ export const AROME_FRANCE_DOMAIN = 'arome_france';
  *  Format MapLibre : `{ center: [lon, lat], zoom }`. */
 export const DOMAIN_DEFAULT_VIEWS: Record<string, { center: [number, number]; zoom: number }> = {
 	[AROME_OM_REUNION_DOMAIN]: { center: [50.2, -15.97], zoom: 4.47 },
+	[AROME_OM_ANTILLES_DOMAIN]: { center: [-63.5, 16.3], zoom: 5 },
+	[AROME_OM_GUYANE_DOMAIN]: { center: [-51.5, 5.0], zoom: 5.9 },
+	[AROME_OM_NCALEDONIE_DOMAIN]: { center: [165.0, -19.9], zoom: 5.3 },
+	[AROME_OM_POLYNESIE_DOMAIN]: { center: [-151.0, -18.9], zoom: 5.3 },
 	[AROME_FRANCE_CONVECTION_DOMAIN]: { center: [2.3, 46.6], zoom: 5 },
 	[AROME_FRANCE_DOMAIN]: { center: [2.3, 46.6], zoom: 5 }
 };
@@ -168,8 +178,12 @@ export const DOMAIN_ALLOWLIST: readonly string[] = [
 	// Anomalies (pseudo-domaine, visible seulement si le bucket est configuré)
 	'anomaly_europe',
 
-	// AROME-OM Outre-Mer (pseudo-domaine, visible seulement si le bucket est configuré)
+	// AROME-OM Outre-Mer (pseudo-domaines, visibles seulement si le bucket est configuré)
 	'arome_om_reunion',
+	'arome_om_antilles',
+	'arome_om_guyane',
+	'arome_om_ncaledonie',
+	'arome_om_polynesie',
 
 	// AROME Convection France (pseudo-domaine, visible seulement si le bucket est configuré)
 	'arome_france_convection',
@@ -224,6 +238,10 @@ export const DOMAIN_ALLOWLIST: readonly string[] = [
 export const MODEL_DESCRIPTIONS: Record<string, string> = {
 	anomaly_europe: 'Écart à la température normale 1991–2020 · Europe',
 	arome_om_reunion: 'Météo-France · Outre-mer, La Réunion · haute résolution',
+	arome_om_antilles: 'Météo-France · Outre-mer, Antilles · haute résolution',
+	arome_om_guyane: 'Météo-France · Outre-mer, Guyane · haute résolution',
+	arome_om_ncaledonie: 'Météo-France · Outre-mer, Nouvelle-Calédonie · haute résolution',
+	arome_om_polynesie: 'Météo-France · Outre-mer, Polynésie française · haute résolution',
 	arome_france_convection:
 		'Infoclimat · 0,025° (~2,5 km), France métropole · convection / orage · ~51 h',
 	arome_france: 'Infoclimat · 0,025° (~2,5 km), France métropole · surface · ~51 h',
