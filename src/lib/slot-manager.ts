@@ -45,6 +45,13 @@ export interface SlotManagerOptions {
 	onCommit?: () => void;
 	/** Called on source load error. */
 	onError?: () => void;
+	/**
+	 * When true, a source load error clears BOTH the failed pending slot and the
+	 * previous (still-visible) slot, instead of leaving the old data displayed.
+	 * Used for the vector/arrows layer: a domain without the requested wind
+	 * variable 404s, and stale arrows must not stay frozen as if current.
+	 */
+	clearOnError?: boolean;
 	slowLoadWarningMs?: number;
 	onSlowLoad?: () => void;
 }
@@ -244,6 +251,14 @@ export class SlotManager {
 		const onError = (e: maplibregl.MapSourceDataEvent): void => {
 			if (e.sourceId !== sourceId) return;
 			cleanup();
+			if (this.opts.clearOnError) {
+				// Drop the failed pending slot AND the stale previous slot so outdated
+				// data (e.g. arrows from the previous model) isn't left frozen on screen.
+				this.forceRemoveSlot(nextSlot);
+				if (previousSlot) this.forceRemoveSlot(previousSlot);
+				this.activeSlot = null;
+				this.pendingSlot = null;
+			}
 			this.opts.onError?.();
 		};
 
