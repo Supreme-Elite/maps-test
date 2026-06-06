@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { DOMAIN_ALLOWLIST, MODEL_SELECTOR_GROUPS } from '$lib/constants';
 
@@ -43,5 +43,31 @@ describe('MODEL_SELECTOR_GROUPS', () => {
 		const flat = MODEL_SELECTOR_GROUPS.flatMap((g) => g.domains.map((d) => d.value));
 		expect([...DOMAIN_ALLOWLIST]).toEqual(flat);
 		expect(new Set(DOMAIN_ALLOWLIST).size).toBe(DOMAIN_ALLOWLIST.length);
+	});
+});
+
+describe('applyModelSelectorLabels', () => {
+	it('aligne le libellé de domainOptions sur la table (package + pseudo-domaines)', async () => {
+		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
+		const { domainOptions } = await import('@openmeteo/weather-map-layer');
+		const { registerAnomalyDomain } = await import('$lib/anomaly-domain');
+		const { registerAromeOmDomain } = await import('$lib/arome-om-domain');
+		const { registerAromeFranceConvectionDomain } = await import(
+			'$lib/arome-france-convection-domain'
+		);
+		const { registerAromeFranceDomain } = await import('$lib/arome-france-domain');
+		const { applyModelSelectorLabels } = await import('$lib/model-selector-labels');
+
+		registerAnomalyDomain();
+		registerAromeOmDomain();
+		registerAromeFranceConvectionDomain();
+		registerAromeFranceDomain();
+		applyModelSelectorLabels();
+
+		const labelOf = (v: string) => domainOptions.find((d) => d.value === v)?.label;
+		expect(labelOf('meteofrance_arpege_europe')).toBe('Arpège Europe');
+		expect(labelOf('meteofrance_arome_france_hd')).toBe('Arome France HD');
+		expect(labelOf('arome_france')).toBe('Arome France 2.5');
+		expect(labelOf('anomaly_europe')).toBe('Anomalie T°C (Europe ERA/Arpège)');
 	});
 });
