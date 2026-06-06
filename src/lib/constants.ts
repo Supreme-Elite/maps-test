@@ -104,6 +104,13 @@ export const DEFAULT_CACHE_MAX_BYTES_MB = 400;
 // Subtracted from block size so total transfer fits within the nominal KiB boundary.
 export const HTTP_OVERHEAD_BYTES = 1408;
 
+// Préchargement automatique des échéances voisines (issue #46).
+// Fenêtre asymétrique dans le sens de navigation : FORWARD pas devant, BACKWARD derrière.
+export const NEIGHBOR_PREFETCH_FORWARD = 3;
+export const NEIGHBOR_PREFETCH_BACKWARD = 1;
+// Pause après le dernier changement d'échéance avant de lancer le préchargement.
+export const NEIGHBOR_PREFETCH_DEBOUNCE_MS = 400;
+
 // Complete default values for URL parameter checking
 export const COMPLETE_DEFAULT_VALUES: { [key: string]: boolean | string | number } = {
 	domain: DEFAULT_DOMAIN,

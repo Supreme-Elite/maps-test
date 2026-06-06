@@ -45,6 +45,16 @@ Supprimés : `src/lib/stores/playback.ts`, le composant `playback-panel.svelte`,
 
 **Préchargement (prefetch) — réintroduit seul.** `src/lib/prefetch.ts` + `src/lib/components/time/prefetch-button.svelte` ont été restaurés (sans le player d'animation). Le bouton vit dans la barre de run (`time-selector.svelte`, dans le `<div>` `-top-4.5` à côté du sélecteur de run) : un `Select` de mode (Aujourd'hui / 24 h suivantes / 24 h précédentes / Run complet) + un bouton télécharger qui appelle `prefetchData()`. `getDateRangeForMode()` traduit le mode en plage `[startDate, endDate]`, `prefetchData()` filtre les `valid_times` du `metaJson` dans cette plage et précharge chaque pas via `omFileReader.prefetchVariable()` (8 workers concurrents, annulable via `AbortController`). Sans `metaJson`/`modelRun` chargés, un toast d'avertissement s'affiche.
 
+**Préchargement automatique des échéances voisines (#46).** `src/lib/neighbor-prefetch.ts`
+s'abonne au store `time` (initialisé dans `+page.svelte`), debounce
+`NEIGHBOR_PREFETCH_DEBOUNCE_MS` (400 ms), détecte le sens de navigation via les index
+`valid_times` et précharge une fenêtre asymétrique (`computeNeighborWindow` : 3 devant /
+1 derrière dans le sens, ±1 sur saut/premier chargement) de la variable affichée — et de
+`variable2` si `layer2Enabled` — via `prefetchData()`. Un seul préchargement en vol
+(`AbortController`, annulé à chaque nouveau changement). Les contours/flèches partagent la
+variable principale → couverts sans requête dédiée. Remplace l'ancien préchargement
+header-only du `postReadCallback` (`getNextOmUrls`, retiré).
+
 ## Domain allowlist (Infoclimat preset)
 
 `MODEL_SELECTOR_GROUPS` in `src/lib/constants.ts` is the single source of truth for the
