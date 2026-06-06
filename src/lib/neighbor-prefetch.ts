@@ -1,6 +1,7 @@
 import { get } from 'svelte/store';
 
 import {
+	ANOMALY_DOMAIN,
 	NEIGHBOR_PREFETCH_BACKWARD,
 	NEIGHBOR_PREFETCH_DEBOUNCE_MS,
 	NEIGHBOR_PREFETCH_FORWARD
@@ -8,6 +9,15 @@ import {
 import { prefetchData } from './prefetch';
 import { metaJson, modelRun, time } from './stores/time';
 import { layer2Enabled, selectedDomain, variable, variable2 } from './stores/variables';
+
+/**
+ * Le préchargement voisin passe par `prefetchData` qui construit des URLs `data_spatial`.
+ * Le pseudo-domaine anomalie utilise un layout `/anomaly/…` incompatible → on l'exclut
+ * (sinon chaque changement d'échéance déclenche des 404 silencieux). Les autres
+ * pseudo-domaines bucket (`arome_*`) utilisent bien `data_spatial`.
+ */
+export const isPrefetchableDomain = (domainValue: string): boolean =>
+	domainValue !== ANOMALY_DOMAIN;
 
 export interface NeighborWindow {
 	startDate: Date;
@@ -84,6 +94,9 @@ export const initNeighborPrefetch = (): (() => void) => {
 		const currentRun = get(modelRun);
 		if (!meta || !currentRun) return;
 
+		const domain = get(selectedDomain).value;
+		if (!isPrefetchableDomain(domain)) return;
+
 		const current = get(time);
 		const validTimes = meta.valid_times.map((vt: string) => new Date(vt));
 		const neighborWindow = computeNeighborWindow(current, previousTime, validTimes, {
@@ -97,7 +110,6 @@ export const initNeighborPrefetch = (): (() => void) => {
 		controller = new AbortController();
 		const signal = controller.signal;
 
-		const domain = get(selectedDomain).value;
 		const base = {
 			startDate: neighborWindow.startDate,
 			endDate: neighborWindow.endDate,

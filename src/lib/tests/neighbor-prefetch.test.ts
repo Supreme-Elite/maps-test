@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { computeNeighborWindow } from '$lib/neighbor-prefetch';
+import { computeNeighborWindow, isPrefetchableDomain } from '$lib/neighbor-prefetch';
 
 // 6 pas horaires : 00:00 … 05:00
 const VALID_TIMES = [
@@ -70,5 +70,16 @@ describe('computeNeighborWindow', () => {
 	it('currentTime introuvable → null', () => {
 		const unknown = new Date('2026-06-06T09:00:00Z');
 		expect(computeNeighborWindow(unknown, null, VALID_TIMES, CFG)).toBeNull();
+	});
+});
+
+describe('isPrefetchableDomain', () => {
+	it('exclut le pseudo-domaine anomalie', () => {
+		expect(isPrefetchableDomain('anomaly_europe')).toBe(false);
+	});
+
+	it('autorise les domaines standard et bucket arome', () => {
+		expect(isPrefetchableDomain('meteofrance_arome_france0025')).toBe(true);
+		expect(isPrefetchableDomain('arome_france')).toBe(true);
 	});
 });
