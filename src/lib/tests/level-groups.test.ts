@@ -50,6 +50,17 @@ describe('sortLevels', () => {
 			'wind_u_component_10m'
 		]);
 	});
+
+	it('trie les niveaux de sol (cm) par profondeur croissante', () => {
+		const levels = ['soil_temperature_54cm', 'soil_temperature_0cm', 'soil_temperature_18cm'].map(
+			opt
+		);
+		expect(sortLevels(levels).map((l) => l.value)).toEqual([
+			'soil_temperature_0cm',
+			'soil_temperature_18cm',
+			'soil_temperature_54cm'
+		]);
+	});
 });
 
 describe('pickDefaultLevel', () => {
@@ -74,6 +85,24 @@ describe('pickDefaultLevel', () => {
 	it('retombe sur le niveau le plus bas trié sans 2 m / 10 m', () => {
 		const levels = ['temperature_500hPa', 'temperature_1000hPa', 'temperature_850hPa'].map(opt);
 		expect(pickDefaultLevel(levels)).toBe('temperature_1000hPa');
+	});
+
+	it('groupe hPa pur (géopotentiel) : défaut = pression la plus haute (altitude la plus basse)', () => {
+		// Niveaux visibles du sélecteur, dans l'ordre du metaJson (non trié).
+		const levels = [
+			'geopotential_height_500hPa',
+			'geopotential_height_925hPa',
+			'geopotential_height_200hPa',
+			'geopotential_height_850hPa'
+		].map(opt);
+		expect(pickDefaultLevel(levels)).toBe('geopotential_height_925hPa');
+	});
+
+	it('groupe de sol (cm) : défaut = niveau le plus proche de la surface', () => {
+		const levels = ['soil_temperature_54cm', 'soil_temperature_0cm', 'soil_temperature_18cm'].map(
+			opt
+		);
+		expect(pickDefaultLevel(levels)).toBe('soil_temperature_0cm');
 	});
 
 	it('renvoie undefined pour un groupe vide', () => {
