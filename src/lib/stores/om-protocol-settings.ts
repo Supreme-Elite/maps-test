@@ -127,7 +127,7 @@ export const omProtocolSettings: Writable<OmProtocolSettings> = writable({
 		...initialCustomColorScales
 	},
 
-	postReadCallback: (omFileReader: WeatherMapLayerFileReader, data: Data, state: OmUrlState) => {
+	postReadCallback: (_omFileReader: WeatherMapLayerFileReader, data: Data, state: OmUrlState) => {
 		if (
 			state.dataOptions.domain.value === 'ecmwf_ifs' &&
 			state.dataOptions.variable === 'pressure_msl'
