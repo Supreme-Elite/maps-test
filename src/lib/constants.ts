@@ -177,10 +177,7 @@ export const isSoundingDomain = (domain: string): boolean =>
  *  Les pseudo-domaines servis depuis le bucket R2 (`anomaly_europe`, `arome_*`) ne
  *  sont enregistrés dans `domainOptions` que si le bucket est configuré ; le sélecteur
  *  saute ceux absents (cf. `model-selector.svelte`). */
-export const MODEL_SELECTOR_GROUPS: readonly {
-	label: string;
-	domains: readonly { value: string; label: string }[];
-}[] = [
+export const MODEL_SELECTOR_GROUPS = [
 	{
 		label: 'Météo-France Arome',
 		domains: [
@@ -224,7 +221,7 @@ export const MODEL_SELECTOR_GROUPS: readonly {
 		label: 'Anomalie',
 		domains: [{ value: ANOMALY_DOMAIN, label: 'Anomalie T°C (Europe ERA/Arpège)' }]
 	}
-];
+] as const satisfies readonly { label: string; domains: readonly { value: string; label: string }[] }[];
 
 /** Domaines visibles dans le sélecteur, dérivés de `MODEL_SELECTOR_GROUPS` (aplatissement
  *  dans l'ordre d'affichage). Display-only : filtre le sélecteur sans bloquer le routing

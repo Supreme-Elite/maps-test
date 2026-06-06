@@ -40,7 +40,8 @@ describe('MODEL_SELECTOR_GROUPS', () => {
 	});
 
 	it('DOMAIN_ALLOWLIST est dérivé de la table, sans doublon', () => {
-		expect([...DOMAIN_ALLOWLIST]).toEqual(EXPECTED_ORDER);
+		const flat = MODEL_SELECTOR_GROUPS.flatMap((g) => g.domains.map((d) => d.value));
+		expect([...DOMAIN_ALLOWLIST]).toEqual(flat);
 		expect(new Set(DOMAIN_ALLOWLIST).size).toBe(DOMAIN_ALLOWLIST.length);
 	});
 });
