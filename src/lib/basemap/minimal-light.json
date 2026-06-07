@@ -583,6 +583,29 @@
 			}
 		},
 		{
+			"id": "coastline",
+			"type": "line",
+			"source": "openmaptiles",
+			"source-layer": "water",
+			"filter": ["==", "$type", "Polygon"],
+			"layout": {
+				"line-cap": "round",
+				"line-join": "round"
+			},
+			"paint": {
+				"line-color": "rgba(40, 40, 40, 0.55)",
+				"line-width": {
+					"base": 1.2,
+					"stops": [
+						[4, 0.6],
+						[7, 1],
+						[10, 1.4],
+						[14, 2]
+					]
+				}
+			}
+		},
+		{
 			"id": "admin_sub",
 			"type": "line",
 			"source": "openmaptiles",
@@ -592,7 +615,7 @@
 				"line-color": {
 					"stops": [
 						[3, "rgba(59, 59, 59, 0)"],
-						[6, "rgba(59, 59, 59, 0.5)"]
+						[6, "rgba(59, 59, 59, 0.6)"]
 					],
 					"type": "exponential"
 				},
@@ -615,13 +638,13 @@
 				"line-join": "round"
 			},
 			"paint": {
-				"line-color": "rgba(0, 0, 0, 0.75)",
+				"line-color": "rgba(0, 0, 0, 0.8)",
 				"line-width": {
 					"base": 0.5,
 					"stops": [
-						[0, 0.5],
-						[7, 1],
-						[10, 2],
+						[0, 0.6],
+						[7, 1.2],
+						[10, 2.4],
 						[23, 5]
 					]
 				}
@@ -651,10 +674,10 @@
 				}
 			},
 			"paint": {
-				"text-color": "rgba(64, 64, 64, 0.9)",
-				"text-halo-blur": 0,
-				"text-halo-color": "rgba(255,255,255,0.75)",
-				"text-halo-width": 0.5
+				"text-color": "rgba(255, 255, 255, 0.95)",
+				"text-halo-blur": 0.3,
+				"text-halo-color": "rgba(0, 0, 0, 0.9)",
+				"text-halo-width": 1.4
 			}
 		},
 		{
@@ -676,10 +699,10 @@
 				}
 			},
 			"paint": {
-				"text-color": "rgba(0, 0, 0, 0.9)",
-				"text-halo-blur": 0,
-				"text-halo-color": "rgba(255,255,255,0.75)",
-				"text-halo-width": 0.5
+				"text-color": "rgba(255, 255, 255, 0.95)",
+				"text-halo-blur": 0.3,
+				"text-halo-color": "rgba(0, 0, 0, 0.9)",
+				"text-halo-width": 1.4
 			}
 		},
 		{
@@ -701,10 +724,10 @@
 				}
 			},
 			"paint": {
-				"text-color": "rgba(33, 33, 33, 0.65)",
-				"text-halo-blur": 0,
-				"text-halo-color": "rgba(0, 0, 0, 0.25)",
-				"text-halo-width": 1
+				"text-color": "rgba(255, 255, 255, 0.8)",
+				"text-halo-blur": 0.3,
+				"text-halo-color": "rgba(0, 0, 0, 0.85)",
+				"text-halo-width": 1.4
 			}
 		},
 		{
@@ -726,10 +749,10 @@
 				}
 			},
 			"paint": {
-				"text-color": "rgba(33, 33, 33, 0.9)",
-				"text-halo-blur": 0,
-				"text-halo-color": "rgba(255,255,255,0.75)",
-				"text-halo-width": 0.5
+				"text-color": "rgba(255, 255, 255, 0.95)",
+				"text-halo-blur": 0.3,
+				"text-halo-color": "rgba(0, 0, 0, 0.9)",
+				"text-halo-width": 1.4
 			}
 		}
 	],
