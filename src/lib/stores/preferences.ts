@@ -17,6 +17,7 @@ import {
 } from '$lib/constants';
 import { getInitialMetaData, getMetaData } from '$lib/metadata';
 
+import { DEFAULT_BASEMAP_THEME, basemapTheme } from './basemap-theme';
 import { DEFAULT_SHOW_DEPARTMENTS, showDepartments } from './departments';
 import { cacheBlockSizeKb, cacheMaxBytesMb, customColorScales } from './om-protocol-settings';
 import { inProgress, latest, metaJson, modelRun, modelRunLocked, now, time } from './time';
@@ -98,6 +99,7 @@ export const resetStates = async () => {
 	preferences.set(defaultPreferences);
 	vectorOptions.set(defaultVectorOptions);
 	showDepartments.set(DEFAULT_SHOW_DEPARTMENTS);
+	basemapTheme.set(DEFAULT_BASEMAP_THEME);
 
 	loading.set(false);
 

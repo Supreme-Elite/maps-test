@@ -1,9 +1,9 @@
 import { get } from 'svelte/store';
 
 import * as maplibregl from 'maplibre-gl';
-import { mode } from 'mode-watcher';
 import { toast } from 'svelte-sonner';
 
+import { basemapTheme } from '$lib/stores/basemap-theme';
 import { map as m } from '$lib/stores/map';
 import { loading, opacity, opacity2, preferences as p } from '$lib/stores/preferences';
 import { metaJson as mJ, time } from '$lib/stores/time';
@@ -38,7 +38,8 @@ import { anomalyPhase, getOMUrl, getOMUrlFor, getWindOverlayUrl, provisionalDate
 // Expression helpers
 // =============================================================================
 
-const isDark = (): boolean => mode.current === 'dark';
+// Couleur des flèches/contours selon le FOND DE CARTE (pas le chrome, toujours sombre).
+const isDark = (): boolean => get(basemapTheme) === 'dark';
 const lightOrDark = (light: string, dark: string): string => (isDark() ? dark : light);
 
 /** Facteur d'opacité appliqué aux jours d'anomalie provisoires (estimation

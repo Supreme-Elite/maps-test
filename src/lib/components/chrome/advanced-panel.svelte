@@ -7,6 +7,7 @@
 	import SettingsIcon from '@lucide/svelte/icons/settings-2';
 	import XIcon from '@lucide/svelte/icons/x';
 
+	import { basemapTheme } from '$lib/stores/basemap-theme';
 	import { clippingPanelOpen } from '$lib/stores/clipping';
 	import { DEFAULT_SHOW_DEPARTMENTS, showDepartments } from '$lib/stores/departments';
 	import {
@@ -38,6 +39,8 @@
 	// Reactive snapshots driving the toggle UI.
 	const departmentsOn = $derived($showDepartments);
 	const hillshadeOn = $derived($preferences.hillshade);
+	// Thème du FOND DE CARTE (le chrome reste sombre en permanence — cf. basemap-theme.ts).
+	const darkOn = $derived($basemapTheme === 'dark');
 
 	// --- IControl behaviors ported to plain handlers ---
 	function toggleDepartments(next: boolean) {
@@ -49,6 +52,12 @@
 		preferences.update((p) => ({ ...p, hillshade: next }));
 		setHillshadeEnabled(next);
 		updateUrl('hillshade', String(next), String(defaultPreferences.hillshade));
+	}
+
+	// Bascule le fond de carte clair/sombre (persisté). Le ré-affichage du basemap +
+	// couches météo est piloté par l'effet réactif sur `basemapTheme` dans +page.svelte.
+	function toggleDark(next: boolean) {
+		basemapTheme.set(next ? 'dark' : 'light');
 	}
 
 	// Respecte prefers-reduced-motion : neutralise la transition JS du rail desktop.
@@ -94,6 +103,7 @@
 		<SecondaryLayerPanel />
 		<LayerToggle label="Départements" checked={departmentsOn} onCheckedChange={toggleDepartments} />
 		<LayerToggle label="Relief ombré" checked={hillshadeOn} onCheckedChange={toggleHillshade} />
+		<LayerToggle label="Fond de carte sombre" checked={darkOn} onCheckedChange={toggleDark} />
 		<OpacitySetting />
 	</section>
 

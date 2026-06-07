@@ -7,8 +7,8 @@
 import { get } from 'svelte/store';
 
 import maplibregl from 'maplibre-gl';
-import { mode } from 'mode-watcher';
 
+import { basemapTheme } from '$lib/stores/basemap-theme';
 import { showDepartments } from '$lib/stores/departments';
 import { map as mStore } from '$lib/stores/map';
 
@@ -58,7 +58,8 @@ export const ensureDepartmentsLayer = (): void => {
 		});
 	}
 	if (!map.getLayer(LAYER_ID)) {
-		const isDark = mode.current === 'dark';
+		// Couleur dépendante du FOND DE CARTE (pas du chrome, toujours sombre).
+		const isDark = get(basemapTheme) === 'dark';
 		map.addLayer(
 			{
 				id: LAYER_ID,
