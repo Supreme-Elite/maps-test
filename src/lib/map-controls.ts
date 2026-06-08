@@ -1,8 +1,8 @@
 import { get } from 'svelte/store';
 
 import * as maplibregl from 'maplibre-gl';
-import { mode } from 'mode-watcher';
 
+import { basemapTheme } from '$lib/stores/basemap-theme';
 import { map as m } from '$lib/stores/map';
 import { defaultPreferences, preferences as p } from '$lib/stores/preferences';
 
@@ -10,6 +10,7 @@ import minimalDark from '$lib/basemap/minimal-dark.json';
 import minimalLight from '$lib/basemap/minimal-light.json';
 import { BEFORE_LAYER_RASTER, HILLSHADE_LAYER } from '$lib/constants';
 
+import { ensureDepartmentsLayer, refreshDepartments } from './departments-layer';
 import { addOmFileLayers } from './layers';
 import { updateUrl } from './url';
 
@@ -100,7 +101,7 @@ export const getStyle = async (): Promise<maplibregl.StyleSpecification> => {
 	// OpenFreeMap, servis en CORS natif — plus aucune dépendance réseau tierce.
 	// Labels en français (cf. src/lib/basemap/*.json).
 	const style = structuredClone(
-		(mode.current === 'dark'
+		(get(basemapTheme) === 'dark'
 			? minimalDark
 			: minimalLight) as unknown as maplibregl.StyleSpecification
 	);
@@ -129,12 +130,20 @@ export const reloadStyles = () => {
 		map.setStyle(style);
 		map.once('styledata', () => {
 			setTimeout(() => {
+				// setStyle a retiré toutes les sources ; on recrée les DEUX sources terrain
+				// comme à l'init (+page.svelte). terrainSource2 alimente le TerrainControl
+				// (hillshade.ts) — sans elle, le bouton « terrain » lève « no source … terrainSource2 ».
 				addTerrainSource(map);
+				addTerrainSource(map, 'terrainSource2');
 				const preferences = get(p);
 				if (preferences.hillshade) {
 					addHillshadeLayer();
 				}
 				addOmFileLayers();
+				// La couche départements est retirée par setStyle ; on la recrée (avec la
+				// couleur du nouveau thème de fond de carte) si l'overlay est actif.
+				ensureDepartmentsLayer();
+				refreshDepartments();
 			}, 50);
 		});
 	});

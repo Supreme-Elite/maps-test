@@ -15,6 +15,7 @@
 
 	import { version } from '$app/environment';
 
+	import { basemapTheme } from '$lib/stores/basemap-theme';
 	import { showDepartments } from '$lib/stores/departments';
 	import { map } from '$lib/stores/map';
 	import { omProtocolSettings } from '$lib/stores/om-protocol-settings';
@@ -49,7 +50,12 @@
 	import { checkHighDefinition } from '$lib/helpers';
 	import { initHillshadeFromPrefs } from '$lib/hillshade';
 	import { addOmFileLayers, changeOMfileURL } from '$lib/layers';
-	import { addTerrainSource, getStyle, setMapControlSettings } from '$lib/map-controls';
+	import {
+		addTerrainSource,
+		getStyle,
+		reloadStyles,
+		setMapControlSettings
+	} from '$lib/map-controls';
 	import { getInitialMetaData, getMetaData, matchVariableOrFirst } from '$lib/metadata';
 	import { initNeighborPrefetch } from '$lib/neighbor-prefetch';
 	import { addPopup } from '$lib/popup';
@@ -67,6 +73,10 @@
 	let mapContainer: HTMLElement | null;
 
 	let stopNeighborPrefetch: (() => void) | undefined;
+
+	// Thème (clair/sombre) du fond de carte effectivement appliqué, pour ne re-styler
+	// que sur un vrai changement — cf. l'effet réactif sur `basemapTheme` plus bas.
+	let appliedTheme: 'light' | 'dark' | undefined;
 
 	onMount(async () => {
 		$url = new URL(document.location.href);
@@ -119,6 +129,9 @@
 			// Required for canvas.toBlob() during PNG capture — see capture-flow.svelte
 			canvasContextAttributes: { preserveDrawingBuffer: true }
 		});
+
+		// getStyle() ci-dessus a lu basemapTheme : on mémorise le thème réellement posé.
+		appliedTheme = get(basemapTheme);
 
 		setMapControlSettings();
 
@@ -214,6 +227,16 @@
 
 	$effect(() => {
 		refreshDepartments([$showDepartments]);
+	});
+
+	// Re-applique basemap + couches météo quand le thème du fond de carte change
+	// (toggle « Mode sombre »). reloadStyles() → getStyle() et addOmFileLayers()
+	// relisent basemapTheme (basemap + URL om qui encode le dark mode).
+	$effect(() => {
+		const theme = $basemapTheme;
+		if (!$map || appliedTheme === undefined || theme === appliedTheme) return;
+		appliedTheme = theme;
+		reloadStyles();
 	});
 
 	// Ferme le cadre d'export quand l'utilisateur clique hors du carré sur la carte.
