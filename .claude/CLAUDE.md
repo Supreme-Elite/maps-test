@@ -43,6 +43,7 @@ Node version is pinned via `.nvmrc` (`lts/*`). CI (`.github/workflows/build.yml`
 ## Conventions
 
 - **Svelte 5 runes** (`$state`, `$derived`, `$effect`, `$props`) — not Svelte 4 reactive statements. `svelte.config.js` sets `compilerOptions.modernAst: true`.
+- **Svelte AI tooling** — install the official `sveltejs/ai-tools` Claude Code plugin (`/plugin marketplace add sveltejs/ai-tools` then `/plugin install svelte`). It provides the Svelte MCP server, the `svelte-core-bestpractices` skill, and the `svelte-file-editor` agent — delegate `.svelte` / `.svelte.ts` edits to that agent and validate with `svelte-autofixer`.
 - **Tailwind v4** with `@tailwindcss/vite`; tokens live in `src/styles.css`. `slate` is the shadcn base color.
 - **Prettier** uses tabs, single quotes, no trailing commas, 100 col print width. Imports are auto-sorted by `@trivago/prettier-plugin-sort-imports` following the order in `prettier.config.js` (`svelte` → 3rd party → `$app/` → `$lib/stores` → `$lib/utils` → `$lib/components` → `$lib`). Don't hand-order imports — run `npm run format`.
 - **Semantic PR titles** are enforced (`.github/workflows/semantic-pr.yml`). Use `feat:`, `fix:`, `chore:`, etc.
