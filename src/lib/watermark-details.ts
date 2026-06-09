@@ -10,28 +10,32 @@ import { variable as variableStore } from '$lib/stores/variables';
 
 import type { PngWatermarkDetails } from '$lib/png-export';
 
-const formatLegendValue = (value: number, colorScale: RenderableColorScale): string => {
-	const converted = convertValue(value, colorScale.unit, get(unitPreferences));
+const formatLegendValue = (
+	value: number,
+	colorScale: RenderableColorScale,
+	variable: string
+): string => {
+	const converted = convertValue(value, colorScale.unit, get(unitPreferences), variable);
 	if (Math.abs(converted) >= 1) return converted.toFixed(0);
 	if (Math.abs(converted) >= 0.1) return converted.toFixed(1);
 	return converted.toFixed(2);
 };
 
-const getLegendEntries = (colorScale: RenderableColorScale) => {
+const getLegendEntries = (colorScale: RenderableColorScale, variable: string) => {
 	if (colorScale.type === 'rgba') {
 		const steps = 25;
 		const stepSize = (colorScale.max - colorScale.min) / steps;
 		return Array.from({ length: steps + 1 }, (_, i) => {
 			const value = colorScale.min + i * stepSize;
 			return {
-				value: formatLegendValue(value, colorScale),
+				value: formatLegendValue(value, colorScale, variable),
 				color: getColor(colorScale, value)
 			};
 		});
 	}
 
 	return colorScale.breakpoints.map((value) => ({
-		value: formatLegendValue(value, colorScale),
+		value: formatLegendValue(value, colorScale, variable),
 		color: getColor(colorScale, value)
 	}));
 };
@@ -45,9 +49,9 @@ export const buildWatermarkLegend = (): NonNullable<PngWatermarkDetails['legend'
 		get(omProtocolSettings).colorScales
 	);
 	return {
-		unit: getDisplayUnit(colorScale.unit, get(unitPreferences)),
+		unit: getDisplayUnit(colorScale.unit, get(unitPreferences), variable),
 		opacity: get(opacity) / 100,
-		entries: getLegendEntries(colorScale)
+		entries: getLegendEntries(colorScale, variable)
 	};
 };
 

@@ -21,6 +21,7 @@
 		convertValue,
 		getDisplayUnit,
 		getUnitOptions,
+		isGeopotentialVariable,
 		setUnitForCategory,
 		unitPreferences
 	} from '$lib/stores/units';
@@ -31,7 +32,7 @@
 	import { getAlpha, hexToRgba, rgbaToHex } from '$lib/color';
 	import { categoricalLegendEntries, isCategorical } from '$lib/color-scales/legend';
 	import { textWhite } from '$lib/helpers';
-	import { changeOMfileURL } from '$lib/layers';
+	import { changeOMfileURL, reloadVectorStyle } from '$lib/layers';
 	import { refreshPopup } from '$lib/popup';
 
 	import CategoricalLegend from './categorical-legend.svelte';
@@ -76,7 +77,7 @@
 	};
 
 	const formatValue = (value: number, digits: number): string => {
-		const converted = convertValue(value, colorScale.unit, $unitPreferences);
+		const converted = convertValue(value, colorScale.unit, $unitPreferences, $variable);
 		if (Math.abs(converted) >= 1) return converted.toFixed(0);
 		if (Math.abs(converted) >= 0.1) return converted.toFixed(1);
 		return converted.toFixed(digits);
@@ -133,8 +134,8 @@
 
 	const digits = 2;
 	const labeledColors = $derived(getLabeledColorsForLegend(colorScale));
-	const displayUnit = $derived(getDisplayUnit(colorScale.unit, $unitPreferences));
-	const unitOptions = $derived(getUnitOptions(colorScale.unit));
+	const displayUnit = $derived(getDisplayUnit(colorScale.unit, $unitPreferences, $variable));
+	const unitOptions = $derived(getUnitOptions(colorScale.unit, $variable));
 	const valueLength = $derived(String(Math.round(labeledColors.at(-1)?.value ?? 1)).length);
 	const labelWidth = $derived(17 + Math.max(valueLength, displayUnit.length + 1, digits + 2) * 4);
 	const desktop = new MediaQuery('min-width: 768px');
@@ -267,8 +268,10 @@
 								value={displayUnit}
 								onValueChange={(v) => {
 									if (v) {
-										setUnitForCategory(colorScale.unit, v);
+										setUnitForCategory(colorScale.unit, v, $variable);
 										refreshPopup();
+										// Le géopotentiel convertit aussi les étiquettes d'isolignes (gpm↔gpdam).
+										if (isGeopotentialVariable($variable)) reloadVectorStyle();
 									}
 								}}
 							>

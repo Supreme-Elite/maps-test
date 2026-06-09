@@ -3,10 +3,12 @@
 
 	import {
 		type DistanceUnit,
+		type GeopotentialUnit,
 		type PrecipitationUnit,
 		type TemperatureUnit,
 		type WindSpeedUnit,
 		distanceUnit,
+		geopotentialUnit,
 		precipitationUnit,
 		temperatureUnit,
 		windSpeedUnit
@@ -15,6 +17,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import * as Select from '$lib/components/ui/select';
 
+	import { reloadVectorStyle } from '$lib/layers';
 	import { refreshPopup } from '$lib/popup';
 
 	const temperatureOptions: { value: TemperatureUnit; label: string }[] = [
@@ -37,6 +40,11 @@
 	export const distanceOptions: { value: DistanceUnit; label: string }[] = [
 		{ value: 'm', label: 'Mètres (m)' },
 		{ value: 'ft', label: 'Pieds (ft)' }
+	];
+
+	const geopotentialOptions: { value: GeopotentialUnit; label: string }[] = [
+		{ value: 'gpm', label: 'Mètres géopot. (gpm)' },
+		{ value: 'gpdam', label: 'Décamètres géopot. (gpdam)' }
 	];
 
 	function getLabel<T extends string>(options: { value: T; label: string }[], value: T): string {
@@ -96,6 +104,36 @@
 				</Select.Trigger>
 				<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
 					{#each distanceOptions as { value, label } (value)}
+						<Select.Item {value} {label} class="cursor-pointer text-sm" />
+					{/each}
+				</Select.Content>
+			</Select.Root>
+		</div>
+
+		<!-- Geopotential selector -->
+		<div class="flex items-center gap-3">
+			<Label class="w-28 shrink-0">Géopotentiel</Label>
+			<Select.Root
+				type="single"
+				value={$geopotentialUnit}
+				onValueChange={(v) => {
+					if (v) {
+						geopotentialUnit.set(v as GeopotentialUnit);
+						refreshPopup();
+						// Rafraîchit les étiquettes d'isolignes si un géopotentiel est affiché.
+						reloadVectorStyle();
+						toast.info(`Unité de géopotentiel : ${v}`);
+					}
+				}}
+			>
+				<Select.Trigger
+					class="h-8 min-w-0 flex-1 cursor-pointer bg-background/60 text-sm"
+					aria-label="Unité de géopotentiel"
+				>
+					<span class="truncate">{getLabel(geopotentialOptions, $geopotentialUnit)}</span>
+				</Select.Trigger>
+				<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+					{#each geopotentialOptions as { value, label } (value)}
 						<Select.Item {value} {label} class="cursor-pointer text-sm" />
 					{/each}
 				</Select.Content>
