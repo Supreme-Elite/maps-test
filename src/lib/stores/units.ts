@@ -6,11 +6,13 @@ export type TemperatureUnit = '°C' | '°F';
 export type PrecipitationUnit = 'mm' | 'inch';
 export type WindSpeedUnit = 'm/s' | 'km/h' | 'mph' | 'knots';
 export type DistanceUnit = 'm' | 'ft';
+export type GeopotentialUnit = 'gpm' | 'gpdam';
 
 export const DEFAULT_TEMPERATURE_UNIT: TemperatureUnit = '°C';
 export const DEFAULT_PRECIPITATION_UNIT: PrecipitationUnit = 'mm';
 export const DEFAULT_WIND_SPEED_UNIT: WindSpeedUnit = 'km/h';
 export const DEFAULT_DISTANCE_UNIT: DistanceUnit = 'm';
+export const DEFAULT_GEOPOTENTIAL_UNIT: GeopotentialUnit = 'gpm';
 
 export const temperatureUnit = persisted<TemperatureUnit>(
 	'temperature_unit',
@@ -22,6 +24,10 @@ export const precipitationUnit = persisted<PrecipitationUnit>(
 );
 export const windSpeedUnit = persisted<WindSpeedUnit>('wind_speed_unit', DEFAULT_WIND_SPEED_UNIT);
 export const distanceUnit = persisted<DistanceUnit>('distance_unit', DEFAULT_DISTANCE_UNIT);
+export const geopotentialUnit = persisted<GeopotentialUnit>(
+	'geopotential_unit',
+	DEFAULT_GEOPOTENTIAL_UNIT
+);
 
 // --- Conversion functions (from base SI unit to selected unit) ---
 
@@ -48,15 +54,34 @@ export function convertWindSpeed(value: number, unit: WindSpeedUnit): number {
 	}
 }
 
-/** Map a base unit string from the color scale to the corresponding unit category. */
-export type UnitCategory = 'temperature' | 'precipitation' | 'wind_speed' | 'distance';
-
 export function convertDistance(value: number, unit: DistanceUnit): number {
 	if (unit === 'ft') return value * 3.28084;
 	return value;
 }
 
-export function getUnitCategory(baseUnit: string): UnitCategory | undefined {
+export function convertGeopotential(value: number, unit: GeopotentialUnit): number {
+	// gpdam (décamètres géopotentiels) = gpm / 10.
+	if (unit === 'gpdam') return value / 10;
+	return value;
+}
+
+export type UnitCategory =
+	| 'temperature'
+	| 'precipitation'
+	| 'wind_speed'
+	| 'distance'
+	| 'geopotential';
+
+/**
+ * Map a value's unit category from the color-scale base unit, optionally
+ * disambiguated by the variable name.
+ *
+ * Le géopotentiel partage la chaîne d'unité de base `'m'` avec la distance ;
+ * seul le nom de la variable permet de les distinguer. Quand `variable`
+ * désigne un géopotentiel, la catégorie `geopotential` est prioritaire.
+ */
+export function getUnitCategory(baseUnit: string, variable?: string): UnitCategory | undefined {
+	if (variable && /geopotential/i.test(variable)) return 'geopotential';
 	switch (baseUnit) {
 		case '°C':
 		case 'K':
@@ -72,18 +97,22 @@ export function getUnitCategory(baseUnit: string): UnitCategory | undefined {
 	}
 }
 
+export interface UnitPreferences {
+	temperature: TemperatureUnit;
+	precipitation: PrecipitationUnit;
+	windSpeed: WindSpeedUnit;
+	distance: DistanceUnit;
+	geopotential: GeopotentialUnit;
+}
+
 /** Convert a value from its base unit to the user's selected unit. */
 export function convertValue(
 	value: number,
 	baseUnit: string,
-	units: {
-		temperature: TemperatureUnit;
-		precipitation: PrecipitationUnit;
-		windSpeed: WindSpeedUnit;
-		distance: DistanceUnit;
-	}
+	units: UnitPreferences,
+	variable?: string
 ): number {
-	const category = getUnitCategory(baseUnit);
+	const category = getUnitCategory(baseUnit, variable);
 	switch (category) {
 		case 'temperature':
 			return convertTemperature(value, units.temperature);
@@ -93,6 +122,8 @@ export function convertValue(
 			return convertWindSpeed(value, units.windSpeed);
 		case 'distance':
 			return convertDistance(value, units.distance);
+		case 'geopotential':
+			return convertGeopotential(value, units.geopotential);
 		default:
 			return value;
 	}
@@ -101,14 +132,10 @@ export function convertValue(
 /** Get the display unit string for a base unit given user preferences. */
 export function getDisplayUnit(
 	baseUnit: string,
-	units: {
-		temperature: TemperatureUnit;
-		precipitation: PrecipitationUnit;
-		windSpeed: WindSpeedUnit;
-		distance: DistanceUnit;
-	}
+	units: UnitPreferences,
+	variable?: string
 ): string {
-	const category = getUnitCategory(baseUnit);
+	const category = getUnitCategory(baseUnit, variable);
 	switch (category) {
 		case 'temperature':
 			return units.temperature;
@@ -118,14 +145,12 @@ export function getDisplayUnit(
 			return units.windSpeed;
 		case 'distance':
 			return units.distance;
+		case 'geopotential':
+			return units.geopotential;
 		default:
 			return baseUnit;
 	}
 }
-export const distanceOptions: { value: DistanceUnit; label: string }[] = [
-	{ value: 'm', label: 'm' },
-	{ value: 'ft', label: 'ft' }
-];
 
 /** Option arrays for each unit category. */
 export const temperatureOptions: { value: TemperatureUnit; label: string }[] = [
@@ -145,9 +170,22 @@ export const windSpeedOptions: { value: WindSpeedUnit; label: string }[] = [
 	{ value: 'knots', label: 'knots' }
 ];
 
+export const distanceOptions: { value: DistanceUnit; label: string }[] = [
+	{ value: 'm', label: 'm' },
+	{ value: 'ft', label: 'ft' }
+];
+
+export const geopotentialOptions: { value: GeopotentialUnit; label: string }[] = [
+	{ value: 'gpm', label: 'gpm' },
+	{ value: 'gpdam', label: 'gpdam' }
+];
+
 /** Get the unit options for a given base unit string. Returns undefined if the unit has no alternatives. */
-export function getUnitOptions(baseUnit: string): { value: string; label: string }[] | undefined {
-	const category = getUnitCategory(baseUnit);
+export function getUnitOptions(
+	baseUnit: string,
+	variable?: string
+): { value: string; label: string }[] | undefined {
+	const category = getUnitCategory(baseUnit, variable);
 	switch (category) {
 		case 'temperature':
 			return temperatureOptions;
@@ -157,14 +195,16 @@ export function getUnitOptions(baseUnit: string): { value: string; label: string
 			return windSpeedOptions;
 		case 'distance':
 			return distanceOptions;
+		case 'geopotential':
+			return geopotentialOptions;
 		default:
 			return undefined;
 	}
 }
 
 /** Set the unit for a given base unit category. */
-export function setUnitForCategory(baseUnit: string, newUnit: string): void {
-	const category = getUnitCategory(baseUnit);
+export function setUnitForCategory(baseUnit: string, newUnit: string, variable?: string): void {
+	const category = getUnitCategory(baseUnit, variable);
 	switch (category) {
 		case 'temperature':
 			temperatureUnit.set(newUnit as TemperatureUnit);
@@ -178,16 +218,20 @@ export function setUnitForCategory(baseUnit: string, newUnit: string): void {
 		case 'distance':
 			distanceUnit.set(newUnit as DistanceUnit);
 			break;
+		case 'geopotential':
+			geopotentialUnit.set(newUnit as GeopotentialUnit);
+			break;
 	}
 }
 
 /** Derived store combining all unit preferences into a single object. */
 export const unitPreferences = derived(
-	[temperatureUnit, precipitationUnit, windSpeedUnit, distanceUnit],
-	([$t, $p, $w, $d]) => ({
+	[temperatureUnit, precipitationUnit, windSpeedUnit, distanceUnit, geopotentialUnit],
+	([$t, $p, $w, $d, $g]): UnitPreferences => ({
 		temperature: $t,
 		precipitation: $p,
 		windSpeed: $w,
-		distance: $d
+		distance: $d,
+		geopotential: $g
 	})
 );

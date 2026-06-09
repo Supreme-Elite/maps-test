@@ -146,9 +146,10 @@ const updatePopupContent = async (coordinates: maplibregl.LngLat): Promise<void>
 		contentDiv.style.backgroundColor = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${popupOpacity})`;
 		contentDiv.style.color = textWhite(color, isDark) ? 'white' : 'black';
 		const units = get(unitPreferences);
-		const displayValue = convertValue(value, colorScale.unit, units);
+		const variable = get(v);
+		const displayValue = convertValue(value, colorScale.unit, units, variable);
 		valueSpan.innerText = displayValue.toFixed(1);
-		unitSpan.innerText = getDisplayUnit(colorScale.unit, units);
+		unitSpan.innerText = getDisplayUnit(colorScale.unit, units, variable);
 		if (windResult && isFinite(windResult.value)) {
 			const windDisplay = convertValue(windResult.value, 'm/s', units);
 			windSpan.innerText = `· ${windDisplay.toFixed(1)} ${getDisplayUnit('m/s', units)}`;
