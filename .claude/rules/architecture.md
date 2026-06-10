@@ -56,7 +56,7 @@ callback `playbackAdvance` de `time-selector.svelte` (store + URL + `changeOMfil
 **sans** `checkClosestModelRun` : les échéances sortent des `valid_times` du run courant), attend
 que la frame soit réellement rendue (événement `commit` de `slot-events.ts` ; les commits
 surnuméraires des managers raster/vecteur sont ignorés pendant qu'une avancée est programmée) puis
-programme la suivante avec un plancher de 700 ms/frame (`PLAYBACK_MIN_FRAME_MS`) et une garde de
+programme la suivante avec un plancher de 1,2 s/frame (`PLAYBACK_MIN_FRAME_MS`) et une garde de
 10 s sans commit (`PLAYBACK_MAX_WAIT_MS` — on avance quand même). Boucle de l'échéance de départ à
 la fin du run (`nextPlaybackFrame`, `src/lib/playback.ts`) jusqu'à pause. Arrêt automatique sur
 `error` de slot et sur changement de domaine/run (`$effect` dans le bouton). Au play, le bouton

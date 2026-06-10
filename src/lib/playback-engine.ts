@@ -1,8 +1,12 @@
 import { nextPlaybackFrame } from '$lib/playback';
 import { SLOT_EVENT_COMMIT, SLOT_EVENT_ERROR } from '$lib/slot-events';
 
-/** Plancher de durée d'affichage d'une échéance pendant la lecture. */
-export const PLAYBACK_MIN_FRAME_MS = 700;
+/**
+ * Plancher de durée d'affichage d'une échéance pendant la lecture. Le commit
+ * arrive au déclenchement du cross-fade (~300 ms) : ce plancher laisse la
+ * carte stabilisée à l'écran ~900 ms avant l'échéance suivante.
+ */
+export const PLAYBACK_MIN_FRAME_MS = 1200;
 /** Garde : sans commit du slot manager sous ce délai, on avance quand même. */
 export const PLAYBACK_MAX_WAIT_MS = 10000;
 
