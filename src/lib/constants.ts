@@ -130,10 +130,6 @@ export const COMPLETE_DEFAULT_VALUES: { [key: string]: boolean | string | number
 	departments: 'true'
 };
 
-// Contours administratifs FR — GeoJSON simplifié (~550 KB / ~80 KB gzip),
-// licence ODbL, bundlé depuis `gregoiredavid/france-geojson`.
-export const DEPARTMENTS_GEOJSON_URL = '/departements.geojson';
-
 // Niveaux iso-pression exposés dans le sélecteur (hPa). Les niveaux non listés
 // restent fonctionnels via URL partagée — c'est purement un filtre d'affichage.
 // Les unités non-hPa (2m, 10m, 80m, 120m, 180m…) ne sont pas filtrées.
