@@ -17,6 +17,11 @@ export interface PlaybackEngineOptions {
 	getCurrent: () => Date;
 	/** Applique l'échéance suivante (store `time` + URL + rechargement des couches). */
 	advance: (date: Date) => void;
+	/**
+	 * Bornes de la boucle de lecture, lues au start. Sans bornes (ou si absent) :
+	 * de l'échéance courante à la fin du run.
+	 */
+	getBounds?: () => { start: Date; end: Date } | undefined;
 	/** Appelé quand le moteur s'arrête de lui-même (erreur de slot, pas de frame suivante). */
 	onAutoStop?: () => void;
 	minFrameMs?: number;
@@ -42,6 +47,7 @@ export const createPlaybackEngine = (options: PlaybackEngineOptions): PlaybackEn
 
 	let running = false;
 	let loopStart = new Date(0);
+	let loopEnd: Date | undefined;
 	let lastAdvanceAt = 0;
 	let waitingForCommit = false;
 	let timer: ReturnType<typeof setTimeout> | undefined;
@@ -71,8 +77,15 @@ export const createPlaybackEngine = (options: PlaybackEngineOptions): PlaybackEn
 		if (!running) return;
 		clearTimer();
 		const steps = getSteps();
-		const end = steps?.[steps.length - 1];
-		const next = steps && end ? nextPlaybackFrame(getCurrent(), loopStart, end, steps) : undefined;
+		const end = loopEnd ?? steps?.[steps.length - 1];
+		let next: Date | undefined;
+		if (steps && end) {
+			const current = getCurrent();
+			const outside = current.getTime() < loopStart.getTime() || current.getTime() > end.getTime();
+			next = outside
+				? steps.find((s) => s.getTime() >= loopStart.getTime() && s.getTime() <= end.getTime())
+				: nextPlaybackFrame(current, loopStart, end, steps);
+		}
 		if (!next) {
 			autoStop();
 			return;
@@ -98,7 +111,9 @@ export const createPlaybackEngine = (options: PlaybackEngineOptions): PlaybackEn
 			if (running) return true;
 			const steps = getSteps();
 			if (!steps || steps.length === 0) return false;
-			loopStart = getCurrent();
+			const bounds = options.getBounds?.();
+			loopStart = bounds?.start ?? getCurrent();
+			loopEnd = bounds?.end;
 			running = true;
 			events.addEventListener(SLOT_EVENT_COMMIT, onCommit);
 			events.addEventListener(SLOT_EVENT_ERROR, onError);

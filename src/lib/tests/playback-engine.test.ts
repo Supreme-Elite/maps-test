@@ -132,6 +132,41 @@ describe('createPlaybackEngine', () => {
 		expect(onAutoStop).not.toHaveBeenCalled();
 	});
 
+	it('loops within the bounds provided by getBounds', () => {
+		const { engine, advanced, commit } = setup({
+			getBounds: () => ({ start: steps[1], end: steps[2] })
+		});
+		// current = steps[1] : steps[2] → boucle sur steps[1]
+		engine.start();
+		commit();
+		vi.advanceTimersByTime(700);
+		expect(advanced.map((d) => d.getTime())).toEqual([steps[2], steps[1]].map((d) => d.getTime()));
+		engine.stop();
+	});
+
+	it('jumps to the range start when the current time is outside the bounds', () => {
+		const { engine, advanced } = setup({
+			getCurrent: () => steps[0],
+			getBounds: () => ({ start: steps[2], end: steps[3] })
+		});
+		// current = steps[0], sous la plage : on saute directement à steps[2]
+		engine.start();
+		expect(advanced[0].getTime()).toBe(steps[2].getTime());
+		engine.stop();
+	});
+
+	it('refuses to start when no step falls within the bounds', () => {
+		const { engine, advanced } = setup({
+			getBounds: () => ({
+				start: new Date('2026-05-25T00:00:00Z'),
+				end: new Date('2026-05-25T06:00:00Z')
+			})
+		});
+		expect(engine.start()).toBe(false);
+		expect(engine.running).toBe(false);
+		expect(advanced).toHaveLength(0);
+	});
+
 	it('is idempotent: start while running does not double-advance', () => {
 		const { engine, advanced } = setup();
 		engine.start();

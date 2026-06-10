@@ -1,11 +1,14 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
+
 	import { toast } from 'svelte-sonner';
 
+	import { prefetchMode } from '$lib/stores/prefetch';
 	import { metaJson, modelRun, time } from '$lib/stores/time';
 	import { domain as domainStore, variable as variableStore } from '$lib/stores/variables';
 
 	import { createPlaybackEngine } from '$lib/playback-engine';
-	import { prefetchData } from '$lib/prefetch';
+	import { PREFETCH_MODE_LABELS, getDateRangeForMode, prefetchData } from '$lib/prefetch';
 	import { slotEvents } from '$lib/slot-events';
 
 	// L'avancée d'échéance est déléguée à time-selector pour réutiliser son
@@ -15,15 +18,24 @@
 	let playing = $state(false);
 	let prefetchAbort: AbortController | null = null;
 
+	// Plage de lecture : celle du sélecteur partagé avec le préchargement
+	// (Aujourd'hui / 24 h suivantes / 24 h précédentes / Run complet).
+	const playbackRange = () => {
+		if (!$metaJson) return undefined;
+		const { startDate, endDate } = getDateRangeForMode($prefetchMode, $time, $metaJson);
+		return { start: startDate, end: endDate };
+	};
+
 	// Au lancement de la lecture, on précharge en arrière-plan la plage à jouer
-	// (échéance courante → fin de run) pour lisser l'animation sur réseau lent.
-	// Fire-and-forget : la lecture n'attend pas, le cache rattrape en route.
+	// pour lisser l'animation sur réseau lent. Fire-and-forget : la lecture
+	// n'attend pas, le cache rattrape en route.
 	const startBackgroundPrefetch = () => {
-		if (!$metaJson || !$modelRun) return;
+		const range = playbackRange();
+		if (!range || !$metaJson || !$modelRun) return;
 		prefetchAbort = new AbortController();
 		void prefetchData({
-			startDate: new Date($time),
-			endDate: new Date($metaJson.valid_times[$metaJson.valid_times.length - 1] as string),
+			startDate: range.start,
+			endDate: range.end,
 			metaJson: $metaJson,
 			modelRun: $modelRun,
 			domain: $domainStore,
@@ -41,6 +53,7 @@
 		events: slotEvents,
 		getSteps: () => $metaJson?.valid_times.map((validTime: string) => new Date(validTime)),
 		getCurrent: () => $time,
+		getBounds: () => playbackRange(),
 		advance: (date) => advance(date),
 		onAutoStop: () => {
 			stopBackgroundPrefetch();
@@ -60,12 +73,30 @@
 			return;
 		}
 		if (!engine.start()) {
-			toast.warning('Aucune échéance disponible pour lancer la lecture');
+			toast.warning('Aucune échéance disponible dans la plage sélectionnée');
 			return;
 		}
 		startBackgroundPrefetch();
 		playing = true;
 	};
+
+	// Changement de plage en cours de lecture : on redémarre sur les nouvelles
+	// bornes (et on précharge la nouvelle plage).
+	$effect(() => {
+		void $prefetchMode;
+		// untrack : start() lit $time/$metaJson via getBounds/getSteps, on ne
+		// veut redéclencher l'effet que sur changement de plage.
+		untrack(() => {
+			if (!engine.running) return;
+			engine.stop();
+			stopBackgroundPrefetch();
+			if (engine.start()) {
+				startBackgroundPrefetch();
+			} else {
+				playing = false;
+			}
+		});
+	});
 
 	// Les échéances changent avec le domaine ou le run : on arrête la lecture.
 	$effect(() => {
@@ -90,7 +121,9 @@
 		togglePlayback();
 	}}
 	aria-label={playing ? "Arrêter l'animation" : "Lancer l'animation"}
-	title={playing ? "Arrêter l'animation" : 'Animer les échéances jusqu’à la fin du run (en boucle)'}
+	title={playing
+		? "Arrêter l'animation"
+		: `Animer « ${PREFETCH_MODE_LABELS.get($prefetchMode) ?? 'Run complet'} » (en boucle)`}
 >
 	{#if playing}
 		<svg

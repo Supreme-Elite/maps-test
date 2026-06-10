@@ -57,11 +57,15 @@ callback `playbackAdvance` de `time-selector.svelte` (store + URL + `changeOMfil
 que la frame soit réellement rendue (événement `commit` de `slot-events.ts` ; les commits
 surnuméraires des managers raster/vecteur sont ignorés pendant qu'une avancée est programmée) puis
 programme la suivante avec un plancher de 1,2 s/frame (`PLAYBACK_MIN_FRAME_MS`) et une garde de
-10 s sans commit (`PLAYBACK_MAX_WAIT_MS` — on avance quand même). Boucle de l'échéance de départ à
-la fin du run (`nextPlaybackFrame`, `src/lib/playback.ts`) jusqu'à pause. Arrêt automatique sur
-`error` de slot et sur changement de domaine/run (`$effect` dans le bouton). Au play, le bouton
-lance aussi un `prefetchData()` **en arrière-plan** sur la plage à jouer (échéance courante → fin
-de run, variable affichée), fire-and-forget et annulé à la pause (`AbortController`) : la lecture
+10 s sans commit (`PLAYBACK_MAX_WAIT_MS` — on avance quand même). La **plage lue** est celle du
+sélecteur de mode partagé avec le préchargement (store persisté `prefetchMode`,
+`src/lib/stores/prefetch.ts`, défaut « Run complet ») : bornes injectées au start via `getBounds`,
+boucle dans la plage (`nextPlaybackFrame`, `src/lib/playback.ts`) jusqu'à pause, saut au début de
+plage si l'échéance courante est dehors. Changer de plage en cours de lecture redémarre le moteur
+sur les nouvelles bornes (`$effect` untracked — `start()` lit `$time`/`$metaJson`, ne pas
+re-déclencher sur chaque frame). Arrêt automatique sur `error` de slot et sur changement de
+domaine/run. Au play, le bouton lance aussi un `prefetchData()` **en arrière-plan** sur la même
+plage (variable affichée), fire-and-forget et annulé à la pause (`AbortController`) : la lecture
 démarre sans attendre et se lisse à mesure que le cache rattrape, en plus de `neighbor-prefetch.ts`
 et du préchargement manuel.
 
@@ -70,7 +74,7 @@ Vestige : `src/lib/playback-renderer.ts` ne contient plus que `waitForIdle(map, 
 utilisé par `capture-flow.svelte` pour attendre la mise au repos de la carte avant la capture PNG du
 canvas (`preserveDrawingBuffer` reste activé sur la map — voir `+page.svelte`).
 
-**Préchargement (prefetch) — réintroduit seul.** `src/lib/prefetch.ts` + `src/lib/components/time/prefetch-button.svelte` ont été restaurés (sans le player d'animation). Le bouton vit dans la barre de run (`time-selector.svelte`, dans le `<div>` `-top-4.5` à côté du sélecteur de run) : un `Select` de mode (Aujourd'hui / 24 h suivantes / 24 h précédentes / Run complet) + un bouton télécharger qui appelle `prefetchData()`. `getDateRangeForMode()` traduit le mode en plage `[startDate, endDate]`, `prefetchData()` filtre les `valid_times` du `metaJson` dans cette plage et précharge chaque pas via `omFileReader.prefetchVariable()` (8 workers concurrents, annulable via `AbortController`). Sans `metaJson`/`modelRun` chargés, un toast d'avertissement s'affiche.
+**Préchargement (prefetch) — réintroduit seul.** `src/lib/prefetch.ts` + `src/lib/components/time/prefetch-button.svelte` ont été restaurés (sans le player d'animation). Le bouton vit dans la barre de run (`time-selector.svelte`, dans le `<div>` `-top-4.5` à côté du sélecteur de run) : un `Select` de mode (Aujourd'hui / 24 h suivantes / 24 h précédentes / Run complet — store persisté `prefetchMode`, partagé avec la lecture, libellés dans `PREFETCH_MODE_LABELS` de `prefetch.ts`) + un bouton télécharger qui appelle `prefetchData()`. `getDateRangeForMode()` traduit le mode en plage `[startDate, endDate]`, `prefetchData()` filtre les `valid_times` du `metaJson` dans cette plage et précharge chaque pas via `omFileReader.prefetchVariable()` (8 workers concurrents, annulable via `AbortController`). Sans `metaJson`/`modelRun` chargés, un toast d'avertissement s'affiche.
 
 **Préchargement automatique des échéances voisines (#46).** `src/lib/neighbor-prefetch.ts`
 s'abonne au store `time` (initialisé dans `+page.svelte`), debounce
