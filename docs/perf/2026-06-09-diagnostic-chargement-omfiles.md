@@ -110,12 +110,23 @@ les ~750 ms sont du pipeline pur.
    pas d'heure après un changement de variable reste froid, puis se réchauffe) — recoupe
    l'action 2.
 
-2. **Supprimer les métadonnées par pas** — upstream `file-reader`/`weather-map-layer`
-   (dépendance git pinnée, donc patchable + PR amont) : cacher le résultat du HEAD
-   (fileSize/lastModified) par URL, ou lire le trailer via **suffix range**
-   (`Range: bytes=-N`, pas besoin de connaître la taille), et paralléliser trailer/arbre.
-   **Impact : −250 à −450 ms sur tout pas non préchargé (sauts directs, changements de
-   variable). Effort : moyen. Risque : faible.**
+2. ~~**Supprimer les métadonnées par pas** — upstream `file-reader`.~~ **✅ FAIT (2026-06-10).**
+   Le HEAD par pas vit dans `@openmeteo/file-reader` (`OmHttpBackend.fetchMetadata`),
+   **pas** dans `weather-map-layer`. Forké → `cmer81/typescript-omfiles`, branche
+   `perf/cache-head-metadata` (2 commits). Deux leviers, tous deux livrés :
+   - **(a) Cache HEAD par URL** (`fda6f50`) : un cache statique borné mémorise
+     fileSize/lastModified/eTag par URL → plus de HEAD sur une URL déjà vue.
+   - **(b) Trailer en suffix-range** (`66003be`) : `getTrailer()` lit les N derniers
+     octets via `Range: bytes=-N` et déduit fileSize du `Content-Range` → trailer + taille
+     en **une** requête, sans HEAD, dès la 1ʳᵉ lecture. Repli HEAD si le serveur n'envoie
+     pas `Content-Range`.
+   **Mesuré (Chrome réel, cache vidé)** : changement de variable → **0 HEAD** (a) ;
+   1ʳᵉ lecture d'un fichier neuf → **0 HEAD + 1 suffix-range** au lieu de HEAD + lecture
+   trailer (b) ; re-visite / 2ᵉ accès → 0 requête de métadonnée. **Le HEAD est éliminé sur
+   tous les chemins.** R2/S3 confirmé : `206` + `Content-Range … /total` + `accept-ranges`.
+   **Consommation maps** : `overrides` `@openmeteo/file-reader` → `file:` local (force aussi
+   weather-map-layer). ⚠️ **Local uniquement, non committé** : la CI de maps ne résout pas
+   ce chemin — stratégie de publication (npm / gitpkg / vendor) à trancher avant merge.
 
 3. **Cold load mobile** : (i) lancer la 1ʳᵉ requête `.om` plus tôt (elle part aujourd'hui
    après tout le boot : +1,4 s fibre, +6,7 s 4G) — préconnect + déclenchement dès
