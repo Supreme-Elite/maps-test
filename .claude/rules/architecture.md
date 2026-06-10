@@ -28,11 +28,9 @@ Le style des contours et des flèches n'est plus codé en dur : il est défini d
 
 Single page app: `src/routes/+page.svelte` is the entry; `+layout.ts` opts out of SSR (`export const prerender = true` / no server logic). Adding new routes is unusual — most features become components under `src/lib/components/`.
 
-## GeoJSON overlays
+## Overlay départements (couche `boundary` du fond)
 
-`src/lib/departments-layer.ts` (contours des départements français) suit ce pattern : un seul `geojson` source + un layer MapLibre placé sous `BEFORE_LAYER_VECTOR`, togglé par un store persisté (`showDepartments`). Il expose `ensureDepartmentsLayer()` (enregistrement idempotent) et `refreshDepartments()` (mise à jour des données). Réutiliser ce pattern pour tout nouvel overlay (régions, communes, etc.) plutôt que de câbler sources/layers depuis `+page.svelte` directement.
-
-The departments contour file is bundled (`static/departements.geojson`) to avoid CORS issues with third-party CDNs.
+`src/lib/departments-layer.ts` (contours des départements français) ne lit plus un geojson bundlé : il style la couche vectorielle `boundary` des tuiles OpenFreeMap déjà chargées par le fond (source `openmaptiles`, source-layer `boundary`), filtrée sur `admin_level == 6`. Les lignes viennent donc des **mêmes données OSM** que le fond → raccord topologique parfait, zéro octet bundlé. Il expose `buildDepartmentsLineLayer(isDark, visible)` (builder pur du `LineLayerSpecification`, testé sans carte), `ensureDepartmentsLayer()` (ajoute le `line` layer une fois, sous `BEFORE_LAYER_VECTOR`, couleur figée selon `basemapTheme`) et `refreshDepartments(visible = get(showDepartments))` (bascule la `visibility` via `setLayoutProperty` ; `ensureDepartmentsLayer()` est appelé en interne, donc les sites d'appel n'ont plus besoin de le coupler — pattern de `applyLabelsVisibility()`). **Piège re-style** : `setStyle` (donc `reloadStyles()`) purge les layers custom → `refreshDepartments()` doit être rappelé après chaque re-style (fait dans `reloadStyles()` de `map-controls.ts`) pour recréer le layer avec la couleur du thème courant. `admin_level == 6` n'est pas filtrable par pays (`adm0_l`/`adm0_r` ne sont renseignés que sur l'`admin_level 2`) → les subdivisions niveau-6 des pays voisins s'affichent en lisière, comme le fait déjà le layer `admin_sub` du basemap. Pour un overlay autonome (données hors fond), revenir à un `geojson` source dédié.
 
 ## Labels villes/pays du basemap (toggle)
 
