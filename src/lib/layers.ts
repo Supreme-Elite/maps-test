@@ -14,7 +14,7 @@ import {
 	layer2Enabled,
 	variable2
 } from '$lib/stores/variables';
-import { vectorOptions as vO } from '$lib/stores/vector';
+import { vectorOptions as vO, windOverlayEnabled } from '$lib/stores/vector';
 import { arrowStyle, contourStyle } from '$lib/stores/vector-styles';
 
 import {
@@ -116,13 +116,19 @@ const rasterLayer2 = (): SlotLayer => ({
 	}
 });
 
-const vectorArrowLayer = (): SlotLayer => ({
-	id: 'omVectorArrowLayer',
+// Les flèches sont rendues par EXACTEMENT un manager à la fois :
+//  - `forOverlay = true`  → arrowManager (source = niveau de vent dédié) quand l'overlay est actif ;
+//  - `forOverlay = false` → vectorManager (source = variable affichée) sinon (mode « Selon la variable affichée »).
+// Le garde `windOverlayEnabled !== forOverlay` évite de dessiner les flèches en double et permet aux
+// contours/étiquettes du vectorManager de suivre la variable affichée pendant que l'overlay vent gère les flèches.
+const vectorArrowLayer = (forOverlay: boolean): SlotLayer => ({
+	id: forOverlay ? 'omWindOverlayArrowLayer' : 'omVectorArrowLayer',
 	opacityProp: 'line-opacity',
 	commitOpacity: 1,
 	add: (map, sourceId, layerId, beforeLayer) => {
 		const vectorOptions = get(vO);
 		if (!vectorOptions.arrows) return;
+		if (get(windOverlayEnabled) !== forOverlay) return;
 		map.addLayer(
 			{
 				id: layerId,
@@ -287,6 +293,10 @@ const dropFromGroup = (mgr: SlotManager): void => {
 export let rasterManager: SlotManager | undefined;
 export let rasterManager2: SlotManager | undefined;
 export let vectorManager: SlotManager | undefined;
+// Manager dédié aux flèches de l'overlay vent (niveau de vent indépendant de la
+// variable affichée). Séparé du vectorManager pour que les contours/étiquettes
+// continuent de suivre la variable affichée quand l'overlay est actif.
+export let arrowManager: SlotManager | undefined;
 
 const buildRasterManager2 = (map: maplibregl.Map): SlotManager =>
 	new SlotManager(map, {
@@ -354,7 +364,7 @@ export const createManagers = (): void => {
 		sourceIdPrefix: 'omVectorSource',
 		beforeLayer: resolveVectorBeforeLayer(map, preferences.clipWater),
 		layerFactory: () => [
-			vectorArrowLayer(),
+			vectorArrowLayer(false),
 			vectorGridLayer(),
 			vectorContourLayer(),
 			vectorContourLabelsLayer()
@@ -370,6 +380,24 @@ export const createManagers = (): void => {
 		onCommit: () => slotEvents.dispatchEvent(new Event(SLOT_EVENT_COMMIT)),
 		onError: () => {
 			dropFromGroup(vectorManager!);
+			slotEvents.dispatchEvent(new Event(SLOT_EVENT_ERROR));
+		}
+	});
+
+	arrowManager = new SlotManager(map, {
+		sourceIdPrefix: 'omWindArrowSource',
+		beforeLayer: resolveVectorBeforeLayer(map, preferences.clipWater),
+		layerFactory: () => [vectorArrowLayer(true)],
+		sourceSpec: (sourceUrl) => ({ url: sourceUrl, type: 'vector' }),
+		removeDelayMs: 250,
+		// Domaine sans `wind_u_component_*` au niveau demandé → 404 : on efface les
+		// flèches au lieu de laisser celles du modèle précédent figées (cf. vectorManager).
+		clearOnError: true,
+		deferCommit: true,
+		onReady: tryFlushGroup,
+		onCommit: () => slotEvents.dispatchEvent(new Event(SLOT_EVENT_COMMIT)),
+		onError: () => {
+			dropFromGroup(arrowManager!);
 			slotEvents.dispatchEvent(new Event(SLOT_EVENT_ERROR));
 		}
 	});
@@ -390,7 +418,12 @@ export const addOmFileLayers = (): void => {
 	if (rasterManager) group.push(rasterManager);
 	if (vectorManager) group.push(vectorManager);
 
+	// Overlay vent = flèches sur un manager dédié (niveau de vent). Le vectorManager
+	// reste sur la variable affichée (contours/grille/étiquettes). Sans overlay, on
+	// efface l'arrowManager : les flèches éventuelles passent par le vectorManager.
 	const windUrl = getWindOverlayUrl();
+	if (windUrl && arrowManager) group.push(arrowManager);
+
 	let raster2Url: string | undefined;
 	if (get(layer2Enabled)) {
 		const omUrl2 = getOMUrlFor(get(variable2));
@@ -404,7 +437,11 @@ export const addOmFileLayers = (): void => {
 	loading.set(true);
 	beginCommitGroup(group);
 	rasterManager?.update('om://' + omUrl);
-	vectorManager?.update('om://' + (windUrl ?? omUrl));
+	// arrowManager AVANT vectorManager : insérées d'abord sous BEFORE_LAYER_VECTOR,
+	// les flèches restent SOUS les contours/étiquettes (z-order historique préservé).
+	if (windUrl) arrowManager?.update('om://' + windUrl);
+	else arrowManager?.destroy();
+	vectorManager?.update('om://' + omUrl);
 	if (raster2Url) rasterManager2?.update('om://' + raster2Url);
 };
 
@@ -425,13 +462,17 @@ export const changeOMfileURL = (vectorOnly = false, rasterOnly = false): void =>
 	const group: SlotManager[] = [];
 	let rasterUrl: string | undefined;
 	let vectorUrl: string | undefined;
+	let arrowUrl: string | undefined;
+	let clearArrows = false;
 	let raster2Url: string | undefined;
 
 	if (primaryChanged) {
 		currentOmUrl.set(omUrl);
 
 		const preferences = get(p);
-		vectorManager?.setBeforeLayer(resolveVectorBeforeLayer(map, preferences.clipWater));
+		const vectorBefore = resolveVectorBeforeLayer(map, preferences.clipWater);
+		vectorManager?.setBeforeLayer(vectorBefore);
+		arrowManager?.setBeforeLayer(vectorBefore);
 		rasterManager?.setBeforeLayer(preferences.hillshade ? HILLSHADE_LAYER : BEFORE_LAYER_RASTER);
 
 		if (!vectorOnly && rasterManager) {
@@ -439,9 +480,20 @@ export const changeOMfileURL = (vectorOnly = false, rasterOnly = false): void =>
 			group.push(rasterManager);
 		}
 		if (!rasterOnly && vectorManager) {
-			const windUrl = getWindOverlayUrl();
-			vectorUrl = windUrl ?? omUrl;
+			// Contours/grille/étiquettes suivent toujours la variable affichée.
+			vectorUrl = omUrl;
 			group.push(vectorManager);
+		}
+		if (!rasterOnly) {
+			// Overlay vent → flèches sur arrowManager ; sinon on l'efface (flèches
+			// éventuelles rendues par le vectorManager en mode « variable affichée »).
+			const windUrl = getWindOverlayUrl();
+			if (windUrl && arrowManager) {
+				arrowUrl = windUrl;
+				group.push(arrowManager);
+			} else {
+				clearArrows = true;
+			}
 		}
 	}
 
@@ -461,12 +513,18 @@ export const changeOMfileURL = (vectorOnly = false, rasterOnly = false): void =>
 		}
 	}
 
+	// Effacer les flèches d'overlay avant l'éventuel early-return : éteindre l'overlay
+	// ne doit pas laisser des flèches figées à l'écran, même si rien d'autre ne change.
+	if (clearArrows) arrowManager?.destroy();
+
 	// Rien à recharger (ni primaire ni overlay) : on s'arrête sans toucher au spinner.
 	if (group.length === 0) return;
 
 	loading.set(true);
 	beginCommitGroup(group);
 	if (rasterUrl) rasterManager?.update('om://' + rasterUrl);
+	// arrowManager AVANT vectorManager (z-order : flèches sous contours/étiquettes).
+	if (arrowUrl) arrowManager?.update('om://' + arrowUrl);
 	if (vectorUrl) vectorManager?.update('om://' + vectorUrl);
 	if (raster2Url) rasterManager2?.update('om://' + raster2Url);
 };
@@ -484,10 +542,19 @@ export const reloadVectorStyle = (): void => {
 	// pendant que le raster passe au nouveau (décalage d'une frame, auto-résorbé au
 	// tick suivant). Suivi : lire l'URL du slot pending. Cf. issue de suivi.
 	const url = vectorManager?.getActiveSourceUrl();
-	if (!url || !vectorManager) return;
+	// L'overlay vent a son propre manager : recharger aussi ses flèches pour qu'une
+	// édition du style des flèches (arrowStyle) soit prise en compte quand il est actif.
+	const arrowUrl = arrowManager?.getActiveSourceUrl();
+	if ((!url || !vectorManager) && !(arrowUrl && arrowManager)) return;
 	loading.set(true);
 	// Fusionne dans un éventuel groupe en vol (ne pas écraser : sinon raster/raster2
 	// resteraient différés indéfiniment, figés sur l'ancienne donnée).
-	addToCommitGroup(vectorManager);
-	vectorManager.update(url);
+	if (url && vectorManager) {
+		addToCommitGroup(vectorManager);
+		vectorManager.update(url);
+	}
+	if (arrowUrl && arrowManager) {
+		addToCommitGroup(arrowManager);
+		arrowManager.update(arrowUrl);
+	}
 };
