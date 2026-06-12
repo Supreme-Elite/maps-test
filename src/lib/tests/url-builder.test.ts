@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { metaJson as mJ, modelRun as mR, time } from '$lib/stores/time';
 import { domain as d, variable as v } from '$lib/stores/variables';
-import { defaultVectorOptions, vectorOptions, windOverlayEnabled, windOverlayLevel } from '$lib/stores/vector';
+import {
+	defaultVectorOptions,
+	vectorOptions,
+	windOverlayEnabled,
+	windOverlayLevel
+} from '$lib/stores/vector';
 
 import { getOMUrl, getOMUrlFor, getWindOverlayUrl } from '$lib/url';
 

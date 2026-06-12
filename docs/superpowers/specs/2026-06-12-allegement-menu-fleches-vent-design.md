@@ -62,20 +62,20 @@ Aucune modification du store `arrowStyle`, des builders, ni du moteur : c'est pu
 // Variables que le vectorManager rend déjà en flèches (la lib dérive u/v → vitesse/direction).
 // wind_gusts exclu : pas de composante directionnelle → traité comme non-vent (fallback).
 export const isWindVariable = (v: string): boolean =>
-  v.startsWith('wind_') && !v.startsWith('wind_gusts');
+	v.startsWith('wind_') && !v.startsWith('wind_gusts');
 
 // Niveau de vent à afficher en repli quand la variable affichée n'est pas du vent.
 // Renvoie null si aucun vent n'est disponible dans le modèle.
 export const deriveDisplayedWindLevel = (
-  displayedVariable: string,
-  modelVariables: Iterable<string>
+	displayedVariable: string,
+	modelVariables: Iterable<string>
 ): string | null => {
-  const vars = new Set(modelVariables);
-  const m = displayedVariable.match(/_(\d+m|\d+hPa)$/);
-  const level = m?.[1];
-  if (level && vars.has(`wind_u_component_${level}`)) return level;
-  if (vars.has('wind_u_component_10m')) return '10m';
-  return null;
+	const vars = new Set(modelVariables);
+	const m = displayedVariable.match(/_(\d+m|\d+hPa)$/);
+	const level = m?.[1];
+	if (level && vars.has(`wind_u_component_${level}`)) return level;
+	if (vars.has('wind_u_component_10m')) return '10m';
+	return null;
 };
 ```
 
@@ -88,18 +88,18 @@ Une seule fonction décide quel niveau l'`arrowManager` doit rendre — réutili
 // (flèches off ; ou mode « selon la variable affichée » avec une variable déjà de vent
 //  rendue par le vectorManager ; ou aucun vent publié).
 export const resolveWindArrowLevel = (): string | null => {
-  if (!get(vectorOptions).arrows) return null;
-  if (get(windOverlayEnabled)) return get(windOverlayLevel);      // overlay explicite (inchangé)
-  const displayed = get(v);
-  if (isWindVariable(displayed)) return null;                     // vectorManager s'en charge
-  return deriveDisplayedWindLevel(displayed, get(metaJson)?.variables ?? []);
+	if (!get(vectorOptions).arrows) return null;
+	if (get(windOverlayEnabled)) return get(windOverlayLevel); // overlay explicite (inchangé)
+	const displayed = get(v);
+	if (isWindVariable(displayed)) return null; // vectorManager s'en charge
+	return deriveDisplayedWindLevel(displayed, get(metaJson)?.variables ?? []);
 };
 
 export const getWindOverlayUrl = (): string | undefined => {
-  const level = resolveWindArrowLevel();
-  if (!level) return undefined;
-  // Flèches uniquement : contours/grille suivent la variable affichée (vectorManager).
-  return getOMUrlFor(`wind_u_component_${level}`, undefined, { contours: false, grid: false });
+	const level = resolveWindArrowLevel();
+	if (!level) return undefined;
+	// Flèches uniquement : contours/grille suivent la variable affichée (vectorManager).
+	return getOMUrlFor(`wind_u_component_${level}`, undefined, { contours: false, grid: false });
 };
 ```
 
