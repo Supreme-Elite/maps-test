@@ -2,8 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { modelRun as mR, time } from '$lib/stores/time';
 import { domain as d, variable as v } from '$lib/stores/variables';
+import { vectorOptions, windOverlayEnabled, windOverlayLevel } from '$lib/stores/vector';
 
-import { getOMUrl, getOMUrlFor } from '$lib/url';
+import { getOMUrl, getOMUrlFor, getWindOverlayUrl } from '$lib/url';
 
 describe('getOMUrlFor', () => {
 	beforeEach(() => {
@@ -49,6 +50,18 @@ describe('getOMUrlFor', () => {
 		expect(url).not.toContain('map-tiles.open-meteo.com');
 	});
 
+	it('lets a vectorOverride force-disable contour/grid flags', () => {
+		vectorOptions.update((o) => ({ ...o, contours: true, grid: true, arrows: true }));
+		const full = getOMUrlFor('temperature_2m');
+		expect(full).toContain('contours=true');
+		expect(full).toContain('grid=true');
+
+		const arrowsOnly = getOMUrlFor('temperature_2m', undefined, { contours: false, grid: false });
+		expect(arrowsOnly).not.toContain('contours=true');
+		expect(arrowsOnly).not.toContain('grid=true');
+		expect(arrowsOnly).toContain('arrows=true');
+	});
+
 	it('routes precipitation_sum to the upstream data_spatial path, NOT the worker', () => {
 		// `precipitation_sum` (cumul depuis le début du run) est une variable
 		// first-class du domaine arome_om_reunion : elle doit être lue comme un
@@ -61,5 +74,48 @@ describe('getOMUrlFor', () => {
 		expect(url).toContain('variable=precipitation_sum');
 		expect(url).not.toContain('/v1/sum/');
 		expect(url).not.toContain('localhost:8080');
+	});
+});
+
+describe('getWindOverlayUrl', () => {
+	beforeEach(() => {
+		d.set('meteofrance_arome_france_hd');
+		mR.set(new Date('2026-05-23T00:00:00Z'));
+		time.set(new Date('2026-05-23T15:00:00Z'));
+		v.set('temperature_2m');
+		vectorOptions.update((o) => ({ ...o, contours: true, grid: true, arrows: true }));
+		windOverlayEnabled.set(true);
+		windOverlayLevel.set('10m');
+	});
+
+	afterEach(() => {
+		windOverlayEnabled.set(false);
+		windOverlayLevel.set('10m');
+	});
+
+	it('returns undefined when the overlay is disabled', () => {
+		windOverlayEnabled.set(false);
+		expect(getWindOverlayUrl()).toBeUndefined();
+	});
+
+	it('points at the wind_u_component for the selected level', () => {
+		windOverlayLevel.set('850hPa');
+		expect(getWindOverlayUrl()).toContain('variable=wind_u_component_850hPa');
+	});
+
+	it('is arrows-only: never carries contour/grid flags even when both toggles are on', () => {
+		// Régression : les contours/étiquettes doivent suivre la variable affichée
+		// (vectorManager → getOMUrl), jamais wind_u_component. Sinon des isocontours
+		// parasites du vent s'affichent par-dessus la carte.
+		const url = getWindOverlayUrl();
+		expect(url).toContain('arrows=true');
+		expect(url).not.toContain('contours=true');
+		expect(url).not.toContain('grid=true');
+		expect(url).not.toContain('intervals=');
+	});
+
+	it('leaves the displayed-variable URL (getOMUrl) with its contour flags intact', () => {
+		expect(getOMUrl()).toContain('variable=temperature_2m');
+		expect(getOMUrl()).toContain('contours=true');
 	});
 });

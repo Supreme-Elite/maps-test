@@ -262,7 +262,16 @@ const colorHashSuffix = (): string => {
 	return '';
 };
 
-export const getOMUrlFor = (variable: string, timeOverride?: Date): string | undefined => {
+/** Surcharge ponctuelle des flags vecteur d'une URL (par défaut : lus depuis le
+ *  store `vectorOptions`). Sert à bâtir une source ciblée — p. ex. l'overlay vent
+ *  qui ne veut QUE les flèches, sans les contours/grille de la variable. */
+type VectorFlagOverride = { grid?: boolean; arrows?: boolean; contours?: boolean };
+
+export const getOMUrlFor = (
+	variable: string,
+	timeOverride?: Date,
+	vectorOverride?: VectorFlagOverride
+): string | undefined => {
 	const domain = get(d);
 	const modelRun = get(mR);
 	if (!modelRun) return undefined;
@@ -284,10 +293,13 @@ export const getOMUrlFor = (variable: string, timeOverride?: Date): string | und
 
 	if (mode.current === 'dark') result += '&dark=true';
 	const vectorOptions = get(vO);
-	if (vectorOptions.grid) result += '&grid=true';
-	if (vectorOptions.arrows) result += '&arrows=true';
-	if (vectorOptions.contours) result += '&contours=true';
-	if (vectorOptions.contours && !vectorOptions.breakpoints)
+	const grid = vectorOverride?.grid ?? vectorOptions.grid;
+	const arrows = vectorOverride?.arrows ?? vectorOptions.arrows;
+	const contours = vectorOverride?.contours ?? vectorOptions.contours;
+	if (grid) result += '&grid=true';
+	if (arrows) result += '&arrows=true';
+	if (contours) result += '&contours=true';
+	if (contours && !vectorOptions.breakpoints)
 		result += `&intervals=${vectorOptions.contourInterval}`;
 
 	const tileSize = get(tS);
@@ -320,5 +332,10 @@ export const getWindOverlayUrl = (): string | undefined => {
 	if (!get(windOverlayEnabled)) return undefined;
 	const level = get(windOverlayLevel);
 	// weather-map-layer reads U/V components and renders arrows when arrows=true.
-	return getOMUrlFor(`wind_u_component_${level}`);
+	// Overlay = FLÈCHES uniquement : on force `contours`/`grid` à false pour ne PAS
+	// générer un source-layer `contours` à partir de wind_u_component. Les contours
+	// et leurs étiquettes doivent suivre la variable affichée (rendus par
+	// vectorManager depuis getOMUrl()) — sinon des isocontours/valeurs parasites du
+	// vent s'affichent par-dessus la carte.
+	return getOMUrlFor(`wind_u_component_${level}`, undefined, { contours: false, grid: false });
 };
