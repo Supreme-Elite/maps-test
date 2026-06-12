@@ -155,7 +155,7 @@
 				</Select.Content>
 			</Select.Root>
 		</div>
-		<div class="mt-2 border-t border-white/10 pt-2 pl-1">
+		<div class="mt-2 pl-1">
 			<button
 				type="button"
 				class="flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 text-xs text-white/70 hover:text-white/90 md:min-h-0"
