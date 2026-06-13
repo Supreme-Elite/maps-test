@@ -22,7 +22,7 @@ export interface PngWatermarkDetails {
 	};
 }
 
-export type PngExportFormat = 'current-view' | 'square';
+export type PngExportFormat = 'current-view' | 'social';
 
 type PngWatermarkRenderDetails = PngWatermarkDetails & {
 	logo?: HTMLImageElement;
@@ -223,29 +223,48 @@ export const captureWatermarkedPng = async (
 	format: PngExportFormat = 'current-view'
 ): Promise<Blob> => {
 	const source = map.getCanvas();
-	const canvas = document.createElement('canvas');
 	const sourceWidth = source.width;
 	const sourceHeight = source.height;
 
-	if (format === 'square') {
-		canvas.width = 1080;
-		canvas.height = 1080;
-	} else {
-		canvas.width = sourceWidth;
-		canvas.height = sourceHeight;
+	const canvas = document.createElement('canvas');
+
+	if (format === 'social') {
+		// Plus grand rectangle 4:3 (paysage) / 3:4 (portrait) centré dans le
+		// canvas source — même règle que computeCaptureRect côté overlay, donc
+		// le PNG correspond à la zone cadrée.
+		const landscape = sourceWidth >= sourceHeight;
+		const targetRatio = landscape ? 4 / 3 : 3 / 4;
+
+		let cropW: number;
+		let cropH: number;
+		if (sourceWidth / sourceHeight > targetRatio) {
+			cropH = sourceHeight;
+			cropW = Math.round(cropH * targetRatio);
+		} else {
+			cropW = sourceWidth;
+			cropH = Math.round(cropW / targetRatio);
+		}
+		const sx = Math.round((sourceWidth - cropW) / 2);
+		const sy = Math.round((sourceHeight - cropH) / 2);
+
+		canvas.width = landscape ? 1440 : 1080;
+		canvas.height = landscape ? 1080 : 1440;
+
+		const ctx = canvas.getContext('2d');
+		if (!ctx) throw new Error('2D canvas context unavailable');
+		ctx.drawImage(source, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
+		drawWatermark(ctx, canvas.width, canvas.height, {
+			...details,
+			logo: await loadInfoclimatLogo()
+		});
+		return blobFromCanvas(canvas, 'image/png');
 	}
 
+	canvas.width = sourceWidth;
+	canvas.height = sourceHeight;
 	const ctx = canvas.getContext('2d');
 	if (!ctx) throw new Error('2D canvas context unavailable');
-
-	if (format === 'square') {
-		const cropSize = Math.min(sourceWidth, sourceHeight);
-		const sx = Math.round((sourceWidth - cropSize) / 2);
-		const sy = Math.round((sourceHeight - cropSize) / 2);
-		ctx.drawImage(source, sx, sy, cropSize, cropSize, 0, 0, canvas.width, canvas.height);
-	} else {
-		ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-	}
+	ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
 	drawWatermark(ctx, canvas.width, canvas.height, {
 		...details,
 		logo: await loadInfoclimatLogo()
