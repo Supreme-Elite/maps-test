@@ -25,6 +25,7 @@
 ## Task 1: Helper de géométrie `computeCaptureRect`
 
 **Files:**
+
 - Create: `src/lib/capture-geometry.ts`
 - Test: `src/lib/tests/capture-geometry.test.ts`
 
@@ -150,6 +151,7 @@ git commit -m "feat(capture): helper pur computeCaptureRect (zone 4:3/3:4)"
 Pas de test unitaire automatisé (recadrage canvas → nécessite un canvas réel). Vérification : cohérence par construction avec `computeCaptureRect` + check manuel en Task 5.
 
 **Files:**
+
 - Modify: `src/lib/png-export.ts:25` (type) et `:220-254` (fonction `captureWatermarkedPng`)
 
 - [ ] **Step 1: Remplacer le type de format**
@@ -251,6 +253,7 @@ git commit -m "feat(capture): format export 'social' 4:3/3:4 adaptatif"
 ## Task 3: Overlay + détection de clic dans `+page.svelte`
 
 **Files:**
+
 - Modify: `src/routes/+page.svelte` — imports, état viewport, `$effect` de clic (`:252-272`), bloc overlay (`:295-352`)
 
 - [ ] **Step 1: Importer le helper**
@@ -359,6 +362,7 @@ git commit -m "feat(capture): cadre d'export 4:3/3:4 piloté par computeCaptureR
 ## Task 4: Brancher `capture-flow.svelte`
 
 **Files:**
+
 - Modify: `src/lib/components/capture/capture-flow.svelte:65` (appel), `:68-77` (nom de fichier), imports
 
 - [ ] **Step 1: Importer le helper**
@@ -374,21 +378,21 @@ import { computeCaptureRect } from '$lib/capture-geometry';
 Dans la fonction `capture`, remplacer le bloc qui construit `details`, `blob` et `filename` (`capture-flow.svelte:64-77`) par :
 
 ```ts
-			const details = buildWatermarkDetails(run, currentTime, 0, 1, domainLabel, variableLabel);
-			const blob = await captureWatermarkedPng(map, details, 'social');
-			playShutter();
+const details = buildWatermarkDetails(run, currentTime, 0, 1, domainLabel, variableLabel);
+const blob = await captureWatermarkedPng(map, details, 'social');
+playShutter();
 
-			const orientation = computeCaptureRect(window.innerWidth, window.innerHeight).orientation;
-			const filename =
-				[
-					'infoclimat',
-					sanitizeFilenamePart(domainValue),
-					sanitizeFilenamePart(variableValue),
-					formatUtcStamp(run),
-					formatLeadTimeForFilename(run, currentTime),
-					formatISOWithoutTimezone(currentTime),
-					orientation === 'landscape' ? 'paysage' : 'portrait'
-				].join('_') + '.png';
+const orientation = computeCaptureRect(window.innerWidth, window.innerHeight).orientation;
+const filename =
+	[
+		'infoclimat',
+		sanitizeFilenamePart(domainValue),
+		sanitizeFilenamePart(variableValue),
+		formatUtcStamp(run),
+		formatLeadTimeForFilename(run, currentTime),
+		formatISOWithoutTimezone(currentTime),
+		orientation === 'landscape' ? 'paysage' : 'portrait'
+	].join('_') + '.png';
 ```
 
 - [ ] **Step 3: Typecheck + lint + tests complets**

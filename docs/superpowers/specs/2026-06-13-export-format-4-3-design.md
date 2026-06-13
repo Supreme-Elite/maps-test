@@ -24,14 +24,14 @@ Le petit côté reste à **1080 px** (qualité identique au carré actuel). Le c
 
 ## Décisions figées
 
-| Décision | Valeur |
-|----------|--------|
-| Ratio | 4:3 exact (1.333) |
-| Orientation | adaptative au viewport au moment de la capture |
-| Résolution paysage | 1440×1080 |
-| Résolution portrait | 1080×1440 |
-| Carré 1:1 | supprimé |
-| Format `'current-view'` | conservé inchangé |
+| Décision                | Valeur                                         |
+| ----------------------- | ---------------------------------------------- |
+| Ratio                   | 4:3 exact (1.333)                              |
+| Orientation             | adaptative au viewport au moment de la capture |
+| Résolution paysage      | 1440×1080                                      |
+| Résolution portrait     | 1080×1440                                      |
+| Carré 1:1               | supprimé                                       |
+| Format `'current-view'` | conservé inchangé                              |
 
 ## Contrainte architecturale centrale
 
@@ -65,8 +65,8 @@ en JS → trois implémentations à synchroniser, non testable.)
 export type CaptureOrientation = 'landscape' | 'portrait';
 
 export interface CaptureRect {
-	x: number;          // px depuis le bord gauche du viewport
-	y: number;          // px depuis le haut du viewport
+	x: number; // px depuis le bord gauche du viewport
+	y: number; // px depuis le haut du viewport
 	w: number;
 	h: number;
 	orientation: CaptureOrientation;

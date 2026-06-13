@@ -27,6 +27,7 @@
 ## Task 1: Helper `computeSourceCrop` (pur)
 
 **Files:**
+
 - Modify: `src/lib/capture-geometry.ts`
 - Test: `src/lib/tests/capture-geometry.test.ts`
 
@@ -117,6 +118,7 @@ git commit -m "feat(capture): helper pur computeSourceCrop (rect CSS → px canv
 ## Task 2: `png-export.ts` prend une région
 
 **Files:**
+
 - Modify: `src/lib/png-export.ts`
 
 Pas de test unitaire (canvas réel). Cohérence par construction + vérif manuelle.
@@ -207,6 +209,7 @@ git commit -m "refactor(capture): captureWatermarkedPng recadre une région (plu
 ## Task 3: `capture-flow.svelte` construit la région
 
 **Files:**
+
 - Modify: `src/lib/components/capture/capture-flow.svelte`
 
 État actuel : ligne 2 `import { get } from 'svelte/store';`, ligne 8 `import { exportFrameVisible } from '$lib/stores/preferences';`, `computeCaptureRect` déjà importé depuis `$lib/capture-geometry`. Le bloc de capture appelle `captureWatermarkedPng(map, details, 'social')` puis calcule `orientation` via `computeCaptureRect(window.innerWidth, window.innerHeight).orientation`.
@@ -230,48 +233,45 @@ import { bottomChromeHeight, exportFrameVisible } from '$lib/stores/preferences'
 Remplacer le bloc :
 
 ```ts
-			const details = buildWatermarkDetails(run, currentTime, 0, 1, domainLabel, variableLabel);
-			const blob = await captureWatermarkedPng(map, details, 'social');
-			playShutter();
+const details = buildWatermarkDetails(run, currentTime, 0, 1, domainLabel, variableLabel);
+const blob = await captureWatermarkedPng(map, details, 'social');
+playShutter();
 
-			const orientation = computeCaptureRect(window.innerWidth, window.innerHeight).orientation;
-			const filename =
-				[
-					'infoclimat',
-					sanitizeFilenamePart(domainValue),
-					sanitizeFilenamePart(variableValue),
-					formatUtcStamp(run),
-					formatLeadTimeForFilename(run, currentTime),
-					formatISOWithoutTimezone(currentTime),
-					orientation === 'landscape' ? 'paysage' : 'portrait'
-				].join('_') + '.png';
+const orientation = computeCaptureRect(window.innerWidth, window.innerHeight).orientation;
+const filename =
+	[
+		'infoclimat',
+		sanitizeFilenamePart(domainValue),
+		sanitizeFilenamePart(variableValue),
+		formatUtcStamp(run),
+		formatLeadTimeForFilename(run, currentTime),
+		formatISOWithoutTimezone(currentTime),
+		orientation === 'landscape' ? 'paysage' : 'portrait'
+	].join('_') + '.png';
 ```
 
 par :
 
 ```ts
-			const details = buildWatermarkDetails(run, currentTime, 0, 1, domainLabel, variableLabel);
-			const rect = computeCaptureRect(
-				window.innerWidth,
-				window.innerHeight - get(bottomChromeHeight)
-			);
-			const blob = await captureWatermarkedPng(map, details, {
-				...rect,
-				viewportW: window.innerWidth,
-				viewportH: window.innerHeight
-			});
-			playShutter();
+const details = buildWatermarkDetails(run, currentTime, 0, 1, domainLabel, variableLabel);
+const rect = computeCaptureRect(window.innerWidth, window.innerHeight - get(bottomChromeHeight));
+const blob = await captureWatermarkedPng(map, details, {
+	...rect,
+	viewportW: window.innerWidth,
+	viewportH: window.innerHeight
+});
+playShutter();
 
-			const filename =
-				[
-					'infoclimat',
-					sanitizeFilenamePart(domainValue),
-					sanitizeFilenamePart(variableValue),
-					formatUtcStamp(run),
-					formatLeadTimeForFilename(run, currentTime),
-					formatISOWithoutTimezone(currentTime),
-					rect.orientation === 'landscape' ? 'paysage' : 'portrait'
-				].join('_') + '.png';
+const filename =
+	[
+		'infoclimat',
+		sanitizeFilenamePart(domainValue),
+		sanitizeFilenamePart(variableValue),
+		formatUtcStamp(run),
+		formatLeadTimeForFilename(run, currentTime),
+		formatISOWithoutTimezone(currentTime),
+		rect.orientation === 'landscape' ? 'paysage' : 'portrait'
+	].join('_') + '.png';
 ```
 
 - [ ] **Step 3: Typecheck + lint + tests**
@@ -292,6 +292,7 @@ git commit -m "feat(capture): capture-flow passe la région calée sur la zone v
 ## Task 4: `+page.svelte` cale le cadre sur la hauteur disponible
 
 **Files:**
+
 - Modify: `src/routes/+page.svelte`
 
 État actuel : `bottomChromeHeight` et `get` sont déjà importés. La ligne `const captureRect = $derived(computeCaptureRect(viewportW, viewportH));` existe, et le `handleClick` calcule `computeCaptureRect(window.innerWidth, window.innerHeight)`.
@@ -301,13 +302,13 @@ git commit -m "feat(capture): capture-flow passe la région calée sur la zone v
 Remplacer :
 
 ```ts
-	const captureRect = $derived(computeCaptureRect(viewportW, viewportH));
+const captureRect = $derived(computeCaptureRect(viewportW, viewportH));
 ```
 
 par :
 
 ```ts
-	const captureRect = $derived(computeCaptureRect(viewportW, viewportH - $bottomChromeHeight));
+const captureRect = $derived(computeCaptureRect(viewportW, viewportH - $bottomChromeHeight));
 ```
 
 - [ ] **Step 2: Caler la détection de clic sur la même hauteur**
@@ -315,13 +316,13 @@ par :
 Dans `handleClick`, remplacer :
 
 ```ts
-		const r = computeCaptureRect(window.innerWidth, window.innerHeight);
+const r = computeCaptureRect(window.innerWidth, window.innerHeight);
 ```
 
 par :
 
 ```ts
-		const r = computeCaptureRect(window.innerWidth, window.innerHeight - get(bottomChromeHeight));
+const r = computeCaptureRect(window.innerWidth, window.innerHeight - get(bottomChromeHeight));
 ```
 
 (Le markup de l'overlay reste inchangé : les bandes sont déjà dérivées de `captureRect`.)

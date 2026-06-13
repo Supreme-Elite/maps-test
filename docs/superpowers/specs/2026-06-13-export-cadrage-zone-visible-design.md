@@ -53,13 +53,13 @@ disponible (`vh - chrome`), mais l'échelle utilise la hauteur **pleine** `vh`
 
 ## Décisions figées
 
-| Décision | Valeur |
-|----------|--------|
-| Hauteur de cadrage | `viewportH - bottomChromeHeight` |
-| Barre du haut (top bar) | hors périmètre — reste survolante (pas d'asymétrie signalée) |
-| Param `format` de `captureWatermarkedPng` | supprimé, remplacé par une région |
-| `'social'` / `'current-view'` / `PngExportFormat` | retirés (morts, aucun appelant) |
-| Résolutions sortie | 1440×1080 (paysage) / 1080×1440 (portrait) inchangées |
+| Décision                                          | Valeur                                                       |
+| ------------------------------------------------- | ------------------------------------------------------------ |
+| Hauteur de cadrage                                | `viewportH - bottomChromeHeight`                             |
+| Barre du haut (top bar)                           | hors périmètre — reste survolante (pas d'asymétrie signalée) |
+| Param `format` de `captureWatermarkedPng`         | supprimé, remplacé par une région                            |
+| `'social'` / `'current-view'` / `PngExportFormat` | retirés (morts, aucun appelant)                              |
+| Résolutions sortie                                | 1440×1080 (paysage) / 1080×1440 (portrait) inchangées        |
 
 ## Unités
 
