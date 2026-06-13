@@ -14,6 +14,7 @@
 		variable as variableStore
 	} from '$lib/stores/variables';
 
+	import { computeCaptureRect } from '$lib/capture-geometry';
 	import { playShutter } from '$lib/capture-sound';
 	import { PRERENDER_FRAME_TIMEOUT_MS } from '$lib/constants';
 	import { waitForIdle } from '$lib/playback-renderer';
@@ -62,9 +63,10 @@
 			const variableLabel = get(selectedVariable).label ?? variableValue;
 
 			const details = buildWatermarkDetails(run, currentTime, 0, 1, domainLabel, variableLabel);
-			const blob = await captureWatermarkedPng(map, details, 'square');
+			const blob = await captureWatermarkedPng(map, details, 'social');
 			playShutter();
 
+			const orientation = computeCaptureRect(window.innerWidth, window.innerHeight).orientation;
 			const filename =
 				[
 					'infoclimat',
@@ -73,7 +75,7 @@
 					formatUtcStamp(run),
 					formatLeadTimeForFilename(run, currentTime),
 					formatISOWithoutTimezone(currentTime),
-					'square'
+					orientation === 'landscape' ? 'paysage' : 'portrait'
 				].join('_') + '.png';
 
 			const file = new File([blob], filename, { type: 'image/png' });
