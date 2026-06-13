@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { computeCaptureRect } from '$lib/capture-geometry';
+import { computeCaptureRect, computeSourceCrop } from '$lib/capture-geometry';
 
 describe('computeCaptureRect', () => {
 	it('écran large → paysage 4:3 borné par la hauteur, centré horizontalement', () => {
@@ -42,5 +42,28 @@ describe('computeCaptureRect', () => {
 		const r = computeCaptureRect(1280, 720);
 		expect(r.x + r.w / 2).toBeCloseTo(640, 5);
 		expect(r.y + r.h / 2).toBeCloseTo(360, 5);
+	});
+});
+
+describe('computeSourceCrop', () => {
+	it('dpr=1 → identité (canvas = viewport)', () => {
+		const c = computeSourceCrop({ x: 100, y: 50, w: 400, h: 300 }, 1000, 800, 1000, 800);
+		expect(c).toEqual({ sx: 100, sy: 50, sw: 400, sh: 300 });
+	});
+
+	it('dpr=2 → doublement des coordonnées', () => {
+		const c = computeSourceCrop({ x: 100, y: 50, w: 400, h: 300 }, 1000, 800, 2000, 1600);
+		expect(c).toEqual({ sx: 200, sy: 100, sw: 800, sh: 600 });
+	});
+
+	it('rectangle décalé, échelles X/Y distinctes', () => {
+		const c = computeSourceCrop({ x: 10, y: 20, w: 100, h: 200 }, 500, 1000, 1000, 3000);
+		// scaleX = 2, scaleY = 3
+		expect(c).toEqual({ sx: 20, sy: 60, sw: 200, sh: 600 });
+	});
+
+	it('arrondit au pixel entier', () => {
+		const c = computeSourceCrop({ x: 10.4, y: 10.6, w: 100.5, h: 100.4 }, 1000, 1000, 1000, 1000);
+		expect(c).toEqual({ sx: 10, sy: 11, sw: 101, sh: 100 });
 	});
 });

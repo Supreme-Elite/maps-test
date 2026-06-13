@@ -36,3 +36,32 @@ export function computeCaptureRect(vw: number, vh: number): CaptureRect {
 
 	return { x: (vw - w) / 2, y: (vh - h) / 2, w, h, orientation };
 }
+
+export interface SourceCrop {
+	sx: number;
+	sy: number;
+	sw: number;
+	sh: number;
+}
+
+/**
+ * Met à l'échelle un rectangle exprimé en px CSS du viewport vers les px du
+ * canvas source (qui couvre tout le viewport). Coordonnées arrondies pour un
+ * découpage pixel entier via `drawImage`.
+ */
+export function computeSourceCrop(
+	rect: { x: number; y: number; w: number; h: number },
+	viewportW: number,
+	viewportH: number,
+	sourceW: number,
+	sourceH: number
+): SourceCrop {
+	const scaleX = sourceW / viewportW;
+	const scaleY = sourceH / viewportH;
+	return {
+		sx: Math.round(rect.x * scaleX),
+		sy: Math.round(rect.y * scaleY),
+		sw: Math.round(rect.w * scaleX),
+		sh: Math.round(rect.h * scaleY)
+	};
+}
