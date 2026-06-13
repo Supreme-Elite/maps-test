@@ -1,3 +1,5 @@
+import { computeSourceCrop } from '$lib/capture-geometry';
+
 import type { Map as MaplibreMap } from 'maplibre-gl';
 
 export interface PngLegendEntry {
@@ -21,8 +23,6 @@ export interface PngWatermarkDetails {
 		entries: PngLegendEntry[];
 	};
 }
-
-export type PngExportFormat = 'current-view' | 'social';
 
 type PngWatermarkRenderDetails = PngWatermarkDetails & {
 	logo?: HTMLImageElement;
@@ -217,54 +217,40 @@ const drawWatermark = (
 	ctx.restore();
 };
 
+export interface PngCaptureRegion {
+	/** px CSS dans le repère viewport (origine en haut à gauche) */
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+	orientation: 'landscape' | 'portrait';
+	/** dimensions CSS du viewport — le canvas MapLibre les couvre entièrement */
+	viewportW: number;
+	viewportH: number;
+}
+
 export const captureWatermarkedPng = async (
 	map: MaplibreMap,
 	details: PngWatermarkDetails,
-	format: PngExportFormat = 'current-view'
+	region: PngCaptureRegion
 ): Promise<Blob> => {
 	const source = map.getCanvas();
-	const sourceWidth = source.width;
-	const sourceHeight = source.height;
+	const { sx, sy, sw, sh } = computeSourceCrop(
+		region,
+		region.viewportW,
+		region.viewportH,
+		source.width,
+		source.height
+	);
 
+	const landscape = region.orientation === 'landscape';
 	const canvas = document.createElement('canvas');
+	canvas.width = landscape ? 1440 : 1080;
+	canvas.height = landscape ? 1080 : 1440;
 
-	if (format === 'social') {
-		// Plus grand rectangle 4:3 (paysage) / 3:4 (portrait) centré dans le
-		// canvas source — même règle que computeCaptureRect côté overlay, donc
-		// le PNG correspond à la zone cadrée.
-		const landscape = sourceWidth >= sourceHeight;
-		const targetRatio = landscape ? 4 / 3 : 3 / 4;
-
-		let cropW: number;
-		let cropH: number;
-		if (sourceWidth / sourceHeight > targetRatio) {
-			cropH = sourceHeight;
-			cropW = Math.round(cropH * targetRatio);
-		} else {
-			cropW = sourceWidth;
-			cropH = Math.round(cropW / targetRatio);
-		}
-		const sx = Math.round((sourceWidth - cropW) / 2);
-		const sy = Math.round((sourceHeight - cropH) / 2);
-
-		canvas.width = landscape ? 1440 : 1080;
-		canvas.height = landscape ? 1080 : 1440;
-
-		const ctx = canvas.getContext('2d');
-		if (!ctx) throw new Error('2D canvas context unavailable');
-		ctx.drawImage(source, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
-		drawWatermark(ctx, canvas.width, canvas.height, {
-			...details,
-			logo: await loadInfoclimatLogo()
-		});
-		return blobFromCanvas(canvas, 'image/png');
-	}
-
-	canvas.width = sourceWidth;
-	canvas.height = sourceHeight;
 	const ctx = canvas.getContext('2d');
 	if (!ctx) throw new Error('2D canvas context unavailable');
-	ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+	ctx.drawImage(source, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 	drawWatermark(ctx, canvas.width, canvas.height, {
 		...details,
 		logo: await loadInfoclimatLogo()
