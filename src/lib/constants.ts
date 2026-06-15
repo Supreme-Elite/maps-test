@@ -216,6 +216,7 @@ export const MODEL_SELECTOR_GROUPS = [
 	{
 		label: 'DWD Germany',
 		domains: [
+			{ value: 'dwd_icon', label: 'DWD ICON Global' },
 			{ value: 'dwd_icon_eu', label: 'DWD ICON EU' },
 			{ value: 'dwd_icon_d2', label: 'DWD ICON D2' }
 		]
@@ -279,6 +280,7 @@ export const MODEL_DESCRIPTIONS: Record<string, string> = {
 	ecmwf_ifs: 'ECMWF (Europe) · global · référence moyenne échéance · ~15 j',
 	ecmwf_ifs025: 'ECMWF (Europe) · global 0,25° · référence fiable · ~15 j',
 	ecmwf_aifs025_single: 'ECMWF · modèle IA (AIFS) · global 0,25° · ~15 j',
+	dwd_icon: 'DWD (Allemagne) · global ~13 km · échéance ~7,5 j',
 	dwd_icon_d2: 'DWD (Allemagne) · ~2 km, Europe centrale · échéance ~2 j',
 	dwd_icon_eu: 'DWD (Allemagne) · ~7 km, Europe · échéance ~5 j',
 	meteoswiss_icon_ch1: 'MeteoSwiss (Suisse) · ~1 km, Alpes/Suisse · échéance ~33 h',

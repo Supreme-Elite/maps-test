@@ -14,6 +14,7 @@ const EXPECTED_ORDER = [
 	'arome_om_ncaledonie',
 	'meteofrance_arpege_europe',
 	'meteofrance_arpege_world025',
+	'dwd_icon',
 	'dwd_icon_eu',
 	'dwd_icon_d2',
 	'meteoswiss_icon_ch1',
