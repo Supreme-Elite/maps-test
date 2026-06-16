@@ -1,3 +1,8 @@
+import {
+	type Feature,
+	type FilterSpecification,
+	featureFilter
+} from '@maplibre/maplibre-gl-style-spec';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -315,7 +320,7 @@ describe('buildGridDecimationFilter (grille régulière)', () => {
 		expect(kept).toBeLessThan(200);
 	});
 
-	it('élague l\'axe latitude (2D AND) — id=1121 (ligne 1, col 0) rejeté au zoom 2', () => {
+	it("élague l'axe latitude (2D AND) — id=1121 (ligne 1, col 0) rejeté au zoom 2", () => {
 		// i = 1121 % 1121 = 0 (multiple de strideX) ; j = 1 (non-multiple de strideY > 1).
 		expect(evalFilter(filter, { id: 1121, zoom: 2 })).toBe(false);
 	});
@@ -336,5 +341,34 @@ describe('buildGridDecimationFilter (grille gaussienne → repli 1D)', () => {
 
 	it('garde un id multiple du stride', () => {
 		expect(evalFilter(filter, { id: 4, zoom: 5 })).toBe(true);
+	});
+});
+
+/**
+ * Garde-fou runtime : on compile le filtre avec le VRAI moteur d'expressions de
+ * MapLibre (`featureFilter` du style-spec, le même que le rendu utilise) pour
+ * verrouiller le seul point que `evalFilter` ne peut pas garantir — que MapLibre
+ * accepte `['step', ['zoom'], …]` + `['id']` dans un filtre — et qu'il évalue
+ * comme prévu. Sans ça, la décimation par zoom resterait une hypothèse non testée.
+ */
+describe('buildGridDecimationFilter — compatibilité moteur MapLibre (featureFilter)', () => {
+	const geom = { nx: 1121, ny: 717, dxDeg: 0.025, dyDeg: 0.025, refLat: 46, gaussian: false };
+	const filter = buildGridDecimationFilter(geom, [2, 12], 48);
+	const compiled = featureFilter(filter as FilterSpecification);
+	const feat = (id: number): Feature => ({ id, type: 1, properties: {} });
+
+	it('MapLibre accepte le filtre (compile sans géométrie requise)', () => {
+		expect(compiled.needGeometry).toBe(false);
+	});
+
+	it('évalue comme evalFilter (zoom 2 : id0 gardé, id1 et id1121 rejetés)', () => {
+		expect(compiled.filter({ zoom: 2 }, feat(0))).toBe(true);
+		expect(compiled.filter({ zoom: 2 }, feat(1))).toBe(false);
+		expect(compiled.filter({ zoom: 2 }, feat(1121))).toBe(false);
+	});
+
+	it('densifie au zoom (zoom 12 : tous gardés, stride 1)', () => {
+		expect(compiled.filter({ zoom: 12 }, feat(1))).toBe(true);
+		expect(compiled.filter({ zoom: 12 }, feat(1121))).toBe(true);
 	});
 });
