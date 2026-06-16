@@ -297,6 +297,15 @@ describe('buildGridValueLabelExpr', () => {
 			{ 'max-fraction-digits': 0 }
 		]);
 	});
+
+	it('vent m/s → km/h → number-format ×3,6, 0 décimale', () => {
+		const expr = buildGridValueLabelExpr('wind_speed_10m', 'm/s', { ...units, windSpeed: 'km/h' });
+		expect(expr).toEqual([
+			'number-format',
+			['*', ['to-number', ['get', 'value']], 3.6],
+			{ 'max-fraction-digits': 0 }
+		]);
+	});
 });
 
 describe('buildGridDecimationFilter (grille régulière)', () => {
