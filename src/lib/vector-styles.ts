@@ -216,8 +216,10 @@ export function buildGridValueLabelExpr(
 }
 
 /** Espacement écran cible (px) entre étiquettes de valeur. Le stride 2D vise cet
- *  écart dans chaque axe → grille régulière à densité ~constante à l'écran. */
-export const GRID_VALUE_TARGET_PX = 64;
+ *  écart dans chaque axe → grille régulière à densité ~constante à l'écran.
+ *  Plus petit = plus d'étiquettes. Plancher pratique ~40 px : en dessous, comme
+ *  `text-allow-overlap: true`, les libellés à 2-3 chiffres commencent à se toucher. */
+export const GRID_VALUE_TARGET_PX = 48;
 
 /** Pixels par degré de longitude en web-mercator (tuiles 512 px) au zoom donné.
  *  `x` mercator est linéaire en longitude → indépendant de la latitude. */

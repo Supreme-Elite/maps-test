@@ -298,9 +298,10 @@ const vectorGridValuesLayer = (): SlotLayer => ({
 				type: 'symbol',
 				source: sourceId,
 				'source-layer': 'grid',
-				// Masqué sous z4 : à très bas zoom le domaine entier est visible (cas le
-				// plus lourd en nœuds) et les valeurs y sont illisibles de toute façon.
-				minzoom: 4,
+				// Masqué seulement sous z3 (la décimation 2D borne déjà le nombre de
+				// nœuds, donc pas de souci de perf à bas zoom). Plus bas, les valeurs
+				// seraient illisibles.
+				minzoom: 3,
 				filter: buildGridDecimationFilter(gridGeometryOf(get(selectedDomain).grid)),
 				layout: {
 					'symbol-placement': 'point',
