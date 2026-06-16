@@ -16,22 +16,23 @@
 
 ## Structure des fichiers
 
-| Fichier | Responsabilité | Action |
-| --- | --- | --- |
-| `src/lib/stores/vector.ts` | Store persisté `gridValues` | Modifier |
-| `src/lib/constants.ts` | Défaut URL `grid_values` | Modifier |
-| `src/lib/url.ts` | Hydratation param + `grid` OR dans `getOMUrlFor` | Modifier |
-| `src/lib/vector-styles.ts` | Builders purs : stride, filtre décimation, label entier | Modifier |
-| `src/lib/layers.ts` | `SlotLayer` valeurs + helper géométrie + ajout au `vectorManager` | Modifier |
-| `src/lib/components/settings/grid-settings.svelte` | 2ᵉ switch « Valeurs aux points » | Modifier |
-| `src/lib/tests/vector-styles.test.ts` | Tests des builders purs | Modifier |
-| `src/lib/tests/url-builder.test.ts` | Test `grid` OR dans l'URL | Modifier (si présent) |
+| Fichier                                            | Responsabilité                                                    | Action                |
+| -------------------------------------------------- | ----------------------------------------------------------------- | --------------------- |
+| `src/lib/stores/vector.ts`                         | Store persisté `gridValues`                                       | Modifier              |
+| `src/lib/constants.ts`                             | Défaut URL `grid_values`                                          | Modifier              |
+| `src/lib/url.ts`                                   | Hydratation param + `grid` OR dans `getOMUrlFor`                  | Modifier              |
+| `src/lib/vector-styles.ts`                         | Builders purs : stride, filtre décimation, label entier           | Modifier              |
+| `src/lib/layers.ts`                                | `SlotLayer` valeurs + helper géométrie + ajout au `vectorManager` | Modifier              |
+| `src/lib/components/settings/grid-settings.svelte` | 2ᵉ switch « Valeurs aux points »                                  | Modifier              |
+| `src/lib/tests/vector-styles.test.ts`              | Tests des builders purs                                           | Modifier              |
+| `src/lib/tests/url-builder.test.ts`                | Test `grid` OR dans l'URL                                         | Modifier (si présent) |
 
 ---
 
 ## Task 1 : Store `gridValues` + défaut URL
 
 **Files:**
+
 - Modify: `src/lib/stores/vector.ts`
 - Modify: `src/lib/constants.ts:119-131` (`COMPLETE_DEFAULT_VALUES`)
 
@@ -70,6 +71,7 @@ git commit -m "feat(grid-values): store persisté gridValues + défaut URL"
 ## Task 2 : Builders purs (stride, filtre décimation, label entier)
 
 **Files:**
+
 - Modify: `src/lib/vector-styles.ts`
 - Test: `src/lib/tests/vector-styles.test.ts`
 
@@ -324,6 +326,7 @@ git commit -m "feat(grid-values): builders purs stride + filtre décimation + la
 ## Task 3 : Intégration dans le moteur de rendu (`layers.ts`)
 
 **Files:**
+
 - Modify: `src/lib/layers.ts` (imports, helper, `SlotLayer`, `vectorManager` factory)
 
 - [ ] **Step 1 : Étendre les imports**
@@ -453,13 +456,18 @@ Dans `createManagers()` (vers ligne 384), ajouter `vectorGridValuesLayer()` en d
 Dans `src/lib/url.ts`, importer `gridValues` (ligne 22) :
 
 ```ts
-import { gridValues, vectorOptions as vO, windOverlayEnabled, windOverlayLevel } from '$lib/stores/vector';
+import {
+	gridValues,
+	vectorOptions as vO,
+	windOverlayEnabled,
+	windOverlayLevel
+} from '$lib/stores/vector';
 ```
 
 Puis modifier la résolution du flag `grid` dans `getOMUrlFor` (ligne 297) :
 
 ```ts
-	const grid = vectorOverride?.grid ?? (vectorOptions.grid || get(gridValues));
+const grid = vectorOverride?.grid ?? (vectorOptions.grid || get(gridValues));
 ```
 
 (`get` est déjà importé dans `url.ts`.)
@@ -469,12 +477,12 @@ Puis modifier la résolution du flag `grid` dans `getOMUrlFor` (ligne 297) :
 Dans `urlParamsToPreferences()` (`src/lib/url.ts`), après le bloc `wind_overlay_level` (vers ligne 177), ajouter :
 
 ```ts
-	const gridValuesRaw = params.get('grid_values');
-	if (gridValuesRaw !== null) {
-		gridValues.set(gridValuesRaw === 'true');
-	} else if (get(gridValues)) {
-		url.searchParams.set('grid_values', 'true');
-	}
+const gridValuesRaw = params.get('grid_values');
+if (gridValuesRaw !== null) {
+	gridValues.set(gridValuesRaw === 'true');
+} else if (get(gridValues)) {
+	url.searchParams.set('grid_values', 'true');
+}
 ```
 
 - [ ] **Step 6 : Typecheck**
@@ -496,6 +504,7 @@ git commit -m "feat(grid-values): symbol layer valeurs sur la source-layer grid 
 ## Task 4 : Toggle UI dans la section « Grille »
 
 **Files:**
+
 - Modify: `src/lib/components/settings/grid-settings.svelte`
 
 - [ ] **Step 1 : Ajouter le 2ᵉ switch**
@@ -599,6 +608,7 @@ Run: `npm run dev`, ouvrir
 `http://localhost:5173/?domain=arome_france&variable=temperature_2m&grid_values=true`
 
 Vérifier :
+
 1. Des **valeurs entières** apparaissent aux nœuds de grille, semées (pas toutes), façon Météociel.
 2. **Dézoomer** → les valeurs se raréfient (stride plus grand) ; **zoomer** → elles se densifient. Aucune saccade prolongée à l'échelle France.
 3. Les **points orange** (toggle « Points de grille ») sont indépendants : activer l'un n'active pas l'autre.
@@ -626,6 +636,7 @@ git commit -m "docs(architecture): calque valeurs aux points de grille"
 ## Self-review (effectuée)
 
 **Couverture spec :**
+
 - Source de données (source-layer `'grid'`, pas de réseau) → Task 3.
 - Activation (store `gridValues`, param `grid_values`, `grid` OR) → Tasks 1 & 3.
 - Décimation par zoom (`step(zoom)` sur `id`, stride par domaine, lattice + repli gaussien) → Task 2 (builders) & 3 (géométrie).

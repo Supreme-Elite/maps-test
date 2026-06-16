@@ -22,7 +22,7 @@ y porte :
 
 ```js
 properties.value = Number(value.toFixed(2)); // valeur EXACTE au nœud (non interpolée)
-properties.direction = directions[index];    // si la variable est du vent
+properties.direction = directions[index]; // si la variable est du vent
 ```
 
 Référence package : `forEachPoint` → construction de la couche `'grid'` dans
@@ -43,11 +43,11 @@ Parade : **décimation par zoom** (cf. §3), à deux niveaux qui se combinent.
 
 ## Décisions de design (validées)
 
-| Sujet            | Décision                                                                 |
-| ---------------- | ------------------------------------------------------------------------ |
-| Densité          | Décimation par zoom (vrai « façon Météociel ») — clairsemé puis dense    |
-| Relation grille  | Toggle **indépendant**, décorrélé des points orange                      |
-| Format           | **Entiers**, conversion d'unité d'affichage incluse (°C/°F, km/h…)       |
+| Sujet           | Décision                                                              |
+| --------------- | --------------------------------------------------------------------- |
+| Densité         | Décimation par zoom (vrai « façon Météociel ») — clairsemé puis dense |
+| Relation grille | Toggle **indépendant**, décorrélé des points orange                   |
+| Format          | **Entiers**, conversion d'unité d'affichage incluse (°C/°F, km/h…)    |
 
 ## Architecture
 
@@ -85,10 +85,11 @@ garder si   i % strideX(zoom) == 0   ET   j % strideY(zoom) == 0
 Chaque branche du `step` est un booléen :
 
 ```js
-['all',
-  ['==', ['%', ['%', ['id'], nx], strideX], 0],
-  ['==', ['%', ['floor', ['/', ['id'], nx]], strideY], 0]
-]
+[
+	'all',
+	['==', ['%', ['%', ['id'], nx], strideX], 0],
+	['==', ['%', ['floor', ['/', ['id'], nx]], strideY], 0]
+];
 ```
 
 `strideX/strideY` sont **précalculés par domaine** à partir du pas de grille (`dx`/`dy`
@@ -113,7 +114,7 @@ déjà existant.
 - **régulières** (`RegularGrid`) et **projetées** (`ProjectionGrid`) : `id = j·nx + i`
   avec `nx` constant → lattice propre, traitement first-class.
 - **gaussiennes** (`GaussianGrid`, largeur de ligne variable `nxOf(y)`, `index =
-  integral(y) + x`) : l'extraction `i = id % nx` est invalide. Repli sur une décimation
+integral(y) + x`) : l'extraction `i = id % nx` est invalide. Repli sur une décimation
   1D `id % stride` (scatter régulier, acceptable). Le set exact de domaines concernés
   sera vérifié au plan (lire `domain.grid.type`).
 
