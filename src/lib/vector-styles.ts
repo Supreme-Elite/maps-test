@@ -187,6 +187,93 @@ export function buildContourLabelExpr(
 	return ['number-format', scaled, { 'max-fraction-digits': 1 }];
 }
 
+// ── Calque « valeurs aux points de grille » (façon Météociel) ───────────────
+
+/** Espacement écran cible entre deux étiquettes de valeur (px). Le stride vise
+ *  cet écart ; la collision MapLibre élague le résidu. */
+export const GRID_VALUE_TARGET_PX = 48;
+
+/** Pixels par degré de longitude en web-mercator (tuiles 512 px) au zoom donné.
+ *  `x` mercator est linéaire en longitude → indépendant de la latitude. */
+export const pxPerDegLon = (zoom: number): number => (512 * Math.pow(2, zoom)) / 360;
+
+/** Stride d'échantillonnage (entier ≥ 1) pour viser `targetPx` à l'écran.
+ *  `stepDeg` = pas de la grille sur l'axe considéré ; `pxPerDeg` = densité écran. */
+export const computeStride = (stepDeg: number, pxPerDeg: number, targetPx: number): number => {
+	const screenStep = pxPerDeg * stepDeg;
+	if (!(screenStep > 0)) return 1;
+	return Math.max(1, Math.round(targetPx / screenStep));
+};
+
+/** Géométrie de grille nécessaire à la décimation, dérivée du domaine. */
+export interface GridGeometry {
+	nx: number;
+	ny: number;
+	/** Pas longitude (degrés), dérivé des bornes / nx. */
+	dxDeg: number;
+	/** Pas latitude (degrés), dérivé des bornes / ny. */
+	dyDeg: number;
+	/** Latitude de référence (centre) pour la correction mercator du stride Y. */
+	refLat: number;
+	/** Grille gaussienne (largeur de ligne variable) → repli décimation 1D. */
+	gaussian: boolean;
+}
+
+/**
+ * Champ texte des étiquettes de valeur — **entier**, dans l'unité d'affichage.
+ * Même conversion affine que `buildContourLabelExpr`, mais arrondi à l'entier
+ * (`max-fraction-digits: 0`). Sans conversion (unité d'affichage = unité de
+ * base), on arrondit la valeur brute via `['round', …]`.
+ */
+export function buildGridValueLabelExpr(
+	variable: string,
+	baseUnit: string,
+	units: UnitPreferences
+): maplibregl.ExpressionSpecification {
+	const round = (n: number): number => Math.round(n * 1e6) / 1e6;
+	const offset = round(convertValue(0, baseUnit, units, variable));
+	const factor = round(
+		convertValue(1, baseUnit, units, variable) - convertValue(0, baseUnit, units, variable)
+	);
+	if (factor === 1 && offset === 0) return ['to-string', ['round', VALUE]];
+	const scaled: maplibregl.ExpressionSpecification =
+		offset === 0 ? ['*', VALUE, factor] : ['+', ['*', VALUE, factor], offset];
+	return ['number-format', scaled, { 'max-fraction-digits': 0 }];
+}
+
+/**
+ * Filtre de décimation par zoom sur l'`id` du point de grille (`id = j·nx + i`).
+ * Structuré en `['step', ['zoom'], …]` : c'est la seule forme où `['zoom']` est
+ * accepté dans un filtre MapLibre (premier argument d'un `step` de tête). Chaque
+ * branche garde un sous-réseau régulier dont le pas vise `targetPx` à l'écran.
+ * Les grilles gaussiennes (largeur de ligne variable) n'ont pas d'`id = j·nx+i`
+ * exploitable → repli sur une décimation 1D `id % stride`.
+ */
+export function buildGridDecimationFilter(
+	geom: GridGeometry,
+	zoomRange: [number, number] = [2, 12],
+	targetPx: number = GRID_VALUE_TARGET_PX
+): maplibregl.FilterSpecification {
+	const branch = (zoom: number): maplibregl.ExpressionSpecification => {
+		const pxLon = pxPerDegLon(zoom);
+		const sx = computeStride(geom.dxDeg, pxLon, targetPx);
+		if (geom.gaussian) {
+			return ['==', ['%', ['id'], sx], 0];
+		}
+		const pxLat = pxLon / Math.cos((geom.refLat * Math.PI) / 180);
+		const sy = computeStride(geom.dyDeg, pxLat, targetPx);
+		const i: maplibregl.ExpressionSpecification = ['%', ['id'], geom.nx];
+		const j: maplibregl.ExpressionSpecification = ['floor', ['/', ['id'], geom.nx]];
+		return ['all', ['==', ['%', i, sx], 0], ['==', ['%', j, sy], 0]];
+	};
+	const [zMin, zMax] = zoomRange;
+	const stops: unknown[] = ['step', ['zoom'], branch(zMin)];
+	for (let z = zMin + 1; z <= zMax; z++) {
+		stops.push(z, branch(z));
+	}
+	return stops as unknown as maplibregl.FilterSpecification;
+}
+
 /** Couleur des flèches : plus grand seuil testé en premier, base en dernier. */
 export function buildArrowColorExpr(style: ArrowStyle, dark: boolean): ColorOrExpr {
 	const base = style.levels.find((l) => l.minSpeed === 0);

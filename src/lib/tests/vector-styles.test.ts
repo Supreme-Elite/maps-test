@@ -6,12 +6,16 @@ import {
 	buildContourColorExpr,
 	buildContourLabelExpr,
 	buildContourWidthExpr,
+	buildGridDecimationFilter,
+	buildGridValueLabelExpr,
+	computeStride,
 	defaultArrowStyle,
 	defaultContourStyle,
 	deriveDisplayedWindLevel,
 	hexToRgbaString,
 	isWindVariable,
 	parseRgbaOpacity,
+	pxPerDegLon,
 	rgbaStringToHex
 } from '$lib/vector-styles';
 
@@ -210,5 +214,127 @@ describe('deriveDisplayedWindLevel', () => {
 
 	it('renvoie null quand le modèle ne publie aucun vent', () => {
 		expect(deriveDisplayedWindLevel('temperature_2m', ['cape', 'precipitation'])).toBe(null);
+	});
+});
+
+/** Évaluateur minimal du sous-ensemble d'expressions émis par le filtre de
+ *  décimation. `ctx` fournit `id` (id du point) et `zoom` (niveau MapLibre). */
+function evalFilter(expr: unknown, ctx: { id: number; zoom: number }): unknown {
+	if (!Array.isArray(expr)) return expr;
+	const [op, ...args] = expr as [string, ...unknown[]];
+	switch (op) {
+		case 'id':
+			return ctx.id;
+		case 'zoom':
+			return ctx.zoom;
+		case '%':
+			return (evalFilter(args[0], ctx) as number) % (evalFilter(args[1], ctx) as number);
+		case '/':
+			return (evalFilter(args[0], ctx) as number) / (evalFilter(args[1], ctx) as number);
+		case 'floor':
+			return Math.floor(evalFilter(args[0], ctx) as number);
+		case '==':
+			return evalFilter(args[0], ctx) === evalFilter(args[1], ctx);
+		case 'all':
+			return args.every((a) => Boolean(evalFilter(a, ctx)));
+		case 'step': {
+			const input = evalFilter(args[0], ctx) as number;
+			let result = args[1];
+			for (let i = 2; i + 1 < args.length; i += 2) {
+				if (input >= (args[i] as number)) result = args[i + 1];
+				else break;
+			}
+			return evalFilter(result, ctx);
+		}
+		default:
+			throw new Error(`Unsupported filter op: ${op}`);
+	}
+}
+
+describe('computeStride', () => {
+	it('grille fine (0,025°) très dézoomée → stride élevé', () => {
+		const stride = computeStride(0.025, pxPerDegLon(2), 48);
+		expect(stride).toBeGreaterThan(100);
+	});
+	it('grille fine (0,025°) fortement zoomée → stride 1', () => {
+		expect(computeStride(0.025, pxPerDegLon(12), 48)).toBe(1);
+	});
+	it('grille 0,25° au zoom 5 → 4', () => {
+		expect(computeStride(0.25, pxPerDegLon(5), 48)).toBe(4);
+	});
+	it('jamais inférieur à 1', () => {
+		expect(computeStride(10, pxPerDegLon(12), 48)).toBe(1);
+	});
+});
+
+describe('buildGridValueLabelExpr', () => {
+	const units = {
+		temperature: '°C',
+		precipitation: 'mm',
+		windSpeed: 'km/h',
+		distance: 'm',
+		geopotential: 'gpm'
+	} as const;
+
+	it('°C → °C (identité) → to-string(round(value))', () => {
+		const expr = buildGridValueLabelExpr('temperature_2m', '°C', units);
+		expect(expr).toEqual(['to-string', ['round', ['to-number', ['get', 'value']]]]);
+	});
+
+	it('°C → °F → number-format affine, 0 décimale', () => {
+		const expr = buildGridValueLabelExpr('temperature_2m', '°C', {
+			...units,
+			temperature: '°F'
+		});
+		expect(expr).toEqual([
+			'number-format',
+			['+', ['*', ['to-number', ['get', 'value']], 1.8], 32],
+			{ 'max-fraction-digits': 0 }
+		]);
+	});
+});
+
+describe('buildGridDecimationFilter (grille régulière)', () => {
+	const geom = { nx: 1121, ny: 717, dxDeg: 0.025, dyDeg: 0.025, refLat: 46, gaussian: false };
+	const filter = buildGridDecimationFilter(geom, [2, 12], 48);
+
+	it('a la forme step(zoom)', () => {
+		expect((filter as unknown[])[0]).toBe('step');
+		expect((filter as unknown[])[1]).toEqual(['zoom']);
+	});
+
+	it('au zoom 12, garde le nœud id=1 (stride 1)', () => {
+		expect(evalFilter(filter, { id: 1, zoom: 12 })).toBe(true);
+	});
+
+	it('au zoom 2, élague la grande majorité des nœuds', () => {
+		let kept = 0;
+		for (let id = 0; id < 5000; id++) {
+			if (evalFilter(filter, { id, zoom: 2 })) kept++;
+		}
+		expect(kept).toBeLessThan(200);
+	});
+
+	it('élague l\'axe latitude (2D AND) — id=1121 (ligne 1, col 0) rejeté au zoom 2', () => {
+		// i = 1121 % 1121 = 0 (multiple de strideX) ; j = 1 (non-multiple de strideY > 1).
+		expect(evalFilter(filter, { id: 1121, zoom: 2 })).toBe(false);
+	});
+});
+
+describe('buildGridDecimationFilter (grille gaussienne → repli 1D)', () => {
+	const geom = { nx: 1440, ny: 721, dxDeg: 0.25, dyDeg: 0.25, refLat: 0, gaussian: true };
+	const filter = buildGridDecimationFilter(geom, [2, 12], 48);
+
+	it("décime sur l'id seul (pas de garde lattice 2D)", () => {
+		expect(evalFilter(filter, { id: 0, zoom: 5 })).toBe(true);
+	});
+
+	it('rejette un id non-multiple du stride à bas zoom', () => {
+		// zoom 5 : stride 1D = 4 (cf. computeStride(0.25, pxPerDegLon(5), 48)).
+		expect(evalFilter(filter, { id: 1, zoom: 5 })).toBe(false);
+	});
+
+	it('garde un id multiple du stride', () => {
+		expect(evalFilter(filter, { id: 4, zoom: 5 })).toBe(true);
 	});
 });
