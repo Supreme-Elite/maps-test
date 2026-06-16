@@ -20,6 +20,15 @@ Client SvelteKit qui rend des OMfiles via MapLibre GL — l'intégralité du ren
 - **Diaporama / playback** — animation pré-rendue avec FPS configurable (4–15 fps), capture côté canvas via `preserveDrawingBuffer`.
 - **UI 100 % française.**
 
+### Dépendances forkées
+
+Deux paquets `@openmeteo/*` sont consommés depuis des forks maison (voir `package.json`), en attendant l'upstream :
+
+- **`@openmeteo/file-reader` → `npm:@cm3r/file-reader`** — cache de l'en-tête (HEAD) par URL pour accélérer le scrubbing (le reader officiel refait HEAD + trailer à chaque fichier). PR proposée upstream : [typescript-omfiles#93](https://github.com/open-meteo/typescript-omfiles/pull/93).
+- **`@openmeteo/weather-map-layer` → `github:cmer81/weather-map-layer#<sha>`** (fork, branche `feat/grid-global-id`) — les points de la source-layer `grid` portent désormais un **`id` global stable** (`globalIndex = rangée_globale·nx + colonne_globale`) au lieu de l'index local de la sous-grille rognée aux tuiles. Sans ça, un même nœud changeait d'`id` selon les tuiles chargées (`nxClip` variable) → l'index de symboles inter-tuiles de MapLibre ne pouvait plus l'apparier (étiquettes qui se replacent au pan) et tout décodage `(i, j)` côté client produisait des bandes horizontales sur les domaines monde. Le fork **découple** l'`id` (global, pour MapLibre) de l'index local (qui sert encore à lire la valeur). Patch minimal : `src/grids/{regular,projected}.ts` + `src/utils/grid-points.ts`. C'est ce qui permet la couche « valeurs aux points de grille » figée (voir `## Architecture`). La dépendance est **épinglée par SHA** (immuable) ; le `prepare` du paquet rebuild le `dist` à l'install.
+
+  Synchroniser avec l'amont : sur le fork, `git fetch upstream && git rebase upstream/main` (remote `upstream` = `open-meteo/weather-map-layer`), `git push --force-with-lease`, puis ré-épingler le nouveau SHA ici. Pour repasser à l'upstream officiel : restaurer `github:open-meteo/weather-map-layer#<sha>` une fois le `globalIndex` mergé en amont.
+
 ## Démarrage
 
 ```bash

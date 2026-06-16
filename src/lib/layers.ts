@@ -262,9 +262,10 @@ const vectorContourLabelsLayer = (): SlotLayer => ({
 	}
 });
 
-/** Géométrie de grille du domaine, dérivée des bornes (agnostique du type de
- *  grille : régulière, projetée ou gaussienne). Le pas en degrés vient des
- *  bornes / (n-1), donc valable même pour une grille projetée (dx/dy en mètres). */
+/** Géométrie de grille du domaine, dérivée des bornes (agnostique du type :
+ *  régulière, projetée ou gaussienne). `nx`/`ny` sont les dimensions **globales**
+ *  du domaine (pour décoder l'`id` global stable en `(i, j)`) ; le pas en degrés
+ *  vient des bornes / (n − 1), valable même pour une grille projetée. */
 const gridGeometryOf = (grid: Parameters<typeof GridFactory.create>[0]): GridGeometry => {
 	const [minLon, minLat, maxLon, maxLat] = GridFactory.create(grid).getBounds();
 	const nx = grid.nx;
@@ -285,14 +286,22 @@ const vectorGridValuesLayer = (): SlotLayer => ({
 	commitOpacity: 1,
 	add: (map, sourceId, layerId, beforeLayer) => {
 		if (!get(gridValues)) return;
-		const geom = gridGeometryOf(get(selectedDomain).grid);
+		// Décimation **2D** sur l'`id` GLOBAL stable (émis par le fork du package) :
+		// `i % sx == 0 && j % sy == 0` → sous-réseau régulier fixe, indépendant du
+		// viewport. Avec `text-allow-overlap: true` (aucune collision), les étiquettes
+		// sont épinglées aux nœuds : un pan ne fait que les translater → zéro churn,
+		// zéro recalcul. (Sans le fork, l'`id` était ré-indexé par sous-grille rognée
+		// → `floor(id/nx)` donnait des bandes horizontales + churn au pan.)
 		map.addLayer(
 			{
 				id: layerId,
 				type: 'symbol',
 				source: sourceId,
 				'source-layer': 'grid',
-				filter: buildGridDecimationFilter(geom),
+				// Masqué sous z4 : à très bas zoom le domaine entier est visible (cas le
+				// plus lourd en nœuds) et les valeurs y sont illisibles de toute façon.
+				minzoom: 4,
+				filter: buildGridDecimationFilter(gridGeometryOf(get(selectedDomain).grid)),
 				layout: {
 					'symbol-placement': 'point',
 					'text-field': buildGridValueLabelExpr(
@@ -303,8 +312,10 @@ const vectorGridValuesLayer = (): SlotLayer => ({
 					),
 					'text-font': ['Noto Sans Regular'],
 					'text-size': 11,
-					'text-allow-overlap': false,
-					'text-ignore-placement': false,
+					// Grille déjà régulière et espacée par la décimation → on désactive la
+					// collision : placement déterministe, figé, aucun recalcul au pan/zoom.
+					'text-allow-overlap': true,
+					'text-ignore-placement': true,
 					'text-padding': 2
 				},
 				paint: {

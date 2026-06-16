@@ -189,36 +189,6 @@ export function buildContourLabelExpr(
 
 // ── Calque « valeurs aux points de grille » (façon Météociel) ───────────────
 
-/** Espacement écran cible entre deux étiquettes de valeur (px). Le stride vise
- *  cet écart ; la collision MapLibre élague le résidu. */
-export const GRID_VALUE_TARGET_PX = 48;
-
-/** Pixels par degré de longitude en web-mercator (tuiles 512 px) au zoom donné.
- *  `x` mercator est linéaire en longitude → indépendant de la latitude. */
-export const pxPerDegLon = (zoom: number): number => (512 * Math.pow(2, zoom)) / 360;
-
-/** Stride d'échantillonnage (entier ≥ 1) pour viser `targetPx` à l'écran.
- *  `stepDeg` = pas de la grille sur l'axe considéré ; `pxPerDeg` = densité écran. */
-export const computeStride = (stepDeg: number, pxPerDeg: number, targetPx: number): number => {
-	const screenStep = pxPerDeg * stepDeg;
-	if (!(screenStep > 0)) return 1;
-	return Math.max(1, Math.round(targetPx / screenStep));
-};
-
-/** Géométrie de grille nécessaire à la décimation, dérivée du domaine. */
-export interface GridGeometry {
-	nx: number;
-	ny: number;
-	/** Pas longitude (degrés), dérivé des bornes / nx. */
-	dxDeg: number;
-	/** Pas latitude (degrés), dérivé des bornes / ny. */
-	dyDeg: number;
-	/** Latitude de référence (centre) pour la correction mercator du stride Y. */
-	refLat: number;
-	/** Grille gaussienne (largeur de ligne variable) → repli décimation 1D. */
-	gaussian: boolean;
-}
-
 /**
  * Champ texte des étiquettes de valeur — **entier**, dans l'unité d'affichage.
  * Même conversion affine que `buildContourLabelExpr`, mais arrondi à l'entier
@@ -241,13 +211,53 @@ export function buildGridValueLabelExpr(
 	return ['number-format', scaled, { 'max-fraction-digits': 0 }];
 }
 
+/** Espacement écran cible (px) entre étiquettes de valeur. Le stride 2D vise cet
+ *  écart dans chaque axe → grille régulière à densité ~constante à l'écran. */
+export const GRID_VALUE_TARGET_PX = 64;
+
+/** Pixels par degré de longitude en web-mercator (tuiles 512 px) au zoom donné.
+ *  `x` mercator est linéaire en longitude → indépendant de la latitude. */
+export const pxPerDegLon = (zoom: number): number => (512 * Math.pow(2, zoom)) / 360;
+
+/** Stride d'échantillonnage (entier ≥ 1) pour viser `targetPx` à l'écran.
+ *  `stepDeg` = pas de la grille sur l'axe considéré ; `pxPerDeg` = densité écran. */
+export const computeStride = (stepDeg: number, pxPerDeg: number, targetPx: number): number => {
+	const screenStep = pxPerDeg * stepDeg;
+	if (!(screenStep > 0)) return 1;
+	return Math.max(1, Math.round(targetPx / screenStep));
+};
+
+/** Géométrie de grille nécessaire à la décimation 2D, dérivée du domaine. */
+export interface GridGeometry {
+	/** Largeur **globale** de la grille (`grid.nx`), pour décoder `id → (i, j)`. */
+	nx: number;
+	ny: number;
+	/** Pas longitude (degrés), bornes / (nx − 1). */
+	dxDeg: number;
+	/** Pas latitude (degrés), bornes / (ny − 1). */
+	dyDeg: number;
+	/** Latitude de référence (centre) pour la correction mercator du stride Y. */
+	refLat: number;
+	/** Grille gaussienne → pas d'`id = j·nx+i` exploitable → repli décimation 1D. */
+	gaussian: boolean;
+}
+
 /**
- * Filtre de décimation par zoom sur l'`id` du point de grille (`id = j·nx + i`).
- * Structuré en `['step', ['zoom'], …]` : c'est la seule forme où `['zoom']` est
- * accepté dans un filtre MapLibre (premier argument d'un `step` de tête). Chaque
- * branche garde un sous-réseau régulier dont le pas vise `targetPx` à l'écran.
- * Les grilles gaussiennes (largeur de ligne variable) n'ont pas d'`id = j·nx+i`
- * exploitable → repli sur une décimation 1D `id % stride`.
+ * Filtre de **décimation 2D** sur l'`id` GLOBAL du point de grille
+ * (`id = j·nx + i`, émis de façon stable par le fork du package — cf.
+ * `GridPoint.globalIndex`). Garde un **sous-réseau régulier fixe**
+ * `i % strideX == 0 && j % strideY == 0`, indépendant du viewport → grille figée.
+ * Combiné à `text-allow-overlap: true` (aucune collision), les étiquettes sont
+ * épinglées aux nœuds : un pan ne fait que les translater, zéro recalcul.
+ *
+ * Structuré en `['step', ['zoom'], …]` (seule forme acceptant `['zoom']` en filtre
+ * MapLibre), à **paliers entiers** : le stride ne change qu'aux zooms entiers, qui
+ * coïncident avec les rechargements de tuiles → pas de recalcul en cours de zoom.
+ * Les grilles gaussiennes (largeur de ligne variable, pas d'`id = j·nx+i`) →
+ * repli décimation 1D `id % strideX`.
+ *
+ * **Prérequis** : `id` global stable. Sans le fork (id ré-indexé par sous-grille
+ * rognée, `nxClip` variable), `floor(id/nx)` produirait des bandes horizontales.
  */
 export function buildGridDecimationFilter(
 	geom: GridGeometry,
@@ -266,14 +276,8 @@ export function buildGridDecimationFilter(
 		const j: maplibregl.ExpressionSpecification = ['floor', ['/', ['id'], geom.nx]];
 		return ['all', ['==', ['%', i, sx], 0], ['==', ['%', j, sy], 0]];
 	};
-	// Paliers fins (¼ de zoom) : le stride est figé sur chaque palier, donc en
-	// zoomant dans un palier l'espacement écran croît (étiquettes qui s'éclaircissent)
-	// avant de se resserrer au palier suivant. Avec des paliers entiers la densité
-	// varie d'un facteur 2 dans un palier (effet « pop » visible) ; à ¼ de zoom la
-	// variation tombe à 2^0,25 ≈ 1,19 — imperceptible. (Itération par compteur entier
-	// pour éviter la dérive flottante et garantir un dernier stop = zMax exact.)
 	const [zMin, zMax] = zoomRange;
-	const ZOOM_STEP = 0.25;
+	const ZOOM_STEP = 1;
 	const steps = Math.round((zMax - zMin) / ZOOM_STEP);
 	const stops: unknown[] = ['step', ['zoom'], branch(zMin)];
 	for (let k = 1; k <= steps; k++) {

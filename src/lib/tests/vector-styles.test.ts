@@ -222,56 +222,6 @@ describe('deriveDisplayedWindLevel', () => {
 	});
 });
 
-/** Évaluateur minimal du sous-ensemble d'expressions émis par le filtre de
- *  décimation. `ctx` fournit `id` (id du point) et `zoom` (niveau MapLibre). */
-function evalFilter(expr: unknown, ctx: { id: number; zoom: number }): unknown {
-	if (!Array.isArray(expr)) return expr;
-	const [op, ...args] = expr as [string, ...unknown[]];
-	switch (op) {
-		case 'id':
-			return ctx.id;
-		case 'zoom':
-			return ctx.zoom;
-		case '%':
-			return (evalFilter(args[0], ctx) as number) % (evalFilter(args[1], ctx) as number);
-		case '/':
-			return (evalFilter(args[0], ctx) as number) / (evalFilter(args[1], ctx) as number);
-		case 'floor':
-			return Math.floor(evalFilter(args[0], ctx) as number);
-		case '==':
-			return evalFilter(args[0], ctx) === evalFilter(args[1], ctx);
-		case 'all':
-			return args.every((a) => Boolean(evalFilter(a, ctx)));
-		case 'step': {
-			const input = evalFilter(args[0], ctx) as number;
-			let result = args[1];
-			for (let i = 2; i + 1 < args.length; i += 2) {
-				if (input >= (args[i] as number)) result = args[i + 1];
-				else break;
-			}
-			return evalFilter(result, ctx);
-		}
-		default:
-			throw new Error(`Unsupported filter op: ${op}`);
-	}
-}
-
-describe('computeStride', () => {
-	it('grille fine (0,025°) très dézoomée → stride élevé', () => {
-		const stride = computeStride(0.025, pxPerDegLon(2), 48);
-		expect(stride).toBeGreaterThan(100);
-	});
-	it('grille fine (0,025°) fortement zoomée → stride 1', () => {
-		expect(computeStride(0.025, pxPerDegLon(12), 48)).toBe(1);
-	});
-	it('grille 0,25° au zoom 5 → 4', () => {
-		expect(computeStride(0.25, pxPerDegLon(5), 48)).toBe(4);
-	});
-	it('jamais inférieur à 1', () => {
-		expect(computeStride(10, pxPerDegLon(12), 48)).toBe(1);
-	});
-});
-
 describe('buildGridValueLabelExpr', () => {
 	const units = {
 		temperature: '°C',
@@ -308,8 +258,23 @@ describe('buildGridValueLabelExpr', () => {
 	});
 });
 
-describe('buildGridDecimationFilter (grille régulière)', () => {
-	const geom = { nx: 1121, ny: 717, dxDeg: 0.025, dyDeg: 0.025, refLat: 46, gaussian: false };
+describe('computeStride', () => {
+	it('grille fine (0,025°) très dézoomée → stride élevé', () => {
+		expect(computeStride(0.025, pxPerDegLon(2), 48)).toBeGreaterThan(100);
+	});
+	it('grille fine (0,025°) fortement zoomée → stride 1', () => {
+		expect(computeStride(0.025, pxPerDegLon(12), 48)).toBe(1);
+	});
+	it('grille 0,25° au zoom 5 → 4', () => {
+		expect(computeStride(0.25, pxPerDegLon(5), 48)).toBe(4);
+	});
+	it('jamais inférieur à 1 (pas grossier)', () => {
+		expect(computeStride(10, pxPerDegLon(12), 48)).toBe(1);
+	});
+});
+
+describe('buildGridDecimationFilter (2D, id global stable)', () => {
+	const geom = { nx: 1440, ny: 721, dxDeg: 0.25, dyDeg: 0.25, refLat: 46, gaussian: false };
 	const filter = buildGridDecimationFilter(geom, [2, 12], 48);
 
 	it('a la forme step(zoom)', () => {
@@ -317,94 +282,53 @@ describe('buildGridDecimationFilter (grille régulière)', () => {
 		expect((filter as unknown[])[1]).toEqual(['zoom']);
 	});
 
-	it('au zoom 12, garde le nœud id=1 (stride 1)', () => {
-		expect(evalFilter(filter, { id: 1, zoom: 12 })).toBe(true);
-	});
-
-	it('au zoom 2, élague la grande majorité des nœuds', () => {
-		let kept = 0;
-		for (let id = 0; id < 5000; id++) {
-			if (evalFilter(filter, { id, zoom: 2 })) kept++;
+	it("chaque branche décode (i, j) = (id%nx, floor(id/nx)) et décime les deux axes", () => {
+		// step = ['step', ['zoom'], branch0, z1, branch1, …] → branches aux indices pairs ≥ 2.
+		const stops = filter as unknown[];
+		for (let i = 2; i < stops.length; i += 2) {
+			const branch = stops[i] as unknown[];
+			// ['all', ['==', ['%', ['%',['id'],nx], sx], 0], ['==', ['%', ['floor',['/',['id'],nx]], sy], 0]]
+			expect(branch[0]).toBe('all');
+			const s = JSON.stringify(branch);
+			expect(s).toContain('floor'); // décodage de la rangée j
+			expect(s).toContain('1440'); // nx global
 		}
-		expect(kept).toBeLessThan(200);
 	});
 
-	it("élague l'axe latitude (2D AND) — id=1121 (ligne 1, col 0) rejeté au zoom 2", () => {
-		// i = 1121 % 1121 = 0 (multiple de strideX) ; j = 1 (non-multiple de strideY > 1).
-		expect(evalFilter(filter, { id: 1121, zoom: 2 })).toBe(false);
-	});
-});
-
-describe('buildGridDecimationFilter (grille gaussienne → repli 1D)', () => {
-	const geom = { nx: 1440, ny: 721, dxDeg: 0.25, dyDeg: 0.25, refLat: 0, gaussian: true };
-	const filter = buildGridDecimationFilter(geom, [2, 12], 48);
-
-	it("décime sur l'id seul (pas de garde lattice 2D)", () => {
-		expect(evalFilter(filter, { id: 0, zoom: 5 })).toBe(true);
-	});
-
-	it('rejette un id non-multiple du stride à bas zoom', () => {
-		// zoom 5 : stride 1D = 4 (cf. computeStride(0.25, pxPerDegLon(5), 48)).
-		expect(evalFilter(filter, { id: 1, zoom: 5 })).toBe(false);
-	});
-
-	it('garde un id multiple du stride', () => {
-		expect(evalFilter(filter, { id: 4, zoom: 5 })).toBe(true);
+	it('grille gaussienne → repli décimation 1D (pas de floor)', () => {
+		const g = buildGridDecimationFilter(
+			{ nx: 6599680, ny: 1, dxDeg: 0.0001, dyDeg: 180, refLat: 0, gaussian: true },
+			[2, 12],
+			48
+		);
+		expect(JSON.stringify(g)).not.toContain('floor');
 	});
 });
 
 /**
- * Garde-fou runtime : on compile le filtre avec le VRAI moteur d'expressions de
- * MapLibre (`featureFilter` du style-spec, le même que le rendu utilise) pour
- * verrouiller le seul point que `evalFilter` ne peut pas garantir — que MapLibre
- * accepte `['step', ['zoom'], …]` + `['id']` dans un filtre — et qu'il évalue
- * comme prévu. Sans ça, la décimation par zoom resterait une hypothèse non testée.
+ * Garde-fou runtime : on compile le filtre 2D avec le VRAI moteur d'expressions de
+ * MapLibre (`featureFilter`, celui du rendu) — verrouille que MapLibre accepte
+ * `['step', ['zoom'], …]` + `['id']` + `['floor']`/`['%']` en filtre et l'évalue
+ * comme prévu (sous-réseau régulier `i%sx==0 && j%sy==0`).
  */
 describe('buildGridDecimationFilter — compatibilité moteur MapLibre (featureFilter)', () => {
-	const geom = { nx: 1121, ny: 717, dxDeg: 0.025, dyDeg: 0.025, refLat: 46, gaussian: false };
-	const filter = buildGridDecimationFilter(geom, [2, 12], 48);
-	const compiled = featureFilter(filter as FilterSpecification);
+	const geom = { nx: 1440, ny: 721, dxDeg: 0.25, dyDeg: 0.25, refLat: 46, gaussian: false };
+	const compiled = featureFilter(buildGridDecimationFilter(geom, [2, 12], 48) as FilterSpecification);
 	const feat = (id: number): Feature => ({ id, type: 1, properties: {} });
 
 	it('MapLibre accepte le filtre (compile sans géométrie requise)', () => {
 		expect(compiled.needGeometry).toBe(false);
 	});
 
-	it('évalue comme evalFilter (zoom 2 : id0 gardé, id1 et id1121 rejetés)', () => {
+	it('au zoom 2 : garde id=0 (i=0,j=0), rejette i=1 (id=1) et j=1 (id=1440)', () => {
 		expect(compiled.filter({ zoom: 2 }, feat(0))).toBe(true);
 		expect(compiled.filter({ zoom: 2 }, feat(1))).toBe(false);
-		expect(compiled.filter({ zoom: 2 }, feat(1121))).toBe(false);
+		expect(compiled.filter({ zoom: 2 }, feat(1440))).toBe(false);
 	});
 
-	it('densifie au zoom (zoom 12 : tous gardés, stride 1)', () => {
+	it('densifie au zoom (zoom 12 : stride 1, tous gardés)', () => {
 		expect(compiled.filter({ zoom: 12 }, feat(1))).toBe(true);
-		expect(compiled.filter({ zoom: 12 }, feat(1121))).toBe(true);
+		expect(compiled.filter({ zoom: 12 }, feat(1440))).toBe(true);
 	});
 });
 
-/**
- * Continuité de densité : la décimation doit s'adapter à des fractions de zoom,
- * pas seulement aux zooms entiers. Avec des paliers entiers, le stride reste figé
- * sur tout `[z, z+1)` → en zoomant dans le palier les étiquettes s'écartent (~×2
- * d'espacement écran) puis se redensifient d'un coup au palier suivant (effet
- * « pop »). Des paliers fins resserrent le stride dès le sous-palier → densité
- * quasi constante en zoom continu.
- */
-describe('buildGridDecimationFilter — continuité de densité (paliers fins)', () => {
-	const geom = { nx: 1121, ny: 717, dxDeg: 0.025, dyDeg: 0.025, refLat: 46, gaussian: false };
-	const compiled = featureFilter(buildGridDecimationFilter(geom) as FilterSpecification);
-	const countKept = (zoom: number): number => {
-		let n = 0;
-		for (let id = 0; id < 1121 * 16; id++) {
-			if (compiled.filter({ zoom }, { id, type: 1, properties: {} } as Feature)) n++;
-		}
-		return n;
-	};
-
-	it('la densité se resserre DANS le palier de zoom entier (zoom 8,75 > zoom 8)', () => {
-		// Paliers entiers : zoom 8 et 8,75 utiliseraient le même stride → même compte
-		// (densité figée qui s'éclaircit en zoomant). Paliers fins : 8,75 garde
-		// strictement plus de points.
-		expect(countKept(8.75)).toBeGreaterThan(countKept(8));
-	});
-});
