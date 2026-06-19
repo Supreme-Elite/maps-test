@@ -5,6 +5,7 @@ import maplibregl from 'maplibre-gl';
 import { map } from '$lib/stores/map';
 import { preferences } from '$lib/stores/preferences';
 
+import { VIEW_3D_EXAGGERATION } from '$lib/constants';
 import { addHillshadeLayer, terrainHandler } from '$lib/map-controls';
 
 let terrainControl: maplibregl.TerrainControl | undefined;
@@ -12,11 +13,14 @@ let terrainControl: maplibregl.TerrainControl | undefined;
 function addTerrainControl() {
 	const m = get(map);
 	if (!m || terrainControl) return;
-	terrainControl = new maplibregl.TerrainControl({ source: 'terrainSource2', exaggeration: 1 });
+	terrainControl = new maplibregl.TerrainControl({
+		source: 'terrainSource2',
+		exaggeration: VIEW_3D_EXAGGERATION
+	});
 	m.addControl(terrainControl);
 	terrainControl._terrainButton.addEventListener('click', () => terrainHandler());
 	if (get(preferences).terrain) {
-		m.setTerrain({ source: 'terrainSource2' });
+		m.setTerrain({ source: 'terrainSource2', exaggeration: VIEW_3D_EXAGGERATION });
 	}
 }
 

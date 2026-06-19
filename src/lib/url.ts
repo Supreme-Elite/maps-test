@@ -4,6 +4,7 @@ import { get } from 'svelte/store';
 import { defaultOmProtocolSettings } from '@openmeteo/weather-map-layer';
 import { mode } from 'mode-watcher';
 
+import { browser } from '$app/environment';
 import { replaceState } from '$app/navigation';
 
 import { DEFAULT_SHOW_DEPARTMENTS, showDepartments } from '$lib/stores/departments';
@@ -73,7 +74,9 @@ export const updateUrl = async (
 		fullUrl = String(url);
 	}
 
-	replaceState(fullUrl, {});
+	// `replaceState` (SvelteKit) lève hors navigateur — no-op en prerender / tests
+	// node. La mise à jour du store URL ci-dessus reste effective dans tous les cas.
+	if (browser) replaceState(fullUrl, {});
 };
 
 export const urlParamsToPreferences = () => {

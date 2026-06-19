@@ -66,6 +66,7 @@
 	import { formatISOWithoutTimezone } from '$lib/time-format';
 	import { findTimeStep } from '$lib/time-utils';
 	import { updateUrl, urlParamsToPreferences } from '$lib/url';
+	import { restoreView3DFromPrefs } from '$lib/view-3d';
 
 	import '../styles.css';
 
@@ -161,6 +162,7 @@
 
 			addTerrainSource($map);
 			addTerrainSource($map, 'terrainSource2');
+			restoreView3DFromPrefs();
 			initHillshadeFromPrefs();
 			stopNeighborPrefetch = initNeighborPrefetch();
 			clippingPanel?.initTerraDraw();

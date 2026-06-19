@@ -82,6 +82,10 @@ export const DEFAULT_PREFERENCES = {
 	showScale: true
 };
 
+// Vue 3D (bouton preset) — angle caméra + exagération du relief, ajustables.
+export const VIEW_3D_PITCH = 60;
+export const VIEW_3D_EXAGGERATION = 1.4;
+
 // Layer names for map rendering
 export const HILLSHADE_LAYER = 'hillshadeLayer';
 export const BEFORE_LAYER_RASTER = 'waterway-tunnel';
