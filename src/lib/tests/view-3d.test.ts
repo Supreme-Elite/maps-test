@@ -1,0 +1,59 @@
+import { get } from 'svelte/store';
+
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import { map } from '$lib/stores/map';
+import { defaultPreferences, preferences, url as urlStore } from '$lib/stores/preferences';
+
+import { VIEW_3D_EXAGGERATION, VIEW_3D_PITCH } from '$lib/constants';
+import { applyView3D } from '$lib/view-3d';
+
+// Fausse carte MapLibre minimale : enregistre les appels caméra/terrain.
+function fakeMap() {
+	const calls: { ease: unknown[]; terrain: unknown[] } = { ease: [], terrain: [] };
+	return {
+		calls,
+		easeTo: (opts: unknown) => calls.ease.push(opts),
+		setTerrain: (opts: unknown) => calls.terrain.push(opts)
+	};
+}
+
+describe('applyView3D', () => {
+	beforeEach(() => {
+		preferences.set({ ...defaultPreferences });
+		urlStore.set(new URL('http://localhost/'));
+		// @ts-expect-error — fausse carte de test
+		map.set(undefined);
+	});
+
+	it("no-op quand la carte n'est pas prete", () => {
+		expect(() => applyView3D(true)).not.toThrow();
+	});
+
+	it('active la vue 3D : incline + releve le relief + flippe la preference', () => {
+		const m = fakeMap();
+		// @ts-expect-error — fausse carte de test
+		map.set(m);
+		applyView3D(true);
+		expect(m.calls.ease).toEqual([{ pitch: VIEW_3D_PITCH }]);
+		expect(m.calls.terrain).toEqual([
+			{ source: 'terrainSource2', exaggeration: VIEW_3D_EXAGGERATION }
+		]);
+		expect(get(preferences).terrain).toBe(true);
+		// searchParams.set s'exécute avant le `await tick()` interne → lisible aussitôt.
+		expect(get(urlStore).searchParams.get('terrain')).toBe('true');
+	});
+
+	it('desactive la vue 3D : remet a plat + retire le relief', () => {
+		const m = fakeMap();
+		// @ts-expect-error — fausse carte de test
+		map.set(m);
+		preferences.set({ ...defaultPreferences, terrain: true });
+		applyView3D(false);
+		expect(m.calls.ease).toEqual([{ pitch: 0 }]);
+		expect(m.calls.terrain).toEqual([null]);
+		expect(get(preferences).terrain).toBe(false);
+		// 'false' == défaut → le param est retiré de l'URL.
+		expect(get(urlStore).searchParams.get('terrain')).toBeNull();
+	});
+});
