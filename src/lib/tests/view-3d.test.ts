@@ -26,11 +26,11 @@ describe('applyView3D', () => {
 		map.set(undefined);
 	});
 
-	it("no-op quand la carte n'est pas prete", () => {
+	it("no-op quand la carte n'est pas prête", () => {
 		expect(() => applyView3D(true)).not.toThrow();
 	});
 
-	it('active la vue 3D : incline + releve le relief + flippe la preference', () => {
+	it('active la vue 3D : incline + relève le relief + flippe la préférence', () => {
 		const m = fakeMap();
 		// @ts-expect-error — fausse carte de test
 		map.set(m);
@@ -44,7 +44,7 @@ describe('applyView3D', () => {
 		expect(get(urlStore).searchParams.get('terrain')).toBe('true');
 	});
 
-	it('desactive la vue 3D : remet a plat + retire le relief', () => {
+	it('désactive la vue 3D : remet à plat + retire le relief', () => {
 		const m = fakeMap();
 		// @ts-expect-error — fausse carte de test
 		map.set(m);
@@ -63,6 +63,10 @@ describe('restoreView3DFromPrefs', () => {
 		preferences.set({ ...defaultPreferences });
 		// @ts-expect-error — fausse carte de test
 		map.set(undefined);
+	});
+
+	it("no-op quand la carte n'est pas prête", () => {
+		expect(() => restoreView3DFromPrefs()).not.toThrow();
 	});
 
 	it('ne touche pas au relief si la préférence est false', () => {
