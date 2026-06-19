@@ -6,7 +6,7 @@ import { map } from '$lib/stores/map';
 import { defaultPreferences, preferences, url as urlStore } from '$lib/stores/preferences';
 
 import { VIEW_3D_EXAGGERATION, VIEW_3D_PITCH } from '$lib/constants';
-import { applyView3D } from '$lib/view-3d';
+import { applyView3D, restoreView3DFromPrefs } from '$lib/view-3d';
 
 // Fausse carte MapLibre minimale : enregistre les appels caméra/terrain.
 function fakeMap() {
@@ -55,5 +55,32 @@ describe('applyView3D', () => {
 		expect(get(preferences).terrain).toBe(false);
 		// 'false' == défaut → le param est retiré de l'URL.
 		expect(get(urlStore).searchParams.get('terrain')).toBeNull();
+	});
+});
+
+describe('restoreView3DFromPrefs', () => {
+	beforeEach(() => {
+		preferences.set({ ...defaultPreferences });
+		// @ts-expect-error — fausse carte de test
+		map.set(undefined);
+	});
+
+	it('ne touche pas au relief si la préférence est false', () => {
+		const m = fakeMap();
+		// @ts-expect-error — fausse carte de test
+		map.set(m);
+		restoreView3DFromPrefs();
+		expect(m.calls.terrain).toEqual([]);
+	});
+
+	it('réapplique le relief si la préférence est true (lien partagé)', () => {
+		const m = fakeMap();
+		// @ts-expect-error — fausse carte de test
+		map.set(m);
+		preferences.set({ ...defaultPreferences, terrain: true });
+		restoreView3DFromPrefs();
+		expect(m.calls.terrain).toEqual([
+			{ source: 'terrainSource2', exaggeration: VIEW_3D_EXAGGERATION }
+		]);
 	});
 });

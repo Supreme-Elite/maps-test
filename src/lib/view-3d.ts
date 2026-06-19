@@ -10,6 +10,17 @@ import { updateUrl } from './url';
 const TERRAIN_SOURCE = 'terrainSource2';
 
 /**
+ * Init-on-load : le hash MapLibre restaure le pitch mais pas le mesh terrain.
+ * Si la préférence terrain est active (lien partagé `?terrain=true`), réapplique
+ * le relief. Idempotent vis-à-vis du TerrainControl natif.
+ */
+export function restoreView3DFromPrefs(): void {
+	const m = get(mapStore);
+	if (!m || !get(preferences).terrain) return;
+	m.setTerrain({ source: TERRAIN_SOURCE, exaggeration: VIEW_3D_EXAGGERATION });
+}
+
+/**
  * Préset de vue 3D : oriente la caméra en perspective + relève le relief, ou
  * rétablit la vue à plat. Réutilise l'état partagé `preferences.terrain` + l'URL
  * (mêmes clés que `terrainHandler`), donc pas de désynchro avec le TerrainControl
