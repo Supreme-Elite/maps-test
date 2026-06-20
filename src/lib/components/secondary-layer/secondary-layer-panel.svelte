@@ -1,4 +1,6 @@
 <script lang="ts">
+	import LayersIcon from '@lucide/svelte/icons/layers';
+
 	import { currentOmUrl, currentOmUrl2 } from '$lib/stores/om-url';
 	import { opacity2 } from '$lib/stores/preferences';
 	import { metaJson } from '$lib/stores/time';
@@ -65,13 +67,20 @@
 
 <div>
 	<label
-		class="flex min-h-11 items-center justify-between gap-3 py-2 md:min-h-0 md:py-1.5 {hasAny
+		class="flex min-h-11 items-center justify-between gap-3 px-3 py-2.5 {hasAny
 			? 'cursor-pointer'
 			: 'cursor-not-allowed opacity-50'}"
 		for="layer2"
 		title={hasAny ? undefined : 'Ce modèle ne fournit aucune variable de couche superposée'}
 	>
-		<span class="text-sm">Couche superposée</span>
+		<span
+			class="flex items-center gap-3 text-sm transition-colors {$layer2Enabled && hasAny
+				? 'text-sky-300'
+				: 'text-white'}"
+		>
+			<LayersIcon class="size-[18px]" aria-hidden="true" />
+			Couche superposée
+		</span>
 		<Switch
 			id="layer2"
 			class={hasAny ? 'cursor-pointer' : 'cursor-not-allowed'}
@@ -81,9 +90,9 @@
 		/>
 	</label>
 	{#if !hasAny}
-		<p class="pl-1 text-xs text-white/50">Aucune variable superposable pour ce modèle.</p>
+		<p class="px-3 text-xs text-white/50">Aucune variable superposable pour ce modèle.</p>
 	{:else if $layer2Enabled}
-		<div class="mt-1 flex flex-col gap-2 pl-1">
+		<div class="mt-1 flex flex-col gap-2 px-3 pb-1">
 			<div class="flex items-center gap-3">
 				<Label class="w-14 shrink-0 text-xs text-white/70">Variable</Label>
 				<Select.Root type="single" value={$variable2} onValueChange={(v) => v && onVariable(v)}>

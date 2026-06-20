@@ -25,12 +25,13 @@ sans geste caché.
 
 ## Approche retenue
 
-**Option A — preset de vue additif.** Le bouton est un *preset* qui orchestre `pitch` + `terrain`
+**Option A — preset de vue additif.** Le bouton est un _preset_ qui orchestre `pitch` + `terrain`
 ensemble, **sans démonter** le câblage hillshade/terrain existant. Le toggle « Relief ombré » et le
 `TerrainControl` natif restent inchangés ; le bouton 3D réutilise le même état
 `preferences.terrain` + `updateUrl`, donc pas de désynchronisation entre les deux points d'entrée.
 
 Alternatives écartées :
+
 - **(B) Remplacer le `TerrainControl` natif** par le bouton 3D — plus propre conceptuellement mais
   touche au câblage hillshade/terrain (risque de régression) pour un gain faible.
 - **(C) Deux boutons séparés** (relief / inclinaison) — recrée exactement la friction qu'on veut
@@ -96,7 +97,7 @@ caché, y compris là où le drag-pitch est peu pratique.
 Extraire un handler **pur/testable**, p. ex. `applyView3D(map, on)`, qui :
 
 - à `on=true` : appelle `easeTo({ pitch: VIEW_3D_PITCH })`, `setTerrain({ source: 'terrainSource2',
-  exaggeration: VIEW_3D_EXAGGERATION })`, flippe `preferences.terrain=true` + `updateUrl`.
+exaggeration: VIEW_3D_EXAGGERATION })`, flippe `preferences.terrain=true` + `updateUrl`.
 - à `on=false` : `easeTo({ pitch: 0 })`, `setTerrain(null)`, `preferences.terrain=false` +
   `updateUrl`.
 

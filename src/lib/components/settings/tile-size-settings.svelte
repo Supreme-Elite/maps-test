@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { get } from 'svelte/store';
 
+	import Grid2x2Icon from '@lucide/svelte/icons/grid-2x2';
+
 	import { tileSize as tS } from '$lib/stores/preferences';
 
 	import Button from '$lib/components/ui/button/button.svelte';
@@ -18,9 +20,12 @@
 	});
 </script>
 
-<div>
-	<h2 class="text-lg font-bold">Taille des tuiles</h2>
-	<div class="mt-3 flex gap-3 flex-wrap">
+<div class="px-3 py-2">
+	<div class="flex items-center gap-3 text-sm">
+		<Grid2x2Icon class="size-[18px] text-white/55" aria-hidden="true" />
+		Taille des tuiles
+	</div>
+	<div class="mt-2 flex flex-wrap gap-2">
 		<Button
 			class="min-w-16 cursor-pointer {tileSize === 64 ? 'bg-primary' : 'bg-primary/75'}"
 			onclick={() => handleTileSizeChange(64)}>64</Button

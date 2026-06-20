@@ -1,5 +1,6 @@
 <script lang="ts">
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
+	import SplineIcon from '@lucide/svelte/icons/spline';
 	import { toast } from 'svelte-sonner';
 
 	import { isGeopotentialVariable } from '$lib/stores/units';
@@ -71,10 +72,17 @@
 
 <div>
 	<label
-		class="flex min-h-11 cursor-pointer items-center justify-between gap-3 py-2 md:min-h-0 md:py-1.5"
+		class="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-3 py-2.5"
 		for="contouring"
 	>
-		<span class="text-sm">Isocontours</span>
+		<span
+			class="flex items-center gap-3 text-sm transition-colors {contours
+				? 'text-sky-300'
+				: 'text-white'}"
+		>
+			<SplineIcon class="size-[18px]" aria-hidden="true" />
+			Isocontours
+		</span>
 		<Switch
 			id="contouring"
 			class="cursor-pointer"
@@ -88,7 +96,7 @@
 	</label>
 
 	{#if contours}
-		<div class="mt-1 flex flex-col gap-2 pl-1">
+		<div class="mt-1 flex flex-col gap-2 px-3 pb-1">
 			<label class="flex cursor-pointer items-center justify-between gap-3" for="breakpoints">
 				<span class="text-xs text-white/70">Aligner sur les paliers de l'échelle</span>
 				<Switch

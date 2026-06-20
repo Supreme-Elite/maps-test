@@ -22,11 +22,13 @@
 ### Task 1: Handler `applyView3D` + constantes
 
 **Files:**
+
 - Modify: `src/lib/constants.ts` (après le bloc `DEFAULT_PREFERENCES`, ~ligne 83)
 - Create: `src/lib/view-3d.ts`
 - Test: `src/lib/tests/view-3d.test.ts`
 
 **Interfaces:**
+
 - Consumes: store `map` (`$lib/stores/map`), `preferences` + `defaultPreferences` + `url` (`$lib/stores/preferences`), `updateUrl(urlParam?, newValue?, defaultValue?)` (`$lib/url`).
 - Produces: `VIEW_3D_PITCH: number`, `VIEW_3D_EXAGGERATION: number` (constants) ; `applyView3D(on: boolean): void` (`$lib/view-3d`).
 
@@ -166,11 +168,13 @@ git commit -m "feat: handler applyView3D (preset pitch + relief) + constantes"
 ### Task 2: Restauration du relief au chargement (lien partagé)
 
 **Files:**
+
 - Modify: `src/lib/view-3d.ts` (ajout d'une fonction)
 - Modify: `src/routes/+page.svelte` (handler `$map.on('load')`, après `addTerrainSource($map, 'terrainSource2')`, ~ligne 163)
 - Test: `src/lib/tests/view-3d.test.ts` (ajout d'un `describe`)
 
 **Interfaces:**
+
 - Consumes: store `map`, `preferences`, constantes `VIEW_3D_EXAGGERATION`.
 - Produces: `restoreView3DFromPrefs(): void` (`$lib/view-3d`).
 
@@ -268,11 +272,13 @@ git commit -m "feat: restaure le relief 3D au load pour les liens partagés"
 ### Task 3: `View3DControl` (IControl) + style + câblage
 
 **Files:**
+
 - Modify: `src/lib/view-3d.ts` (ajout de la classe `View3DControl`)
 - Modify: `src/lib/map-controls.ts` (`setMapControlSettings`, après l'ajout du `GlobeControl`, ~ligne 56)
 - Modify: `src/styles.css` (règles du bouton)
 
 **Interfaces:**
+
 - Consumes: `applyView3D`, store `preferences`, `maplibregl.IControl`.
 - Produces: `class View3DControl implements maplibregl.IControl` (`$lib/view-3d`).
 
@@ -337,7 +343,7 @@ import { View3DControl } from './view-3d';
 Dans `setMapControlSettings`, juste après le bloc `GlobeControl` (après la ligne `globeControl._globeButton.addEventListener(...)`, ~ligne 56) :
 
 ```ts
-	map.addControl(new View3DControl());
+map.addControl(new View3DControl());
 ```
 
 - [ ] **Step 3: Style du bouton**
@@ -366,7 +372,9 @@ Expected: PASS (aucune erreur de type)
 ```bash
 npm run dev
 ```
+
 Ouvrir `http://localhost:5173/`. Attendu :
+
 1. Un bouton « 3D » apparaît dans la pile de contrôles haut-droite, sous le globe.
 2. Clic → la carte s'incline (perspective ~60°) **et** le relief se lève ; le bouton passe en état actif (bleu).
 3. Re-clic → retour à plat, relief retiré, bouton inactif.
@@ -387,6 +395,7 @@ git commit -m "feat: bouton IControl Vue 3D + style"
 ## Self-Review
 
 **Spec coverage :**
+
 - Comportement clic on/off (pitch + setTerrain + préférence/URL) → Task 1 (`applyView3D`) + Task 3 (bouton).
 - Bearing non touché → Task 1 (handler n'écrit pas le bearing).
 - État actif piloté par `preferences.terrain` → Task 3 (abonnement store).

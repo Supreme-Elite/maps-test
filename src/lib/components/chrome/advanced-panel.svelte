@@ -4,8 +4,17 @@
 	import { get } from 'svelte/store';
 	import { fly, slide } from 'svelte/transition';
 
+	import Building2Icon from '@lucide/svelte/icons/building-2';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import HelpIcon from '@lucide/svelte/icons/circle-question-mark';
+	import Grid3x3Icon from '@lucide/svelte/icons/grid-3x3';
+	import HashIcon from '@lucide/svelte/icons/hash';
+	import MapIcon from '@lucide/svelte/icons/map';
+	import MoonIcon from '@lucide/svelte/icons/moon';
+	import MountainIcon from '@lucide/svelte/icons/mountain';
+	import ScissorsIcon from '@lucide/svelte/icons/scissors';
 	import SettingsIcon from '@lucide/svelte/icons/settings-2';
+	import SlidersIcon from '@lucide/svelte/icons/sliders-horizontal';
 	import XIcon from '@lucide/svelte/icons/x';
 
 	import { basemapTheme } from '$lib/stores/basemap-theme';
@@ -130,80 +139,125 @@
 	});
 </script>
 
+{#snippet sectionLabel(text: string)}
+	<h3 class="mb-1.5 px-1 text-xs font-semibold tracking-wide text-white/45 uppercase">{text}</h3>
+{/snippet}
+
 {#snippet body()}
-	<!-- Niveau 1 — calques qu'on bascule au quotidien. -->
-	<section class="flex flex-col gap-1">
-		<h3 class="text-xs font-semibold tracking-wide text-white/60 uppercase">Calques carte</h3>
-		<ArrowsSettings />
-		<div class="my-1 h-px bg-white/10"></div>
-		<ContourSettings />
-		<div class="my-1 h-px bg-white/10"></div>
-		<SecondaryLayerPanel />
-		<LayerToggle label="Points de grille" checked={gridDotsOn} onCheckedChange={toggleGridDots} />
-		<LayerToggle label="Valeurs" checked={gridValuesOn} onCheckedChange={toggleGridValues} />
-		<LayerToggle label="Départements" checked={departmentsOn} onCheckedChange={toggleDepartments} />
-		<LayerToggle label="Villes &amp; pays" checked={labelsOn} onCheckedChange={toggleLabels} />
-		<LayerToggle label="Relief ombré" checked={hillshadeOn} onCheckedChange={toggleHillshade} />
-		<OpacitySetting />
+	<!-- Niveau 1 — calques qu'on bascule au quotidien. Deux cartes encartées :
+	     d'abord les calques riches (dépliables), puis les bascules simples. -->
+	<section>
+		{@render sectionLabel('Calques')}
+		<div
+			class="overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
+		>
+			<ArrowsSettings />
+			<ContourSettings />
+			<SecondaryLayerPanel />
+		</div>
+		<div
+			class="mt-2.5 overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
+		>
+			<LayerToggle label="Points de grille" checked={gridDotsOn} onCheckedChange={toggleGridDots}>
+				{#snippet icon()}<Grid3x3Icon class="size-[18px]" aria-hidden="true" />{/snippet}
+			</LayerToggle>
+			<LayerToggle
+				label="Valeurs aux nœuds"
+				checked={gridValuesOn}
+				onCheckedChange={toggleGridValues}
+			>
+				{#snippet icon()}<HashIcon class="size-[18px]" aria-hidden="true" />{/snippet}
+			</LayerToggle>
+			<LayerToggle label="Départements" checked={departmentsOn} onCheckedChange={toggleDepartments}>
+				{#snippet icon()}<MapIcon class="size-[18px]" aria-hidden="true" />{/snippet}
+			</LayerToggle>
+			<LayerToggle label="Villes &amp; pays" checked={labelsOn} onCheckedChange={toggleLabels}>
+				{#snippet icon()}<Building2Icon class="size-[18px]" aria-hidden="true" />{/snippet}
+			</LayerToggle>
+			<LayerToggle label="Relief ombré" checked={hillshadeOn} onCheckedChange={toggleHillshade}>
+				{#snippet icon()}<MountainIcon class="size-[18px]" aria-hidden="true" />{/snippet}
+			</LayerToggle>
+			<OpacitySetting />
+		</div>
 	</section>
 
 	<!-- Niveau 2 — préférences d'affichage occasionnelles. -->
-	<section class="flex flex-col gap-1">
-		<h3 class="text-xs font-semibold tracking-wide text-white/60 uppercase">Affichage</h3>
-		<UnitSettings />
-		<PopupSettings />
-		<LayerToggle label="Mode sombre" checked={darkOn} onCheckedChange={toggleDark} />
+	<section>
+		{@render sectionLabel('Affichage')}
+		<div
+			class="overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
+		>
+			<UnitSettings />
+			<PopupSettings />
+			<LayerToggle label="Mode sombre" checked={darkOn} onCheckedChange={toggleDark}>
+				{#snippet icon()}<MoonIcon class="size-[18px]" aria-hidden="true" />{/snippet}
+			</LayerToggle>
+		</div>
 	</section>
 
 	<!-- Niveau 3 — réglages experts/système, repliés par défaut pour dégonfler le panneau. -->
-	<section class="flex flex-col gap-1">
-		<button
-			type="button"
-			class="hover:text-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 md:min-h-0 w-full cursor-pointer items-center justify-between gap-2 rounded-md py-1 text-xs font-semibold tracking-wide text-white/60 uppercase"
-			aria-expanded={advancedSettingsOpen}
-			onclick={() => (advancedSettingsOpen = !advancedSettingsOpen)}
-		>
-			<span>Avancé</span>
-			<ChevronDownIcon
-				class={[
-					'size-4 transition-transform duration-200 motion-reduce:transition-none',
-					advancedSettingsOpen && 'rotate-180'
-				]
-					.filter(Boolean)
-					.join(' ')}
-				aria-hidden="true"
-			/>
-		</button>
-		{#if advancedSettingsOpen}
-			<div
-				class="flex flex-col gap-1"
-				transition:slide={{ duration: reduceMotion.current ? 0 : 200 }}
+	<section>
+		{@render sectionLabel('Avancé')}
+		<div class="overflow-hidden rounded-xl bg-white/[0.04]">
+			<button
+				type="button"
+				class="hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-left text-sm"
+				aria-expanded={advancedSettingsOpen}
+				onclick={() => (advancedSettingsOpen = !advancedSettingsOpen)}
 			>
-				<TileSizeSettings />
-				<SoundingSettings />
-				<CacheSettings />
-				<StateSettings />
-			</div>
-		{/if}
+				<span class="flex items-center gap-3">
+					<SlidersIcon class="size-[18px] text-white/55" aria-hidden="true" />
+					Réglages experts
+				</span>
+				<ChevronDownIcon
+					class={[
+						'size-4 text-white/45 transition-transform duration-200 motion-reduce:transition-none',
+						advancedSettingsOpen && 'rotate-180'
+					]
+						.filter(Boolean)
+						.join(' ')}
+					aria-hidden="true"
+				/>
+			</button>
+			{#if advancedSettingsOpen}
+				<div
+					class="border-t border-white/[0.06] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
+					transition:slide={{ duration: reduceMotion.current ? 0 : 200 }}
+				>
+					<TileSizeSettings />
+					<SoundingSettings />
+					<CacheSettings />
+					<StateSettings />
+				</div>
+			{/if}
+		</div>
 	</section>
 
 	<!-- Outils — actions ponctuelles, distinctes des réglages. -->
-	<section class="flex flex-col gap-1">
-		<h3 class="text-xs font-semibold tracking-wide text-white/60 uppercase">Outils</h3>
-		<button
-			type="button"
-			class="hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 md:min-h-0 w-full items-center rounded-md px-2 py-3 md:py-1.5 text-left text-sm"
-			onclick={() => clippingPanelOpen.set(!get(clippingPanelOpen))}
+	<section>
+		{@render sectionLabel('Outils')}
+		<div
+			class="overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
 		>
-			Découpage
-		</button>
-		<button
-			type="button"
-			class="hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 md:min-h-0 w-full items-center rounded-md px-2 py-3 md:py-1.5 text-left text-sm"
-			onclick={() => helpOpen.set(true)}
-		>
-			Aide
-		</button>
+			<button
+				type="button"
+				class="hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left text-sm"
+				onclick={() => clippingPanelOpen.set(!get(clippingPanelOpen))}
+			>
+				<ScissorsIcon class="size-[18px] text-white/55" aria-hidden="true" />
+				<span class="flex-1">Découpage</span>
+				<ChevronDownIcon class="size-4 -rotate-90 text-white/35" aria-hidden="true" />
+			</button>
+			<button
+				type="button"
+				class="hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left text-sm"
+				onclick={() => helpOpen.set(true)}
+			>
+				<HelpIcon class="size-[18px] text-white/55" aria-hidden="true" />
+				<span class="flex-1">Aide</span>
+				<ChevronDownIcon class="size-4 -rotate-90 text-white/35" aria-hidden="true" />
+			</button>
+		</div>
 	</section>
 {/snippet}
 

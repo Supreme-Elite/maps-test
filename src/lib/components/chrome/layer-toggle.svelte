@@ -13,9 +13,15 @@
 </script>
 
 <label
-	class="flex min-h-11 md:min-h-0 cursor-pointer items-center justify-between gap-3 py-2 md:py-1.5"
+	class="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-3 py-2.5 md:min-h-11 md:py-2.5"
 >
-	<span class="flex items-center gap-2 text-sm">
+	<!-- L'icône Lucide hérite de `currentColor` : teinter le span suffit à allumer
+	     icône + libellé ensemble quand le calque est actif (scan d'un coup d'œil). -->
+	<span
+		class="flex items-center gap-3 text-sm transition-colors {checked
+			? 'text-sky-300'
+			: 'text-white'}"
+	>
 		{@render icon?.()}
 		{label}
 	</span>
