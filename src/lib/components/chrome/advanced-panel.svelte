@@ -158,11 +158,7 @@
 		<div
 			class="mt-2.5 overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
 		>
-			<LayerToggle
-				label="Valeurs aux nœuds"
-				checked={gridValuesOn}
-				onCheckedChange={toggleGridValues}
-			>
+			<LayerToggle label="Valeurs" checked={gridValuesOn} onCheckedChange={toggleGridValues}>
 				{#snippet icon()}<HashIcon class="size-[18px]" aria-hidden="true" />{/snippet}
 			</LayerToggle>
 			<LayerToggle label="Départements" checked={departmentsOn} onCheckedChange={toggleDepartments}>
