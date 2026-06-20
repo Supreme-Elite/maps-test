@@ -310,9 +310,14 @@
 	<Sheet.Root bind:open={$advancedOpen}>
 		<Sheet.Content
 			side="bottom"
-			class="bg-glass/90 z-100 max-h-[85vh] border-none text-white backdrop-blur-xl"
+			class="bg-glass/90 z-100 flex max-h-[85vh] flex-col gap-0 border-none text-white backdrop-blur-xl"
 		>
-			<div class="flex max-h-[85vh] flex-col gap-6 overflow-y-auto px-6 pt-10 pb-8">
+			<!-- En-tête figé (titre + ✕ intégrée de Sheet, en absolu top-droite) : seul le
+			     corps défile, fermeture toujours visible — même comportement que le rail desktop. -->
+			<div class="flex shrink-0 items-center px-6 pt-4 pb-3">
+				<h2 class="text-sm font-semibold">Calques &amp; réglages</h2>
+			</div>
+			<div class="scrollbar-thin flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pb-8">
 				{@render body()}
 			</div>
 		</Sheet.Content>
