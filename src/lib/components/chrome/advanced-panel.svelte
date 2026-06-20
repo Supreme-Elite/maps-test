@@ -2,8 +2,9 @@
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { get } from 'svelte/store';
-	import { fly } from 'svelte/transition';
+	import { fly, slide } from 'svelte/transition';
 
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import SettingsIcon from '@lucide/svelte/icons/settings-2';
 	import XIcon from '@lucide/svelte/icons/x';
 
@@ -92,6 +93,12 @@
 	// Respecte prefers-reduced-motion : neutralise la transition JS du rail desktop.
 	const reduceMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 
+	// Section « Avancé » repliée par défaut : ces réglages experts/système (cache,
+	// taille des tuiles, sondage, réinitialisation) gonflent la complexité perçue
+	// alors que la plupart des utilisateurs n'y touchent jamais. Local (non persisté)
+	// → repart fermé à chaque session.
+	let advancedSettingsOpen = $state(false);
+
 	// Porte le rail sur <body> : un backdrop-filter imbriqué dans celui de la barre
 	// haute est neutralisé par le navigateur, donc le flou ne s'appliquerait pas.
 	function portal(node: HTMLElement) {
@@ -124,6 +131,7 @@
 </script>
 
 {#snippet body()}
+	<!-- Niveau 1 — calques qu'on bascule au quotidien. -->
 	<section class="flex flex-col gap-1">
 		<h3 class="text-xs font-semibold tracking-wide text-white/60 uppercase">Calques carte</h3>
 		<ArrowsSettings />
@@ -136,20 +144,50 @@
 		<LayerToggle label="Départements" checked={departmentsOn} onCheckedChange={toggleDepartments} />
 		<LayerToggle label="Villes &amp; pays" checked={labelsOn} onCheckedChange={toggleLabels} />
 		<LayerToggle label="Relief ombré" checked={hillshadeOn} onCheckedChange={toggleHillshade} />
-		<LayerToggle label="Dark Mode" checked={darkOn} onCheckedChange={toggleDark} />
 		<OpacitySetting />
 	</section>
 
+	<!-- Niveau 2 — préférences d'affichage occasionnelles. -->
 	<section class="flex flex-col gap-1">
-		<h3 class="text-xs font-semibold tracking-wide text-white/60 uppercase">Réglages</h3>
+		<h3 class="text-xs font-semibold tracking-wide text-white/60 uppercase">Affichage</h3>
 		<UnitSettings />
 		<PopupSettings />
-		<TileSizeSettings />
-		<SoundingSettings />
-		<CacheSettings />
-		<StateSettings />
+		<LayerToggle label="Mode sombre" checked={darkOn} onCheckedChange={toggleDark} />
 	</section>
 
+	<!-- Niveau 3 — réglages experts/système, repliés par défaut pour dégonfler le panneau. -->
+	<section class="flex flex-col gap-1">
+		<button
+			type="button"
+			class="hover:text-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 md:min-h-0 w-full cursor-pointer items-center justify-between gap-2 rounded-md py-1 text-xs font-semibold tracking-wide text-white/60 uppercase"
+			aria-expanded={advancedSettingsOpen}
+			onclick={() => (advancedSettingsOpen = !advancedSettingsOpen)}
+		>
+			<span>Avancé</span>
+			<ChevronDownIcon
+				class={[
+					'size-4 transition-transform duration-200 motion-reduce:transition-none',
+					advancedSettingsOpen && 'rotate-180'
+				]
+					.filter(Boolean)
+					.join(' ')}
+				aria-hidden="true"
+			/>
+		</button>
+		{#if advancedSettingsOpen}
+			<div
+				class="flex flex-col gap-1"
+				transition:slide={{ duration: reduceMotion.current ? 0 : 200 }}
+			>
+				<TileSizeSettings />
+				<SoundingSettings />
+				<CacheSettings />
+				<StateSettings />
+			</div>
+		{/if}
+	</section>
+
+	<!-- Outils — actions ponctuelles, distinctes des réglages. -->
 	<section class="flex flex-col gap-1">
 		<h3 class="text-xs font-semibold tracking-wide text-white/60 uppercase">Outils</h3>
 		<button
