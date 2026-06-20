@@ -158,9 +158,6 @@
 		<div
 			class="mt-2.5 overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
 		>
-			<LayerToggle label="Points de grille" checked={gridDotsOn} onCheckedChange={toggleGridDots}>
-				{#snippet icon()}<Grid3x3Icon class="size-[18px]" aria-hidden="true" />{/snippet}
-			</LayerToggle>
 			<LayerToggle
 				label="Valeurs aux nœuds"
 				checked={gridValuesOn}
@@ -224,6 +221,13 @@
 					class="border-t border-white/[0.06] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
 					transition:slide={{ duration: reduceMotion.current ? 0 : 200 }}
 				>
+					<LayerToggle
+						label="Points de grille"
+						checked={gridDotsOn}
+						onCheckedChange={toggleGridDots}
+					>
+						{#snippet icon()}<Grid3x3Icon class="size-[18px]" aria-hidden="true" />{/snippet}
+					</LayerToggle>
 					<TileSizeSettings />
 					<SoundingSettings />
 					<CacheSettings />
