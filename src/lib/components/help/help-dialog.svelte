@@ -39,9 +39,9 @@
 		<div class="flex flex-col gap-6">
 			<!-- 1. Naviguer dans le temps -->
 			<section>
-				<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
+				<h3 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
 					<ClockIcon class="size-5 opacity-75" /> Naviguer dans le temps
-				</h2>
+				</h3>
 				<ul class="flex flex-col gap-1.5">
 					<li class="flex items-start gap-2.5">
 						<CalendarClockIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
@@ -90,7 +90,7 @@
 						<ChevronRightIcon
 							class="size-4 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
 						/>
-						<h3 class="font-medium">Détails de l'animation</h3>
+						<h4 class="font-medium">Détails de l'animation</h4>
 					</summary>
 					<p class="mt-1.5 ml-5.5 text-sm opacity-80">
 						La lecture boucle sur la plage choisie : <b>Aujourd'hui</b>, <b>24 h suivantes</b>,
@@ -102,9 +102,9 @@
 
 			<!-- 2. Choisir les données -->
 			<section>
-				<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
+				<h3 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
 					<DatabaseIcon class="size-5 opacity-75" /> Choisir les données
-				</h2>
+				</h3>
 				<ul class="flex flex-col gap-1.5">
 					{#if isDesktop.current}
 						<li class="flex items-center gap-2.5">
@@ -136,9 +136,9 @@
 
 			<!-- 3. Visualiser -->
 			<section>
-				<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
+				<h3 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
 					<EyeIcon class="size-5 opacity-75" /> Visualiser
-				</h2>
+				</h3>
 				<ul class="flex flex-col gap-1.5">
 					<li class="flex items-start gap-2.5">
 						<RulerIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
