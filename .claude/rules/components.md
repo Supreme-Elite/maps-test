@@ -11,6 +11,7 @@ Organized by feature under `src/lib/components/` (`chrome/`, `capture/`, `clippi
 **Primitives `ui/` personnalisées (à réappliquer après `npm run upgrade:ui`)** — le verre dépoli du chrome a modifié certaines primitives au-delà de la génération shadcn :
 
 - `ui/select/select-content.svelte` — fond verre translucide (`bg-glass/60 backdrop-blur-xl`, `border-none`, `rounded-lg`) au lieu de `bg-popover ... border shadow-md`, pour que les dropdowns `Select` (unités, run…) s'accordent au reste du chrome verre. `text-popover-foreground` est conservé (adaptatif clair/sombre).
+- `ui/switch/switch.svelte` — état coché en **bleu ciel** (`data-[state=checked]:bg-sky-500`, pouce blanc `dark:data-[state=checked]:bg-white`) au lieu de `bg-primary` (qui, en dark, vaut un quasi-blanc → switch peu lisible). L'accent « sky » est la teinte d'état actif du panneau Calques & réglages, fidèle au sujet (carte du ciel) ; icône + libellé d'un calque actif sont teintés `text-sky-300` (cf. `chrome/layer-toggle.svelte` et les composants `settings/`).
 
 Si d'autres primitives `ui/` sont retouchées pour le style verre, les lister ici.
 

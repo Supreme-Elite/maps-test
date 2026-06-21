@@ -1,4 +1,9 @@
 <script lang="ts">
+	import { MediaQuery } from 'svelte/reactivity';
+	import { slide } from 'svelte/transition';
+
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import RulerIcon from '@lucide/svelte/icons/ruler';
 	import { toast } from 'svelte-sonner';
 
 	import {
@@ -50,154 +55,185 @@
 	function getLabel<T extends string>(options: { value: T; label: string }[], value: T): string {
 		return options.find((o) => o.value === value)?.label ?? value;
 	}
+
+	// Repliée par défaut : 5 sélecteurs d'unités cachés derrière une ligne unique
+	// (réduit la densité de la surface « Affichage »). Résumé = température · vent,
+	// les deux unités les plus consultées.
+	let open = $state(false);
+	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	const summary = $derived(`${$temperatureUnit} · ${$windSpeedUnit}`);
 </script>
 
 <div>
-	<h2 class="text-lg font-bold">Unités</h2>
-	<div class="mt-3 flex flex-col gap-3">
-		<div class="flex items-center gap-3">
-			<Label class="w-28 shrink-0">Température</Label>
-			<Select.Root
-				type="single"
-				value={$temperatureUnit}
-				onValueChange={(v) => {
-					if (v) {
-						temperatureUnit.set(v as TemperatureUnit);
-						refreshPopup();
-						// Rafraîchit les étiquettes d'isolignes si la variable affichée est convertie.
-						reloadVectorStyle();
-						toast.info(`Unité de température : ${v}`);
-					}
-				}}
-			>
-				<Select.Trigger
-					class="h-8 min-w-0 flex-1 cursor-pointer bg-background/60 text-sm"
-					aria-label="Unité de température"
+	<button
+		type="button"
+		class="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-left"
+		aria-expanded={open}
+		onclick={() => (open = !open)}
+	>
+		<span class="flex items-center gap-3 text-sm">
+			<RulerIcon class="size-[18px]" aria-hidden="true" />
+			Unités
+		</span>
+		<span class="flex items-center gap-2">
+			<span class="text-xs text-white/55 tabular-nums">{summary}</span>
+			<ChevronDownIcon
+				class="size-4 text-white/45 transition-transform motion-reduce:transition-none {open
+					? 'rotate-180'
+					: ''}"
+				aria-hidden="true"
+			/>
+		</span>
+	</button>
+	{#if open}
+		<div
+			class="flex flex-col gap-3 px-3 pt-1 pb-3"
+			transition:slide={{ duration: reducedMotion.current ? 0 : 200 }}
+		>
+			<div class="flex items-center gap-3">
+				<Label class="w-28 shrink-0">Température</Label>
+				<Select.Root
+					type="single"
+					value={$temperatureUnit}
+					onValueChange={(v) => {
+						if (v) {
+							temperatureUnit.set(v as TemperatureUnit);
+							refreshPopup();
+							// Rafraîchit les étiquettes d'isolignes si la variable affichée est convertie.
+							reloadVectorStyle();
+							toast.info(`Unité de température : ${v}`);
+						}
+					}}
 				>
-					<span class="truncate">{getLabel(temperatureOptions, $temperatureUnit)}</span>
-				</Select.Trigger>
-				<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
-					{#each temperatureOptions as { value, label } (value)}
-						<Select.Item {value} {label} class="cursor-pointer text-sm" />
-					{/each}
-				</Select.Content>
-			</Select.Root>
-		</div>
+					<Select.Trigger
+						class="h-8 min-w-0 flex-1 cursor-pointer bg-background/60 text-sm"
+						aria-label="Unité de température"
+					>
+						<span class="truncate">{getLabel(temperatureOptions, $temperatureUnit)}</span>
+					</Select.Trigger>
+					<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+						{#each temperatureOptions as { value, label } (value)}
+							<Select.Item {value} {label} class="cursor-pointer text-sm" />
+						{/each}
+					</Select.Content>
+				</Select.Root>
+			</div>
 
-		<!-- Distance selector -->
-		<div class="flex items-center gap-3">
-			<Label class="w-28 shrink-0">Distance</Label>
-			<Select.Root
-				type="single"
-				value={$distanceUnit}
-				onValueChange={(v) => {
-					if (v) {
-						distanceUnit.set(v as DistanceUnit);
-						refreshPopup();
-						reloadVectorStyle();
-						toast.info(`Unité de distance : ${v}`);
-					}
-				}}
-			>
-				<Select.Trigger
-					class="h-8 min-w-0 flex-1 cursor-pointer bg-background/60 text-sm"
-					aria-label="Unité de distance"
+			<!-- Distance selector -->
+			<div class="flex items-center gap-3">
+				<Label class="w-28 shrink-0">Distance</Label>
+				<Select.Root
+					type="single"
+					value={$distanceUnit}
+					onValueChange={(v) => {
+						if (v) {
+							distanceUnit.set(v as DistanceUnit);
+							refreshPopup();
+							reloadVectorStyle();
+							toast.info(`Unité de distance : ${v}`);
+						}
+					}}
 				>
-					<span class="truncate">{getLabel(distanceOptions, $distanceUnit)}</span>
-				</Select.Trigger>
-				<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
-					{#each distanceOptions as { value, label } (value)}
-						<Select.Item {value} {label} class="cursor-pointer text-sm" />
-					{/each}
-				</Select.Content>
-			</Select.Root>
-		</div>
+					<Select.Trigger
+						class="h-8 min-w-0 flex-1 cursor-pointer bg-background/60 text-sm"
+						aria-label="Unité de distance"
+					>
+						<span class="truncate">{getLabel(distanceOptions, $distanceUnit)}</span>
+					</Select.Trigger>
+					<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+						{#each distanceOptions as { value, label } (value)}
+							<Select.Item {value} {label} class="cursor-pointer text-sm" />
+						{/each}
+					</Select.Content>
+				</Select.Root>
+			</div>
 
-		<!-- Geopotential selector -->
-		<div class="flex items-center gap-3">
-			<Label class="w-28 shrink-0">Géopotentiel</Label>
-			<Select.Root
-				type="single"
-				value={$geopotentialUnit}
-				onValueChange={(v) => {
-					if (v) {
-						geopotentialUnit.set(v as GeopotentialUnit);
-						refreshPopup();
-						// Rafraîchit les étiquettes d'isolignes si un géopotentiel est affiché.
-						reloadVectorStyle();
-						toast.info(`Unité de géopotentiel : ${v}`);
-					}
-				}}
-			>
-				<Select.Trigger
-					class="h-8 min-w-0 flex-1 cursor-pointer bg-background/60 text-sm"
-					aria-label="Unité de géopotentiel"
+			<!-- Geopotential selector -->
+			<div class="flex items-center gap-3">
+				<Label class="w-28 shrink-0">Géopotentiel</Label>
+				<Select.Root
+					type="single"
+					value={$geopotentialUnit}
+					onValueChange={(v) => {
+						if (v) {
+							geopotentialUnit.set(v as GeopotentialUnit);
+							refreshPopup();
+							// Rafraîchit les étiquettes d'isolignes si un géopotentiel est affiché.
+							reloadVectorStyle();
+							toast.info(`Unité de géopotentiel : ${v}`);
+						}
+					}}
 				>
-					<span class="truncate">{getLabel(geopotentialOptions, $geopotentialUnit)}</span>
-				</Select.Trigger>
-				<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
-					{#each geopotentialOptions as { value, label } (value)}
-						<Select.Item {value} {label} class="cursor-pointer text-sm" />
-					{/each}
-				</Select.Content>
-			</Select.Root>
-		</div>
+					<Select.Trigger
+						class="h-8 min-w-0 flex-1 cursor-pointer bg-background/60 text-sm"
+						aria-label="Unité de géopotentiel"
+					>
+						<span class="truncate">{getLabel(geopotentialOptions, $geopotentialUnit)}</span>
+					</Select.Trigger>
+					<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+						{#each geopotentialOptions as { value, label } (value)}
+							<Select.Item {value} {label} class="cursor-pointer text-sm" />
+						{/each}
+					</Select.Content>
+				</Select.Root>
+			</div>
 
-		<div class="flex items-center gap-3">
-			<Label class="w-28 shrink-0">Précipitations</Label>
-			<Select.Root
-				type="single"
-				value={$precipitationUnit}
-				onValueChange={(v) => {
-					if (v) {
-						precipitationUnit.set(v as PrecipitationUnit);
-						refreshPopup();
-						reloadVectorStyle();
-						toast.info(`Unité de précipitations : ${v}`);
-					}
-				}}
-			>
-				<Select.Trigger
-					class="h-8 min-w-0 flex-1 cursor-pointer bg-background/60 text-sm"
-					aria-label="Unité de précipitations"
+			<div class="flex items-center gap-3">
+				<Label class="w-28 shrink-0">Précipitations</Label>
+				<Select.Root
+					type="single"
+					value={$precipitationUnit}
+					onValueChange={(v) => {
+						if (v) {
+							precipitationUnit.set(v as PrecipitationUnit);
+							refreshPopup();
+							reloadVectorStyle();
+							toast.info(`Unité de précipitations : ${v}`);
+						}
+					}}
 				>
-					<span class="truncate">{getLabel(precipitationOptions, $precipitationUnit)}</span>
-				</Select.Trigger>
-				<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
-					{#each precipitationOptions as { value, label } (value)}
-						<Select.Item {value} {label} class="cursor-pointer text-sm" />
-					{/each}
-				</Select.Content>
-			</Select.Root>
-		</div>
+					<Select.Trigger
+						class="h-8 min-w-0 flex-1 cursor-pointer bg-background/60 text-sm"
+						aria-label="Unité de précipitations"
+					>
+						<span class="truncate">{getLabel(precipitationOptions, $precipitationUnit)}</span>
+					</Select.Trigger>
+					<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+						{#each precipitationOptions as { value, label } (value)}
+							<Select.Item {value} {label} class="cursor-pointer text-sm" />
+						{/each}
+					</Select.Content>
+				</Select.Root>
+			</div>
 
-		<div class="flex items-center gap-3">
-			<Label class="w-28 shrink-0">Vitesse du vent</Label>
-			<Select.Root
-				type="single"
-				value={$windSpeedUnit}
-				onValueChange={(v) => {
-					if (v) {
-						windSpeedUnit.set(v as WindSpeedUnit);
-						refreshPopup();
-						// Rafraîchit les étiquettes d'isolignes du vent (m/s → km/h, etc.).
-						reloadVectorStyle();
-						toast.info(`Unité de vitesse du vent : ${v}`);
-					}
-				}}
-			>
-				<Select.Trigger
-					class="h-8 min-w-0 flex-1 cursor-pointer bg-background/60 text-sm"
-					aria-label="Unité de vitesse du vent"
+			<div class="flex items-center gap-3">
+				<Label class="w-28 shrink-0">Vitesse du vent</Label>
+				<Select.Root
+					type="single"
+					value={$windSpeedUnit}
+					onValueChange={(v) => {
+						if (v) {
+							windSpeedUnit.set(v as WindSpeedUnit);
+							refreshPopup();
+							// Rafraîchit les étiquettes d'isolignes du vent (m/s → km/h, etc.).
+							reloadVectorStyle();
+							toast.info(`Unité de vitesse du vent : ${v}`);
+						}
+					}}
 				>
-					<span class="truncate">{getLabel(windSpeedOptions, $windSpeedUnit)}</span>
-				</Select.Trigger>
-				<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
-					{#each windSpeedOptions as { value, label } (value)}
-						<Select.Item {value} {label} class="cursor-pointer text-sm" />
-					{/each}
-				</Select.Content>
-			</Select.Root>
+					<Select.Trigger
+						class="h-8 min-w-0 flex-1 cursor-pointer bg-background/60 text-sm"
+						aria-label="Unité de vitesse du vent"
+					>
+						<span class="truncate">{getLabel(windSpeedOptions, $windSpeedUnit)}</span>
+					</Select.Trigger>
+					<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+						{#each windSpeedOptions as { value, label } (value)}
+							<Select.Item {value} {label} class="cursor-pointer text-sm" />
+						{/each}
+					</Select.Content>
+				</Select.Root>
+			</div>
 		</div>
-	</div>
+	{/if}
 </div>

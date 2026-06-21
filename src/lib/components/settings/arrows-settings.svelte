@@ -4,6 +4,7 @@
 
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
+	import WindIcon from '@lucide/svelte/icons/wind';
 	import { toast } from 'svelte-sonner';
 
 	import { metaJson } from '$lib/stores/time';
@@ -120,13 +121,20 @@
 
 <div>
 	<label
-		class="flex min-h-11 items-center justify-between gap-3 py-2 md:min-h-0 md:py-1.5 {hasAnyWind
+		class="flex min-h-11 items-center justify-between gap-3 px-3 py-2.5 {hasAnyWind
 			? 'cursor-pointer'
 			: 'cursor-not-allowed opacity-50'}"
 		for="arrows"
 		title={hasAnyWind ? undefined : 'Ce modèle ne fournit pas de données de vent'}
 	>
-		<span class="text-sm">Flèches de vent</span>
+		<span
+			class="flex items-center gap-3 text-sm transition-colors {arrows && hasAnyWind
+				? 'text-sky-300'
+				: 'text-white'}"
+		>
+			<WindIcon class="size-[18px]" aria-hidden="true" />
+			Flèches de vent
+		</span>
 		<Switch
 			id="arrows"
 			class={hasAnyWind ? 'cursor-pointer' : 'cursor-not-allowed'}
@@ -136,9 +144,9 @@
 		/>
 	</label>
 	{#if !hasAnyWind}
-		<p class="pl-1 text-xs text-white/50">Ce modèle ne fournit pas de vent.</p>
+		<p class="px-3 text-xs text-white/50">Ce modèle ne fournit pas de vent.</p>
 	{:else if arrows}
-		<div class="mt-1 flex items-center gap-3 pl-1">
+		<div class="mt-1 flex items-center gap-3 px-3 pb-1">
 			<Label class="w-14 shrink-0 text-xs text-white/70" for="wind-level">Niveau</Label>
 			<Select.Root type="single" value={selectedLevel} onValueChange={(v) => v && onLevel(v)}>
 				<Select.Trigger
@@ -155,7 +163,7 @@
 				</Select.Content>
 			</Select.Root>
 		</div>
-		<div class="mt-2 pl-1">
+		<div class="mt-2 px-3 pb-1">
 			<button
 				type="button"
 				class="flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 text-xs text-white/70 hover:text-white/90 md:min-h-0"

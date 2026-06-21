@@ -1,13 +1,13 @@
 import { get } from 'svelte/store';
 
-import type { IControl, Map as MaplibreMap } from 'maplibre-gl';
-
 import { map as mapStore } from '$lib/stores/map';
 import { defaultPreferences, preferences } from '$lib/stores/preferences';
 
 import { VIEW_3D_EXAGGERATION, VIEW_3D_PITCH } from '$lib/constants';
 
 import { updateUrl } from './url';
+
+import type { IControl, Map as MaplibreMap } from 'maplibre-gl';
 
 const TERRAIN_SOURCE = 'terrainSource2';
 

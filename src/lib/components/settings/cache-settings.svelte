@@ -3,6 +3,7 @@
 	import { get } from 'svelte/store';
 	import { slide } from 'svelte/transition';
 
+	import DatabaseIcon from '@lucide/svelte/icons/database';
 	import { clearBlockCache } from '@openmeteo/weather-map-layer';
 
 	import { cacheBlockSizeKb, cacheMaxBytesMb } from '$lib/stores/om-protocol-settings';
@@ -40,9 +41,12 @@
 	});
 </script>
 
-<div>
-	<h2 class="text-lg font-bold">Cache</h2>
-	<div class="mt-3 flex flex-col gap-3">
+<div class="px-3 py-2">
+	<div class="flex items-center gap-3 text-sm">
+		<DatabaseIcon class="size-[18px] text-white/55" aria-hidden="true" />
+		Cache
+	</div>
+	<div class="mt-2 flex flex-col gap-3">
 		<div class="flex items-center gap-3">
 			<Label class="w-28 shrink-0">Taille des blocs</Label>
 			<Select.Root

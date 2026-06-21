@@ -280,7 +280,7 @@ describe('buildGridDecimationFilter (2D, id global stable)', () => {
 		expect((filter as unknown[])[1]).toEqual(['zoom']);
 	});
 
-	it("chaque branche décode (i, j) = (id%nx, floor(id/nx)) et décime les deux axes", () => {
+	it('chaque branche décode (i, j) = (id%nx, floor(id/nx)) et décime les deux axes', () => {
 		// step = ['step', ['zoom'], branch0, z1, branch1, …] → branches aux indices pairs ≥ 2.
 		const stops = filter as unknown[];
 		for (let i = 2; i < stops.length; i += 2) {
@@ -311,7 +311,9 @@ describe('buildGridDecimationFilter (2D, id global stable)', () => {
  */
 describe('buildGridDecimationFilter — compatibilité moteur MapLibre (featureFilter)', () => {
 	const geom = { nx: 1440, ny: 721, dxDeg: 0.25, dyDeg: 0.25, refLat: 46, gaussian: false };
-	const compiled = featureFilter(buildGridDecimationFilter(geom, [2, 12], 48) as FilterSpecification);
+	const compiled = featureFilter(
+		buildGridDecimationFilter(geom, [2, 12], 48) as FilterSpecification
+	);
 	const feat = (id: number): Feature => ({ id, type: 1, properties: {} });
 
 	it('MapLibre accepte le filtre (compile sans géométrie requise)', () => {
@@ -329,4 +331,3 @@ describe('buildGridDecimationFilter — compatibilité moteur MapLibre (featureF
 		expect(compiled.filter({ zoom: 12 }, feat(1440))).toBe(true);
 	});
 });
-

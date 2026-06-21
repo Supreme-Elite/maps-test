@@ -1,4 +1,5 @@
 <script lang="ts">
+	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 	import { toast } from 'svelte-sonner';
 
 	import { resetStates, url } from '$lib/stores/preferences';
@@ -23,9 +24,12 @@
 	};
 </script>
 
-<div class="mt-auto justify-self-end">
-	<h2 class="text-lg font-bold">Réinitialisation</h2>
-	<div class="mt-3">
+<div class="px-3 py-2">
+	<div class="flex items-center gap-3 text-sm">
+		<RotateCcwIcon class="size-[18px] text-white/55" aria-hidden="true" />
+		Réinitialisation
+	</div>
+	<div class="mt-2">
 		<Button class="cursor-pointer" onclick={reset}>Réinitialiser tous les réglages</Button>
 	</div>
 </div>
