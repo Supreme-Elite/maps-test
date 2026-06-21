@@ -356,7 +356,8 @@
 				</h3>
 				<p class="mb-2 text-sm opacity-90">
 					Si l'affichage est lent ou saccadé (ordinateur ancien, carte graphique modeste), trois
-					réglages du panneau « Calques &amp; réglages » améliorent la fluidité :
+					réglages du groupe « Performance » (panneau « Calques &amp; réglages ») améliorent la
+					fluidité :
 				</p>
 				<ul class="flex list-disc flex-col gap-1.5 pl-5 text-sm opacity-90">
 					<li>

@@ -102,10 +102,10 @@
 	// Respecte prefers-reduced-motion : neutralise la transition JS du rail desktop.
 	const reduceMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 
-	// Section « Avancé » repliée par défaut : ces réglages experts/système (cache,
-	// taille des tuiles, sondage, réinitialisation) gonflent la complexité perçue
-	// alors que la plupart des utilisateurs n'y touchent jamais. Local (non persisté)
-	// → repart fermé à chaque session.
+	// Dépliant « Réglages avancés » replié par défaut : points de grille, sondage et
+	// réinitialisation gonflent la complexité perçue alors que la plupart des utilisateurs
+	// n'y touchent jamais. Les leviers de performance (tuiles, cache) en sont sortis pour
+	// vivre dans un groupe visible. Local (non persisté) → repart fermé à chaque session.
 	let advancedSettingsOpen = $state(false);
 
 	// Porte le rail sur <body> : un backdrop-filter imbriqué dans celui de la barre
@@ -190,7 +190,19 @@
 		</div>
 	</section>
 
-	<!-- Niveau 3 — réglages experts/système, repliés par défaut pour dégonfler le panneau. -->
+	<!-- Performance — leviers de fluidité, VISIBLES (pas repliés) : l'aide y renvoie
+	     explicitement pour les machines lentes (taille des tuiles, cache). -->
+	<section>
+		{@render sectionLabel('Performance')}
+		<div
+			class="overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
+		>
+			<TileSizeSettings />
+			<CacheSettings />
+		</div>
+	</section>
+
+	<!-- Niveau 3 — réglages avancés occasionnels, repliés par défaut pour dégonfler le panneau. -->
 	<section>
 		{@render sectionLabel('Avancé')}
 		<div class="overflow-hidden rounded-xl bg-white/[0.04]">
@@ -202,7 +214,7 @@
 			>
 				<span class="flex items-center gap-3">
 					<SlidersIcon class="size-[18px] text-white/55" aria-hidden="true" />
-					Réglages experts
+					Réglages avancés
 				</span>
 				<ChevronDownIcon
 					class={[
@@ -226,9 +238,7 @@
 					>
 						{#snippet icon()}<Grid3x3Icon class="size-[18px]" aria-hidden="true" />{/snippet}
 					</LayerToggle>
-					<TileSizeSettings />
 					<SoundingSettings />
-					<CacheSettings />
 					<StateSettings />
 				</div>
 			{/if}
