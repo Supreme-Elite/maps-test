@@ -55,7 +55,7 @@ Chaque section : titre `h2` + icône Lucide ; lignes `[icône|Kbd] Libellé — 
    - `↓`/`↑` jour précédent/suivant · `←`/`→` heure précédente/suivante ·
      `c` heure actuelle · `m` verrouiller le run · `n` dernier run ·
      `ctrl`+`←`/`→` run précédent/suivant
-   - **Animation** ▶ — *accordéon* : lit la plage en boucle ; plages Aujourd'hui /
+   - **Animation** ▶ — _accordéon_ : lit la plage en boucle ; plages Aujourd'hui /
      24 h suivantes / 24 h précédentes / Run complet
    - **Préchargement** ⎙ — charge la plage à l'avance pour fluidifier l'animation
 
@@ -67,7 +67,7 @@ Chaque section : titre `h2` + icône Lucide ; lignes `[icône|Kbd] Libellé — 
 3. **Visualiser**
    - Unités (température, distance, géopotentiel, précipitations, vent)
    - Grille (points du modèle)
-   - **Valeurs** (nombres aux nœuds — *distinct de Grille*)
+   - **Valeurs** (nombres aux nœuds — _distinct de Grille_)
    - Flèches (vent / houle ; niveau + style couleur/largeur)
    - Isocontours (intervalle, alignement des paliers, style couleur/largeur)
    - Opacité (transparence des tuiles raster)
@@ -76,13 +76,13 @@ Chaque section : titre `h2` + icône Lucide ; lignes `[icône|Kbd] Libellé — 
 
 4. **Interroger la carte**
    - Infobulle `p` — cycle 3 modes : désactivée / suit la souris / déplaçable
-   - **Sondage vertical** — *accordéon* : Skew-T / hodographe / indices ; au clic
+   - **Sondage vertical** — _accordéon_ : Skew-T / hodographe / indices ; au clic
      sur la carte ; domaines AROME
 
 5. **Cadrer & exporter**
-   - **Découpage** — *accordéon* : modes sélection / rectangle / polygone /
+   - **Découpage** — _accordéon_ : modes sélection / rectangle / polygone /
      main levée / pinceau + sélecteur de pays ; tracé mémorisé
-   - **Capture PNG** — *accordéon* : cadrage paysage 4:3 / portrait 3:4 ;
+   - **Capture PNG** — _accordéon_ : cadrage paysage 4:3 / portrait 3:4 ;
      filigrane (run + échéance + domaine/variable) ; télécharger ou partager
 
 6. **Repères & rendu**
@@ -90,7 +90,7 @@ Chaque section : titre `h2` + icône Lucide ; lignes `[icône|Kbd] Libellé — 
      Départements · Villes & pays · Me localiser ·
      Zoom `+`/`−`, boussole (réinitialiser inclinaison / rotation)
 
-7. **Réglages avancés** — *accordéon, repliée par défaut*
+7. **Réglages avancés** — _accordéon, repliée par défaut_
    - Cache (taille des blocs / cache max en Mo)
    - Réinitialiser tous les réglages
 
@@ -116,7 +116,10 @@ l'infobulle / réinitialiser le mode infobulle.
 
 ## Hors périmètre (YAGNI)
 
-- Pas de réorganisation du panneau « Calques & réglages » lui-même.
+- ~~Pas de réorganisation du panneau « Calques & réglages » lui-même.~~ — **périmètre
+  étendu en cours de route** : Cache + Taille des tuiles regroupés dans un dépliant
+  « Performance » (section Avancé), et « Réglages experts » renommé « Réglages avancés ».
+  L'encart d'aide « Performance » renvoie à ce dépliant.
 - Pas de tour guidé / onboarding interactif.
 - Pas de nouvelle dépendance (Accordion shadcn écarté).
 - Pas de tableau récapitulatif de raccourcis séparé.

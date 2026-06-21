@@ -34,9 +34,11 @@ Le composant est construit en 4 tâches qui modifient ce fichier de façon addit
 Pose la coquille du dialogue et **tous les patterns** (ligne icône, ligne Kbd, accordéon `<details>`, masquage Kbd mobile via `isDesktop`), prouvés par la première section.
 
 **Files:**
+
 - Modify (réécriture totale) : `src/lib/components/help/help-dialog.svelte`
 
 **Interfaces:**
+
 - Consumes : store `helpOpen` (`$lib/stores/preferences`), `Dialog` et `Kbd` (`$lib/components/ui/*`), `MediaQuery` (`svelte/reactivity`), icônes `@lucide/svelte/icons/*`.
 - Produces : patterns markup réutilisés par les Tâches 2-4 — classes de ligne `flex items-start gap-2.5`, icône de ligne `size-4.5 shrink-0 mt-0.5 opacity-75`, pastille `<Kbd.Root>`, accordéon `<details class="group">` + chevron `group-open:rotate-90 motion-reduce:transition-none`, et la variable `isDesktop` (`MediaQuery('min-width: 640px')`) qui masque les pastilles Kbd `<640px`.
 
@@ -48,16 +50,16 @@ Remplacer **tout** le contenu de `src/lib/components/help/help-dialog.svelte` pa
 <script lang="ts">
 	import { MediaQuery } from 'svelte/reactivity';
 
+	import CalendarClockIcon from '@lucide/svelte/icons/calendar-clock';
+	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
+	import ClockIcon from '@lucide/svelte/icons/clock';
+	import DownloadIcon from '@lucide/svelte/icons/download';
+	import PlayIcon from '@lucide/svelte/icons/play';
+
 	import { helpOpen } from '$lib/stores/preferences';
 
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Kbd from '$lib/components/ui/kbd';
-
-	import ClockIcon from '@lucide/svelte/icons/clock';
-	import CalendarClockIcon from '@lucide/svelte/icons/calendar-clock';
-	import PlayIcon from '@lucide/svelte/icons/play';
-	import DownloadIcon from '@lucide/svelte/icons/download';
-	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 
 	// Masque les pastilles clavier sur mobile (pas de clavier physique).
 	const isDesktop = new MediaQuery('min-width: 640px');
@@ -80,7 +82,9 @@ Remplacer **tout** le contenu de `src/lib/components/help/help-dialog.svelte` pa
 				<ul class="flex flex-col gap-1.5">
 					<li class="flex items-start gap-2.5">
 						<CalendarClockIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Sélecteur de temps</span> — afficher / masquer la barre temporelle</span>
+						<span
+							><span class="font-medium">Sélecteur de temps</span> — afficher / masquer la barre temporelle</span
+						>
 					</li>
 					{#if isDesktop.current}
 						<li class="flex items-center gap-2.5">
@@ -107,17 +111,19 @@ Remplacer **tout** le contenu de `src/lib/components/help/help-dialog.svelte` pa
 					{/if}
 					<li class="flex items-start gap-2.5">
 						<PlayIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Animation</span> — lit la plage de temps en boucle</span>
+						<span><span class="font-medium">Animation</span> — lit la plage de temps en boucle</span
+						>
 					</li>
 					<li class="flex items-start gap-2.5">
 						<DownloadIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Préchargement</span> — charge la plage à l'avance pour fluidifier l'animation</span>
+						<span
+							><span class="font-medium">Préchargement</span> — charge la plage à l'avance pour fluidifier
+							l'animation</span
+						>
 					</li>
 				</ul>
 				<details class="group mt-2 ml-7">
-					<summary
-						class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90"
-					>
+					<summary class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90">
 						<ChevronRightIcon
 							class="size-4 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
 						/>
@@ -154,6 +160,7 @@ Expected : PASS (prettier --check + eslint).
 
 Run : `npm run dev`, ouvrir l'app, presser `h` (ou bouton Aide du panneau).
 Critères d'acceptation :
+
 - Le dialogue s'ouvre, titre « Aide ».
 - Section « Naviguer dans le temps » présente avec son icône.
 - Sur desktop (≥640px) : les pastilles `↓ ↑ ← → c m n ctrl` sont visibles.
@@ -172,9 +179,11 @@ git commit -m "feat: refonte aide — scaffold + section Naviguer dans le temps"
 ### Task 2 : Sections « Choisir les données » + « Visualiser »
 
 **Files:**
+
 - Modify : `src/lib/components/help/help-dialog.svelte`
 
 **Interfaces:**
+
 - Consumes : patterns de la Tâche 1 (ligne, ligne-Kbd, `isDesktop`).
 - Produces : rien de nouveau (réutilise les patterns).
 
@@ -183,18 +192,14 @@ git commit -m "feat: refonte aide — scaffold + section Naviguer dans le temps"
 Dans le bloc `<script>`, ajouter après les imports d'icônes existants :
 
 ```svelte
-	import DatabaseIcon from '@lucide/svelte/icons/database';
-	import Layers2Icon from '@lucide/svelte/icons/layers-2';
-	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
-	import EyeIcon from '@lucide/svelte/icons/eye';
-	import RulerIcon from '@lucide/svelte/icons/ruler';
-	import Grid3x3Icon from '@lucide/svelte/icons/grid-3x3';
-	import HashIcon from '@lucide/svelte/icons/hash';
-	import WindIcon from '@lucide/svelte/icons/wind';
-	import SplineIcon from '@lucide/svelte/icons/spline';
-	import BlendIcon from '@lucide/svelte/icons/blend';
-	import PaletteIcon from '@lucide/svelte/icons/palette';
-	import ProportionsIcon from '@lucide/svelte/icons/proportions';
+import DatabaseIcon from '@lucide/svelte/icons/database'; import Layers2Icon from
+'@lucide/svelte/icons/layers-2'; import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
+import EyeIcon from '@lucide/svelte/icons/eye'; import RulerIcon from '@lucide/svelte/icons/ruler';
+import Grid3x3Icon from '@lucide/svelte/icons/grid-3x3'; import HashIcon from
+'@lucide/svelte/icons/hash'; import WindIcon from '@lucide/svelte/icons/wind'; import SplineIcon
+from '@lucide/svelte/icons/spline'; import BlendIcon from '@lucide/svelte/icons/blend'; import
+PaletteIcon from '@lucide/svelte/icons/palette'; import ProportionsIcon from
+'@lucide/svelte/icons/proportions';
 ```
 
 - [ ] **Step 2 : Ajouter les deux sections**
@@ -202,74 +207,97 @@ Dans le bloc `<script>`, ajouter après les imports d'icônes existants :
 Dans la `<div class="flex flex-col gap-6">`, **après** la `<section>` « Naviguer dans le temps », insérer :
 
 ```svelte
-			<!-- 2. Choisir les données -->
-			<section>
-				<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
-					<DatabaseIcon class="size-5 opacity-75" /> Choisir les données
-				</h2>
-				<ul class="flex flex-col gap-1.5">
-					{#if isDesktop.current}
-						<li class="flex items-center gap-2.5">
-							<Kbd.Root>d</Kbd.Root> <span>Sélection du domaine (modèle)</span>
-						</li>
-						<li class="flex items-center gap-2.5">
-							<Kbd.Root>v</Kbd.Root> <span>Sélection de la variable</span>
-						</li>
-						<li class="flex items-center gap-2.5">
-							<Kbd.Root>l</Kbd.Root> <span>Sélection du niveau</span>
-						</li>
-					{/if}
-					<li class="flex items-start gap-2.5">
-						<ChevronLeftIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Sélection de variable</span> — afficher / masquer le panneau de choix</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<Layers2Icon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Couche superposée</span> — afficher une 2ᵉ variable par-dessus la principale, avec une opacité indépendante</span>
-					</li>
-				</ul>
-			</section>
+<!-- 2. Choisir les données -->
+<section>
+	<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
+		<DatabaseIcon class="size-5 opacity-75" /> Choisir les données
+	</h2>
+	<ul class="flex flex-col gap-1.5">
+		{#if isDesktop.current}
+			<li class="flex items-center gap-2.5">
+				<Kbd.Root>d</Kbd.Root> <span>Sélection du domaine (modèle)</span>
+			</li>
+			<li class="flex items-center gap-2.5">
+				<Kbd.Root>v</Kbd.Root> <span>Sélection de la variable</span>
+			</li>
+			<li class="flex items-center gap-2.5">
+				<Kbd.Root>l</Kbd.Root> <span>Sélection du niveau</span>
+			</li>
+		{/if}
+		<li class="flex items-start gap-2.5">
+			<ChevronLeftIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Sélection de variable</span> — afficher / masquer le panneau de choix</span
+			>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<Layers2Icon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Couche superposée</span> — afficher une 2ᵉ variable par-dessus la principale,
+				avec une opacité indépendante</span
+			>
+		</li>
+	</ul>
+</section>
 
-			<!-- 3. Visualiser -->
-			<section>
-				<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
-					<EyeIcon class="size-5 opacity-75" /> Visualiser
-				</h2>
-				<ul class="flex flex-col gap-1.5">
-					<li class="flex items-start gap-2.5">
-						<RulerIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Unités</span> — température, distance, géopotentiel, précipitations, vitesse du vent</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<Grid3x3Icon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Grille</span> — points du modèle, en orange sur la carte</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<HashIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Valeurs</span> — valeur chiffrée à chaque nœud de la grille (distinct de « Grille »)</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<WindIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Flèches</span> — direction et intensité (vent / houle) ; niveau et style (couleur, largeur) réglables</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<SplineIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Isocontours</span> — isolignes entre seuils ; intervalle, alignement des paliers et style réglables</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<BlendIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Opacité</span> — transparence des tuiles météo</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<PaletteIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Couleurs</span> — édition des paliers de l'échelle de couleur</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<ProportionsIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Taille des tuiles</span> — résolution de rendu ; 512 px par défaut (plus petit = plus rapide, plus grand = plus net)</span>
-					</li>
-				</ul>
-			</section>
+<!-- 3. Visualiser -->
+<section>
+	<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
+		<EyeIcon class="size-5 opacity-75" /> Visualiser
+	</h2>
+	<ul class="flex flex-col gap-1.5">
+		<li class="flex items-start gap-2.5">
+			<RulerIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Unités</span> — température, distance, géopotentiel, précipitations,
+				vitesse du vent</span
+			>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<Grid3x3Icon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span><span class="font-medium">Grille</span> — points du modèle, en orange sur la carte</span
+			>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<HashIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Valeurs</span> — valeur chiffrée à chaque nœud de la grille (distinct
+				de « Grille »)</span
+			>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<WindIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Flèches</span> — direction et intensité (vent / houle) ; niveau et
+				style (couleur, largeur) réglables</span
+			>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<SplineIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Isocontours</span> — isolignes entre seuils ; intervalle, alignement
+				des paliers et style réglables</span
+			>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<BlendIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span><span class="font-medium">Opacité</span> — transparence des tuiles météo</span>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<PaletteIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Couleurs</span> — édition des paliers de l'échelle de couleur</span
+			>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<ProportionsIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Taille des tuiles</span> — résolution de rendu ; 512 px par défaut
+				(plus petit = plus rapide, plus grand = plus net)</span
+			>
+		</li>
+	</ul>
+</section>
 ```
 
 - [ ] **Step 3 : Formater** — `npm run format`
@@ -278,6 +306,7 @@ Dans la `<div class="flex flex-col gap-6">`, **après** la `<section>` « Navigu
 - [ ] **Step 6 : Vérification visuelle**
 
 `npm run dev`, ouvrir l'aide. Critères :
+
 - Sections « Choisir les données » et « Visualiser » présentes après « Naviguer dans le temps ».
 - « Grille » et « Valeurs » sont deux lignes distinctes.
 - Chaque ligne a son icône, sans cadre.
@@ -296,9 +325,11 @@ git commit -m "feat: refonte aide — sections Choisir les données + Visualiser
 Deux sections à accordéon (sondage, découpage, capture).
 
 **Files:**
+
 - Modify : `src/lib/components/help/help-dialog.svelte`
 
 **Interfaces:**
+
 - Consumes : patterns Tâche 1 (ligne, ligne-Kbd, accordéon `<details>`, `isDesktop`).
 - Produces : rien de nouveau.
 
@@ -307,12 +338,11 @@ Deux sections à accordéon (sondage, découpage, capture).
 Dans `<script>`, ajouter :
 
 ```svelte
-	import MousePointerClickIcon from '@lucide/svelte/icons/mouse-pointer-click';
-	import SquareMousePointerIcon from '@lucide/svelte/icons/square-mouse-pointer';
-	import ThermometerIcon from '@lucide/svelte/icons/thermometer';
-	import CropIcon from '@lucide/svelte/icons/crop';
-	import ScissorsIcon from '@lucide/svelte/icons/scissors';
-	import CameraIcon from '@lucide/svelte/icons/camera';
+import MousePointerClickIcon from '@lucide/svelte/icons/mouse-pointer-click'; import
+SquareMousePointerIcon from '@lucide/svelte/icons/square-mouse-pointer'; import ThermometerIcon from
+'@lucide/svelte/icons/thermometer'; import CropIcon from '@lucide/svelte/icons/crop'; import
+ScissorsIcon from '@lucide/svelte/icons/scissors'; import CameraIcon from
+'@lucide/svelte/icons/camera';
 ```
 
 - [ ] **Step 2 : Ajouter les deux sections**
@@ -320,75 +350,81 @@ Dans `<script>`, ajouter :
 Après la `<section>` « Visualiser », insérer :
 
 ```svelte
-			<!-- 4. Interroger la carte -->
-			<section>
-				<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
-					<MousePointerClickIcon class="size-5 opacity-75" /> Interroger la carte
-				</h2>
-				<ul class="flex flex-col gap-1.5">
-					<li class="flex items-start gap-2.5">
-						<SquareMousePointerIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span>
-							<span class="font-medium">Infobulle</span> — valeur sous le curseur.
-							{#if isDesktop.current}
-								<Kbd.Root>p</Kbd.Root> bascule : désactivée / suit la souris / déplaçable.
-							{/if}
-						</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<ThermometerIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Sondage vertical</span> — profil atmosphérique au clic sur la carte</span>
-					</li>
-				</ul>
-				<details class="group mt-2 ml-7">
-					<summary class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90">
-						<ChevronRightIcon
-							class="size-4 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
-						/>
-						<h3 class="font-medium">Détails du sondage</h3>
-					</summary>
-					<p class="mt-1.5 ml-5.5 text-sm opacity-80">
-						Trois onglets : <b>Skew-T</b>, <b>hodographe</b> et <b>indices</b> thermodynamiques. Le
-						profil se met à jour en suivant la lecture du temps. Disponible sur les domaines AROME. Le
-						bouton d'accès s'active dans les réglages avancés (« Sondage vertical »).
-					</p>
-				</details>
-			</section>
+<!-- 4. Interroger la carte -->
+<section>
+	<h3 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
+		<MousePointerClickIcon class="size-5 opacity-75" /> Interroger la carte
+	</h3>
+	<ul class="flex flex-col gap-1.5">
+		<li class="flex items-start gap-2.5">
+			<SquareMousePointerIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span>
+				<span class="font-medium">Infobulle</span> — valeur sous le curseur.
+				{#if isDesktop.current}
+					<Kbd.Root>p</Kbd.Root> bascule : désactivée / suit la souris / déplaçable.
+				{/if}
+			</span>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<ThermometerIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Sondage vertical</span> — profil atmosphérique au clic sur la carte</span
+			>
+		</li>
+	</ul>
+	<details class="group mt-2 ml-7">
+		<summary class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90">
+			<ChevronRightIcon
+				class="size-4 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
+			/>
+			<h4 class="font-medium">Détails du sondage</h4>
+		</summary>
+		<p class="mt-1.5 ml-5.5 text-sm opacity-80">
+			Trois onglets : <b>Skew-T</b>, <b>hodographe</b> et <b>indices</b> thermodynamiques. Le profil se
+			met à jour en suivant la lecture du temps. Disponible sur les domaines AROME. Le bouton d'accès
+			s'active dans les réglages avancés (« Sondage vertical »).
+		</p>
+	</details>
+</section>
 
-			<!-- 5. Cadrer & exporter -->
-			<section>
-				<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
-					<CropIcon class="size-5 opacity-75" /> Cadrer &amp; exporter
-				</h2>
-				<ul class="flex flex-col gap-1.5">
-					<li class="flex items-start gap-2.5">
-						<ScissorsIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Découpage</span> — limiter le rendu à une zone dessinée ou à un pays</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<CameraIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Capture</span> — exporter la vue en image PNG avec filigrane</span>
-					</li>
-				</ul>
-				<details class="group mt-2 ml-7">
-					<summary class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90">
-						<ChevronRightIcon
-							class="size-4 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
-						/>
-						<h3 class="font-medium">Détails du découpage et de la capture</h3>
-					</summary>
-					<div class="mt-1.5 ml-5.5 flex flex-col gap-2 text-sm opacity-80">
-						<p>
-							<b>Découpage</b> : modes sélection, rectangle, polygone, main levée ou pinceau, plus un
-							sélecteur de pays. La zone est mémorisée d'une session à l'autre.
-						</p>
-						<p>
-							<b>Capture</b> : cadrage paysage (4:3) ou portrait (3:4), filigrane automatique (run,
-							échéance, domaine et variable), puis téléchargement ou partage.
-						</p>
-					</div>
-				</details>
-			</section>
+<!-- 5. Cadrer & exporter -->
+<section>
+	<h3 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
+		<CropIcon class="size-5 opacity-75" /> Cadrer &amp; exporter
+	</h3>
+	<ul class="flex flex-col gap-1.5">
+		<li class="flex items-start gap-2.5">
+			<ScissorsIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Découpage</span> — limiter le rendu à une zone dessinée ou à un pays</span
+			>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<CameraIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Capture</span> — exporter la vue en image PNG avec filigrane</span
+			>
+		</li>
+	</ul>
+	<details class="group mt-2 ml-7">
+		<summary class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90">
+			<ChevronRightIcon
+				class="size-4 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
+			/>
+			<h4 class="font-medium">Détails du découpage et de la capture</h4>
+		</summary>
+		<div class="mt-1.5 ml-5.5 flex flex-col gap-2 text-sm opacity-80">
+			<p>
+				<b>Découpage</b> : modes sélection, rectangle, polygone, main levée ou pinceau, plus un sélecteur
+				de pays. La zone est mémorisée d'une session à l'autre.
+			</p>
+			<p>
+				<b>Capture</b> : cadrage paysage (4:3) ou portrait (3:4), filigrane automatique (run, échéance,
+				domaine et variable), puis téléchargement ou partage.
+			</p>
+		</div>
+	</details>
+</section>
 ```
 
 - [ ] **Step 3 : Formater** — `npm run format`
@@ -412,9 +448,11 @@ git commit -m "feat: refonte aide — sections Interroger + Cadrer & exporter"
 Dernière tâche : les deux sections restantes, la ligne Général (raccourcis globaux), puis vérification finale complète (responsive, dark mode, absence des features supprimées).
 
 **Files:**
+
 - Modify : `src/lib/components/help/help-dialog.svelte`
 
 **Interfaces:**
+
 - Consumes : tous les patterns des tâches précédentes.
 - Produces : composant complet et final.
 
@@ -423,19 +461,15 @@ Dernière tâche : les deux sections restantes, la ligne Général (raccourcis g
 Dans `<script>`, ajouter :
 
 ```svelte
-	import MapIcon from '@lucide/svelte/icons/map';
-	import SunMoonIcon from '@lucide/svelte/icons/sun-moon';
-	import MountainIcon from '@lucide/svelte/icons/mountain';
-	import BoxIcon from '@lucide/svelte/icons/box';
-	import GlobeIcon from '@lucide/svelte/icons/globe';
-	import LandPlotIcon from '@lucide/svelte/icons/land-plot';
-	import Building2Icon from '@lucide/svelte/icons/building-2';
-	import LocateFixedIcon from '@lucide/svelte/icons/locate-fixed';
-	import CompassIcon from '@lucide/svelte/icons/compass';
-	import Settings2Icon from '@lucide/svelte/icons/settings-2';
-	import HardDriveIcon from '@lucide/svelte/icons/hard-drive';
-	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
-	import KeyboardIcon from '@lucide/svelte/icons/keyboard';
+import MapIcon from '@lucide/svelte/icons/map'; import SunMoonIcon from
+'@lucide/svelte/icons/sun-moon'; import MountainIcon from '@lucide/svelte/icons/mountain'; import
+BoxIcon from '@lucide/svelte/icons/box'; import GlobeIcon from '@lucide/svelte/icons/globe'; import
+LandPlotIcon from '@lucide/svelte/icons/land-plot'; import Building2Icon from
+'@lucide/svelte/icons/building-2'; import LocateFixedIcon from '@lucide/svelte/icons/locate-fixed';
+import CompassIcon from '@lucide/svelte/icons/compass'; import Settings2Icon from
+'@lucide/svelte/icons/settings-2'; import HardDriveIcon from '@lucide/svelte/icons/hard-drive';
+import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw'; import KeyboardIcon from
+'@lucide/svelte/icons/keyboard';
 ```
 
 - [ ] **Step 2 : Ajouter les sections + ligne Général**
@@ -443,87 +477,94 @@ Dans `<script>`, ajouter :
 Après la `<section>` « Cadrer & exporter », insérer :
 
 ```svelte
-			<!-- 6. Repères & rendu -->
-			<section>
-				<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
-					<MapIcon class="size-5 opacity-75" /> Repères &amp; rendu
-				</h2>
-				<ul class="flex flex-col gap-1.5">
-					<li class="flex items-start gap-2.5">
-						<SunMoonIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Mode sombre / clair</span> — thème du fond de carte</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<MountainIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Relief ombré</span> — ombrage du relief</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<BoxIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Terrain 3D</span> — relief en perspective</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<GlobeIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Projection globe</span> — vue sphérique de la Terre</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<LandPlotIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Départements</span> — contours administratifs français</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<Building2Icon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Villes &amp; pays</span> — libellés du fond de carte</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<LocateFixedIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Me localiser</span> — centrer sur ma position</span>
-					</li>
-					<li class="flex items-start gap-2.5">
-						<CompassIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span><span class="font-medium">Zoom &amp; boussole</span> — zoomer / dézoomer ; réinitialiser l'inclinaison et la rotation</span>
-					</li>
-				</ul>
-			</section>
+<!-- 6. Repères & rendu -->
+<section>
+	<h3 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
+		<MapIcon class="size-5 opacity-75" /> Repères &amp; rendu
+	</h3>
+	<ul class="flex flex-col gap-1.5">
+		<li class="flex items-start gap-2.5">
+			<SunMoonIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span><span class="font-medium">Mode sombre / clair</span> — thème du fond de carte</span>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<MountainIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span><span class="font-medium">Relief ombré</span> — ombrage du relief</span>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<BoxIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span><span class="font-medium">Terrain 3D</span> — relief en perspective</span>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<GlobeIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span><span class="font-medium">Projection globe</span> — vue sphérique de la Terre</span>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<LandPlotIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span><span class="font-medium">Départements</span> — contours administratifs français</span>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<Building2Icon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span><span class="font-medium">Villes &amp; pays</span> — libellés du fond de carte</span>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<LocateFixedIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span><span class="font-medium">Me localiser</span> — centrer sur ma position</span>
+		</li>
+		<li class="flex items-start gap-2.5">
+			<CompassIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+			<span
+				><span class="font-medium">Zoom &amp; boussole</span> — zoomer / dézoomer ; réinitialiser l'inclinaison
+				et la rotation</span
+			>
+		</li>
+	</ul>
+</section>
 
-			<!-- 7. Réglages avancés -->
-			<section>
-				<details class="group">
-					<summary class="flex cursor-pointer list-none items-center gap-1.5">
-						<ChevronRightIcon
-							class="size-5 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
-						/>
-						<h2 class="flex items-center gap-1.5 text-lg font-bold">
-							<Settings2Icon class="size-5 opacity-75" /> Réglages avancés
-						</h2>
-					</summary>
-					<ul class="mt-2 ml-6 flex flex-col gap-1.5">
-						<li class="flex items-start gap-2.5">
-							<HardDriveIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-							<span><span class="font-medium">Cache</span> — taille des blocs et taille maximale du cache (Mo)</span>
-						</li>
-						<li class="flex items-start gap-2.5">
-							<RotateCcwIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-							<span><span class="font-medium">Réinitialiser</span> — restaurer tous les réglages par défaut</span>
-						</li>
-					</ul>
-				</details>
-			</section>
+<!-- 7. Réglages avancés -->
+<section>
+	<details class="group">
+		<summary class="flex cursor-pointer list-none items-center gap-1.5">
+			<ChevronRightIcon
+				class="size-5 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
+			/>
+			<h3 class="flex items-center gap-1.5 text-lg font-bold">
+				<Settings2Icon class="size-5 opacity-75" /> Réglages avancés
+			</h3>
+		</summary>
+		<ul class="mt-2 ml-6 flex flex-col gap-1.5">
+			<li class="flex items-start gap-2.5">
+				<HardDriveIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+				<span
+					><span class="font-medium">Cache</span> — taille des blocs et taille maximale du cache (Mo)</span
+				>
+			</li>
+			<li class="flex items-start gap-2.5">
+				<RotateCcwIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+				<span
+					><span class="font-medium">Réinitialiser</span> — restaurer tous les réglages par défaut</span
+				>
+			</li>
+		</ul>
+	</details>
+</section>
 
-			{#if isDesktop.current}
-				<!-- Général (raccourcis globaux) -->
-				<section class="border-t border-white/10 pt-3 text-sm opacity-80">
-					<h2 class="mb-2 flex items-center gap-1.5 font-bold">
-						<KeyboardIcon class="size-4.5 opacity-75" /> Général
-					</h2>
-					<ul class="flex flex-col gap-1.5">
-						<li class="flex items-center gap-2.5">
-							<Kbd.Root>h</Kbd.Root> <span>Ouvrir / fermer cette aide</span>
-						</li>
-						<li class="flex items-center gap-2.5">
-							<Kbd.Root>Échap</Kbd.Root> <span>Fermer l'infobulle / réinitialiser le mode infobulle</span>
-						</li>
-					</ul>
-				</section>
-			{/if}
+{#if isDesktop.current}
+	<!-- Général (raccourcis globaux) -->
+	<section class="border-t border-white/10 pt-3 text-sm opacity-80">
+		<h3 class="mb-2 flex items-center gap-1.5 font-bold">
+			<KeyboardIcon class="size-4.5 opacity-75" /> Général
+		</h3>
+		<ul class="flex flex-col gap-1.5">
+			<li class="flex items-center gap-2.5">
+				<Kbd.Root>h</Kbd.Root> <span>Ouvrir / fermer cette aide</span>
+			</li>
+			<li class="flex items-center gap-2.5">
+				<Kbd.Root>Échap</Kbd.Root> <span>Fermer l'infobulle / réinitialiser le mode infobulle</span>
+			</li>
+		</ul>
+	</section>
+{/if}
 ```
 
 - [ ] **Step 3 : Formater** — `npm run format`
@@ -532,6 +573,7 @@ Après la `<section>` « Cadrer & exporter », insérer :
 - [ ] **Step 6 : Vérification visuelle finale (acceptation globale)**
 
 `npm run dev`, ouvrir l'aide. Vérifier :
+
 - Les 6 sections principales + « Réglages avancés » (replié par défaut) + « Général » sont présentes dans l'ordre.
 - « Réglages avancés » est un accordéon fermé par défaut ; s'ouvre au clic.
 - **Recherche texte dans la page** : aucune occurrence de « Requêtes partielles » ni « Masquer les océans ».
@@ -552,6 +594,7 @@ git commit -m "feat: refonte aide — Repères & rendu, Réglages avancés, Gén
 ## Self-Review
 
 **1. Couverture de la spec :**
+
 - Section 1 Naviguer dans le temps → Task 1 ✓
 - Section 2 Choisir les données → Task 2 ✓
 - Section 3 Visualiser (Grille vs Valeurs distincts) → Task 2 ✓
