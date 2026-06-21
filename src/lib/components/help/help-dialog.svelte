@@ -1,11 +1,23 @@
 <script lang="ts">
 	import { MediaQuery } from 'svelte/reactivity';
 
+	import BlendIcon from '@lucide/svelte/icons/blend';
 	import CalendarClockIcon from '@lucide/svelte/icons/calendar-clock';
+	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import ClockIcon from '@lucide/svelte/icons/clock';
+	import DatabaseIcon from '@lucide/svelte/icons/database';
 	import DownloadIcon from '@lucide/svelte/icons/download';
+	import EyeIcon from '@lucide/svelte/icons/eye';
+	import Grid3x3Icon from '@lucide/svelte/icons/grid-3x3';
+	import HashIcon from '@lucide/svelte/icons/hash';
+	import Layers2Icon from '@lucide/svelte/icons/layers-2';
+	import PaletteIcon from '@lucide/svelte/icons/palette';
 	import PlayIcon from '@lucide/svelte/icons/play';
+	import ProportionsIcon from '@lucide/svelte/icons/proportions';
+	import RulerIcon from '@lucide/svelte/icons/ruler';
+	import SplineIcon from '@lucide/svelte/icons/spline';
+	import WindIcon from '@lucide/svelte/icons/wind';
 
 	import { helpOpen } from '$lib/stores/preferences';
 
@@ -86,6 +98,100 @@
 						l'animation pour éviter les saccades.
 					</p>
 				</details>
+			</section>
+
+			<!-- 2. Choisir les données -->
+			<section>
+				<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
+					<DatabaseIcon class="size-5 opacity-75" /> Choisir les données
+				</h2>
+				<ul class="flex flex-col gap-1.5">
+					{#if isDesktop.current}
+						<li class="flex items-center gap-2.5">
+							<Kbd.Root>d</Kbd.Root> <span>Sélection du domaine (modèle)</span>
+						</li>
+						<li class="flex items-center gap-2.5">
+							<Kbd.Root>v</Kbd.Root> <span>Sélection de la variable</span>
+						</li>
+						<li class="flex items-center gap-2.5">
+							<Kbd.Root>l</Kbd.Root> <span>Sélection du niveau</span>
+						</li>
+					{/if}
+					<li class="flex items-start gap-2.5">
+						<ChevronLeftIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+						<span
+							><span class="font-medium">Sélection de variable</span> — afficher / masquer le panneau
+							de choix</span
+						>
+					</li>
+					<li class="flex items-start gap-2.5">
+						<Layers2Icon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+						<span
+							><span class="font-medium">Couche superposée</span> — afficher une 2ᵉ variable par-dessus
+							la principale, avec une opacité indépendante</span
+						>
+					</li>
+				</ul>
+			</section>
+
+			<!-- 3. Visualiser -->
+			<section>
+				<h2 class="mb-2 flex items-center gap-1.5 text-lg font-bold">
+					<EyeIcon class="size-5 opacity-75" /> Visualiser
+				</h2>
+				<ul class="flex flex-col gap-1.5">
+					<li class="flex items-start gap-2.5">
+						<RulerIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+						<span
+							><span class="font-medium">Unités</span> — température, distance, géopotentiel, précipitations,
+							vitesse du vent</span
+						>
+					</li>
+					<li class="flex items-start gap-2.5">
+						<Grid3x3Icon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+						<span
+							><span class="font-medium">Grille</span> — points du modèle, en orange sur la carte</span
+						>
+					</li>
+					<li class="flex items-start gap-2.5">
+						<HashIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+						<span
+							><span class="font-medium">Valeurs</span> — valeur chiffrée à chaque nœud de la grille (distinct
+							de « Grille »)</span
+						>
+					</li>
+					<li class="flex items-start gap-2.5">
+						<WindIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+						<span
+							><span class="font-medium">Flèches</span> — direction et intensité (vent / houle) ; niveau
+							et style (couleur, largeur) réglables</span
+						>
+					</li>
+					<li class="flex items-start gap-2.5">
+						<SplineIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+						<span
+							><span class="font-medium">Isocontours</span> — isolignes entre seuils ; intervalle, alignement
+							des paliers et style réglables</span
+						>
+					</li>
+					<li class="flex items-start gap-2.5">
+						<BlendIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+						<span><span class="font-medium">Opacité</span> — transparence des tuiles météo</span>
+					</li>
+					<li class="flex items-start gap-2.5">
+						<PaletteIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+						<span
+							><span class="font-medium">Couleurs</span> — édition des paliers de l'échelle de couleur</span
+						>
+					</li>
+					<li class="flex items-start gap-2.5">
+						<ProportionsIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
+						<span
+							><span class="font-medium">Taille des tuiles</span> — résolution de rendu ; 512 px par défaut
+							(plus petit = plus rapide, plus grand = plus net)</span
+						>
+					</li>
+				</ul>
 			</section>
 		</div>
 	</Dialog.Content>
