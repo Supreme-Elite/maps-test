@@ -7,6 +7,7 @@
 	import Building2Icon from '@lucide/svelte/icons/building-2';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import HelpIcon from '@lucide/svelte/icons/circle-question-mark';
+	import GaugeIcon from '@lucide/svelte/icons/gauge';
 	import Grid3x3Icon from '@lucide/svelte/icons/grid-3x3';
 	import HashIcon from '@lucide/svelte/icons/hash';
 	import MapIcon from '@lucide/svelte/icons/map';
@@ -102,10 +103,11 @@
 	// Respecte prefers-reduced-motion : neutralise la transition JS du rail desktop.
 	const reduceMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 
-	// Dépliant « Réglages avancés » replié par défaut : points de grille, sondage et
-	// réinitialisation gonflent la complexité perçue alors que la plupart des utilisateurs
-	// n'y touchent jamais. Les leviers de performance (tuiles, cache) en sont sortis pour
-	// vivre dans un groupe visible. Local (non persisté) → repart fermé à chaque session.
+	// Section « Avancé » : deux dépliants repliés par défaut (« Performance » = tuiles + cache,
+	// « Réglages avancés » = points de grille, sondage, réinitialisation). Repliés pour dégonfler
+	// la complexité perçue alors que la plupart des utilisateurs n'y touchent jamais. Local
+	// (non persisté) → repartent fermés à chaque session. L'aide renvoie au dépliant Performance.
+	let performanceOpen = $state(false);
 	let advancedSettingsOpen = $state(false);
 
 	// Porte le rail sur <body> : un backdrop-filter imbriqué dans celui de la barre
@@ -190,22 +192,47 @@
 		</div>
 	</section>
 
-	<!-- Performance — leviers de fluidité, VISIBLES (pas repliés) : l'aide y renvoie
-	     explicitement pour les machines lentes (taille des tuiles, cache). -->
-	<section>
-		{@render sectionLabel('Performance')}
-		<div
-			class="overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
-		>
-			<TileSizeSettings />
-			<CacheSettings />
-		</div>
-	</section>
-
-	<!-- Niveau 3 — réglages avancés occasionnels, repliés par défaut pour dégonfler le panneau. -->
+	<!-- Niveau 3 — section « Avancé » : deux dépliants repliés par défaut pour dégonfler le
+	     panneau. « Performance » (tuiles + cache) est référencé par l'aide ; « Réglages avancés »
+	     regroupe les réglages occasionnels/système. -->
 	<section>
 		{@render sectionLabel('Avancé')}
+
+		<!-- Dépliant Performance : leviers de fluidité (l'aide y renvoie pour les machines lentes). -->
 		<div class="overflow-hidden rounded-xl bg-white/[0.04]">
+			<button
+				type="button"
+				class="hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-left text-sm"
+				aria-expanded={performanceOpen}
+				onclick={() => (performanceOpen = !performanceOpen)}
+			>
+				<span class="flex items-center gap-3">
+					<GaugeIcon class="size-[18px] text-white/55" aria-hidden="true" />
+					Performance
+				</span>
+				<ChevronDownIcon
+					class={[
+						'size-4 text-white/45 transition-transform duration-200 motion-reduce:transition-none',
+						performanceOpen && 'rotate-180'
+					]
+						.filter(Boolean)
+						.join(' ')}
+					aria-hidden="true"
+				/>
+			</button>
+			{#if performanceOpen}
+				<div
+					class="border-t border-white/[0.06] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
+					transition:slide={{ duration: reduceMotion.current ? 0 : 200 }}
+				>
+					<TileSizeSettings />
+					<CacheSettings />
+				</div>
+			{/if}
+		</div>
+
+		<!-- Dépliant Réglages avancés : réglages occasionnels/système. -->
+		<div class="mt-2.5 overflow-hidden rounded-xl bg-white/[0.04]">
 			<button
 				type="button"
 				class="hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-left text-sm"
