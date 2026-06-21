@@ -105,7 +105,9 @@
 					</li>
 				</ul>
 				<details class="group mt-2 ml-7">
-					<summary class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90">
+					<summary
+						class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90 [&::-webkit-details-marker]:hidden"
+					>
 						<ChevronRightIcon
 							class="size-4 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
 						/>
@@ -237,7 +239,9 @@
 					</li>
 				</ul>
 				<details class="group mt-2 ml-7">
-					<summary class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90">
+					<summary
+						class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90 [&::-webkit-details-marker]:hidden"
+					>
 						<ChevronRightIcon
 							class="size-4 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
 						/>
@@ -272,7 +276,9 @@
 					</li>
 				</ul>
 				<details class="group mt-2 ml-7">
-					<summary class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90">
+					<summary
+						class="flex cursor-pointer list-none items-center gap-1.5 text-sm opacity-90 [&::-webkit-details-marker]:hidden"
+					>
 						<ChevronRightIcon
 							class="size-4 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
 						/>
@@ -346,7 +352,9 @@
 			<!-- 7. Réglages avancés -->
 			<section>
 				<details class="group">
-					<summary class="flex cursor-pointer list-none items-center gap-1.5">
+					<summary
+						class="flex cursor-pointer list-none items-center gap-1.5 [&::-webkit-details-marker]:hidden"
+					>
 						<ChevronRightIcon
 							class="size-5 opacity-75 transition-transform group-open:rotate-90 motion-reduce:transition-none"
 						/>
