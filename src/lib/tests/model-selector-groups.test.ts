@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DOMAIN_ALLOWLIST, MODEL_SELECTOR_GROUPS } from '$lib/constants';
 
 const EXPECTED_ORDER = [
-	'meteofrance_arome_france_hd',
+	'arome_france_hd',
 	'arome_france',
 	'arome_france_convection',
 	'arome_om_reunion',
@@ -54,6 +54,7 @@ describe('MODEL_SELECTOR_GROUPS', () => {
 describe('applyModelSelectorLabels', () => {
 	const PSEUDO_DOMAINS = [
 		'arome_france',
+		'arome_france_hd',
 		'arome_france_convection',
 		'anomaly_europe',
 		'arome_om_reunion',
@@ -79,17 +80,19 @@ describe('applyModelSelectorLabels', () => {
 		const { registerAromeFranceConvectionDomain } =
 			await import('$lib/arome-france-convection-domain');
 		const { registerAromeFranceDomain } = await import('$lib/arome-france-domain');
+		const { registerAromeFranceHdDomain } = await import('$lib/arome-france-hd-domain');
 		const { applyModelSelectorLabels } = await import('$lib/model-selector-labels');
 
 		registerAnomalyDomain();
 		registerAromeOmDomain();
 		registerAromeFranceConvectionDomain();
 		registerAromeFranceDomain();
+		registerAromeFranceHdDomain();
 		applyModelSelectorLabels();
 
 		const labelOf = (v: string) => domainOptions.find((d) => d.value === v)?.label;
 		expect(labelOf('meteofrance_arpege_europe')).toBe('Arpège Europe');
-		expect(labelOf('meteofrance_arome_france_hd')).toBe('Arome France HD');
+		expect(labelOf('arome_france_hd')).toBe('Arome France HD');
 		expect(labelOf('arome_france')).toBe('Arome France 2.5');
 		expect(labelOf('anomaly_europe')).toBe('Anomalie T°C (Europe ERA/Arpège)');
 	});

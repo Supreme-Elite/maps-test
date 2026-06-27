@@ -134,7 +134,20 @@ const EXPLICIT: Record<string, string> = {
 	'Soil Moisture': 'Humidité du sol',
 	'Soil Temperature': 'Température du sol',
 	'Relative Humidity': 'Humidité relative',
-	'Vertical Velocity': 'Vitesse verticale'
+	'Vertical Velocity': 'Vitesse verticale',
+
+	// Variables du domaine `arome_france_hd` (Infoclimat) absentes des
+	// variableOptions du package : sans entrée ici, le sélecteur affiche la valeur
+	// brute snake_case. On les mappe donc par leur clé.
+	graupel_sum: 'Cumul de grésil (graupel)',
+	snow_graupel_sum: 'Cumul de neige + grésil (graupel)',
+	snowfall_water_equivalent_sum: 'Équivalent en eau de la neige (cumul)',
+	humidex: 'Indice Humidex',
+	reflectivity_max: 'Réflectivité radar max.',
+	relative_humidity_2m: 'Humidité relative (2 m)',
+	wind_chill_2m: 'Refroidissement éolien (2 m)',
+	wind_gusts_10m_max: 'Rafales max. (10 m)',
+	wind_u_component_10m: 'Vent (10 m)'
 };
 
 /** Forme contractée à utiliser après "Anomalie/Moyenne/Dispersion/Min/Max de". */

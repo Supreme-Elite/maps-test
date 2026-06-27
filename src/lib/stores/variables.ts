@@ -12,6 +12,7 @@ import { type Persisted, persisted } from 'svelte-persisted-store';
 import { registerAnomalyDomain } from '$lib/anomaly-domain';
 import { registerAromeFranceConvectionDomain } from '$lib/arome-france-convection-domain';
 import { registerAromeFranceDomain } from '$lib/arome-france-domain';
+import { registerAromeFranceHdDomain } from '$lib/arome-france-hd-domain';
 import { registerAromeOmDomain } from '$lib/arome-om-domain';
 import { DEFAULT_DOMAIN, DEFAULT_VARIABLE } from '$lib/constants';
 import { applyModelSelectorLabels } from '$lib/model-selector-labels';
@@ -21,6 +22,7 @@ registerAnomalyDomain();
 registerAromeOmDomain();
 registerAromeFranceConvectionDomain();
 registerAromeFranceDomain();
+registerAromeFranceHdDomain();
 applyModelSelectorLabels();
 
 export const defaultDomain = DEFAULT_DOMAIN;
