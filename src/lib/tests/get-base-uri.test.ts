@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { AROME_FRANCE_DOMAIN } from '$lib/constants';
+import { AROME_FRANCE_DOMAIN, AROME_FRANCE_HD_DOMAIN } from '$lib/constants';
 
 describe('getBaseUri', () => {
 	beforeEach(() => {
@@ -12,6 +12,12 @@ describe('getBaseUri', () => {
 		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
 		const { getBaseUri } = await import('$lib/helpers');
 		expect(getBaseUri(AROME_FRANCE_DOMAIN)).toBe('https://bucket.test');
+	});
+
+	it('route arome_france_hd vers le bucket maison', async () => {
+		vi.stubEnv('VITE_MODELS_BUCKET_URL', 'https://bucket.test');
+		const { getBaseUri } = await import('$lib/helpers');
+		expect(getBaseUri(AROME_FRANCE_HD_DOMAIN)).toBe('https://bucket.test');
 	});
 
 	it('retire un slash final de la base bucket', async () => {

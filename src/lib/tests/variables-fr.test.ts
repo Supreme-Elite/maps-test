@@ -21,4 +21,18 @@ describe('translateVariableLabel — convection variables', () => {
 		expect(translateVariableLabel('Convective Inhibition')).toBe('Inhibition convective (CIN)');
 		expect(translateVariableLabel('Visibility')).toBe('Visibilité');
 	});
+
+	it('translates arome_france_hd raw variables absent from the package', () => {
+		expect(translateVariableLabel('graupel_sum')).toBe('Cumul de grésil (graupel)');
+		expect(translateVariableLabel('snow_graupel_sum')).toBe('Cumul de neige + grésil (graupel)');
+		expect(translateVariableLabel('snowfall_water_equivalent_sum')).toBe(
+			'Équivalent en eau de la neige (cumul)'
+		);
+		expect(translateVariableLabel('humidex')).toBe('Indice Humidex');
+		expect(translateVariableLabel('reflectivity_max')).toBe('Réflectivité radar max.');
+		expect(translateVariableLabel('relative_humidity_2m')).toBe('Humidité relative (2 m)');
+		expect(translateVariableLabel('wind_chill_2m')).toBe('Refroidissement éolien (2 m)');
+		expect(translateVariableLabel('wind_gusts_10m_max')).toBe('Rafales max. (10 m)');
+		expect(translateVariableLabel('wind_u_component_10m')).toBe('Vent (10 m)');
+	});
 });

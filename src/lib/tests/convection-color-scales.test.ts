@@ -1,10 +1,11 @@
-import { getColor } from '@openmeteo/weather-map-layer';
+import { defaultOmProtocolSettings, getColor, getColorScale } from '@openmeteo/weather-map-layer';
 import { describe, expect, it } from 'vitest';
 
 import { brightnessTemperatureScale } from '$lib/color-scales/brightness-temperature';
 import { brightnessTemperatureWvScale } from '$lib/color-scales/brightness-temperature-wv';
 import { capeScale } from '$lib/color-scales/cape';
 import { convectiveInhibitionScale } from '$lib/color-scales/convective-inhibition';
+import { infoclimatTemperatureScale } from '$lib/color-scales/infoclimat-temperature';
 import { lightningDensityScale } from '$lib/color-scales/lightning-density';
 import { precipitationTypeScale } from '$lib/color-scales/precipitation-type';
 import { radarReflectivityScale } from '$lib/color-scales/radar-reflectivity';
@@ -118,5 +119,39 @@ describe('precipitation_type categorical scale', () => {
 		expect(labelOf(5)).toBe('Neige sèche');
 		expect(labelOf(10)).toBe('Grêle');
 		expect(labelOf(193)).toBe('Neige fondante');
+	});
+});
+
+describe('arome_france_hd color scale resolution', () => {
+	// Reproduit le sous-ensemble de `standardColorScales` (om-protocol-settings.ts)
+	// pertinent pour arome_france_hd, sans importer le store (deps browser). Le
+	// package résout via `getColorScale(variable, dark, source)` : une clé EXACTE
+	// dans la source prime sur la résolution par famille / fallback.
+	const source = {
+		...defaultOmProtocolSettings.colorScales,
+		reflectivity_max: radarReflectivityScale,
+		graupel_sum: defaultOmProtocolSettings.colorScales.precipitation,
+		snow_graupel_sum: defaultOmProtocolSettings.colorScales.precipitation,
+		snowfall_water_equivalent_sum: defaultOmProtocolSettings.colorScales.precipitation,
+		wind_chill_2m: infoclimatTemperatureScale,
+		humidex: infoclimatTemperatureScale
+	};
+	const unitOf = (variable: string) => getColorScale(variable, false, source).unit;
+
+	it('évite le fallback température absurde sur les variables non standard', () => {
+		// Sans clé exacte, le package mappait ces variables sur `temperature` (°C) ou
+		// `wind` (m/s) — cf. l'algo getOptionalColorScale (`_sum` non strippé, etc.).
+		expect(unitOf('reflectivity_max')).toBe('dBZ');
+		expect(unitOf('graupel_sum')).toBe('mm');
+		expect(unitOf('snow_graupel_sum')).toBe('mm');
+		expect(unitOf('snowfall_water_equivalent_sum')).toBe('mm');
+		expect(unitOf('wind_chill_2m')).toBe('°C');
+		expect(unitOf('humidex')).toBe('°C');
+	});
+
+	it('laisse intactes les variables déjà bien résolues par le package', () => {
+		expect(unitOf('relative_humidity_2m')).toBe('%');
+		expect(unitOf('wind_gusts_10m_max')).toBe('m/s');
+		expect(unitOf('temperature_2m_max')).toBe('°C');
 	});
 });

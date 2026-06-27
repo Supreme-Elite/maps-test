@@ -44,8 +44,12 @@ describe('isSoundingDomain', () => {
 });
 
 describe('DOMAIN_ALLOWLIST', () => {
-	it("expose l'AROME HD dans le sélecteur (réintroduit à la demande d'utilisateurs)", () => {
-		expect(DOMAIN_ALLOWLIST).toContain('meteofrance_arome_france_hd');
+	it("expose l'AROME HD Infoclimat (bucket maison) dans le sélecteur", () => {
+		expect(DOMAIN_ALLOWLIST).toContain('arome_france_hd');
+	});
+
+	it("garde l'AROME HD d'Open-Meteo hors du sélecteur (remplacé par le HD Infoclimat)", () => {
+		expect(DOMAIN_ALLOWLIST).not.toContain('meteofrance_arome_france_hd');
 	});
 
 	it("garde l'AROME 0025 hors du sélecteur (source de sondage uniquement)", () => {

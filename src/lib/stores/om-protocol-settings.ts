@@ -108,7 +108,24 @@ export const standardColorScales = {
 	visibility: visibilityScale,
 	lightning_density: lightningDensityScale,
 	precipitation_type: precipitationTypeScale,
-	precipitation_type_severe: precipitationTypeScale
+	precipitation_type_severe: precipitationTypeScale,
+
+	// Domaine arome_france_hd (Infoclimat) — clés exactes. Sans elles, la résolution
+	// par famille/fallback du package les mappe sur une échelle absurde :
+	//   - `*_sum` n'est PAS strippé → graupel_sum / snow_graupel_sum /
+	//     snowfall_water_equivalent_sum tombent sur le fallback `temperature` (°C) alors
+	//     que ce sont des cumuls en mm. → échelle `precipitation` (mm).
+	//   - `reflectivity_max` → fallback `temperature` (°C) au lieu de dBZ radar.
+	//   - `wind_chill_2m` → famille `wind` (m/s) alors que c'est une température
+	//     ressentie (°C). → échelle température infoclimat.
+	// (`humidex` tombe déjà sur le fallback `temperature` = infoclimat °C, ce qui est
+	//  correct pour un indice en °C ; on le fige ici pour ne pas dépendre du fallback.)
+	reflectivity_max: radarReflectivityScale,
+	graupel_sum: defaultOmProtocolSettings.colorScales.precipitation,
+	snow_graupel_sum: defaultOmProtocolSettings.colorScales.precipitation,
+	snowfall_water_equivalent_sum: defaultOmProtocolSettings.colorScales.precipitation,
+	wind_chill_2m: infoclimatTemperatureScale,
+	humidex: infoclimatTemperatureScale
 };
 
 export const omProtocolSettings: Writable<OmProtocolSettings> = writable({
