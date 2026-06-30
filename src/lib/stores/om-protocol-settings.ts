@@ -15,6 +15,7 @@ import { brightnessTemperatureScale } from '$lib/color-scales/brightness-tempera
 import { brightnessTemperatureWvScale } from '$lib/color-scales/brightness-temperature-wv';
 import { capeScale } from '$lib/color-scales/cape';
 import { convectiveInhibitionScale } from '$lib/color-scales/convective-inhibition';
+import { geopotentialPv1500Scale } from '$lib/color-scales/geopotential-pv1500';
 import { infoclimatTemperatureScale } from '$lib/color-scales/infoclimat-temperature';
 import { lightningDensityScale } from '$lib/color-scales/lightning-density';
 import { precipitationSumScale } from '$lib/color-scales/precipitation-sum';
@@ -140,11 +141,15 @@ export const standardColorScales = {
 	//   - `theta_e_850hPa` (K) / `theta_w_850hPa` (°C) : températures potentielles.
 	//   - `thickness_500_1000hPa` (gpm) : épaisseur de couche.
 	//   - `absolute_vorticity_500hPa` : valeurs ×1e5 dans postReadCallback → ×10⁻⁵ s⁻¹.
+	//   - `geopotential_height_pv1500` (m) : altitude tropopause dynamique — la
+	//     sous-chaîne `geopotential_height` fait retomber le package sur les
+	//     bornes 500 hPa (4600-6000 m), bien trop étroites.
 	snowfall_sum: snowfallSumScale,
 	theta_e_850hPa: thetaEScale,
 	theta_w_850hPa: thetaWScale,
 	thickness_500_1000hPa: thicknessScale,
-	absolute_vorticity_500hPa: absoluteVorticityScale
+	absolute_vorticity_500hPa: absoluteVorticityScale,
+	geopotential_height_pv1500: geopotentialPv1500Scale
 };
 
 export const omProtocolSettings: Writable<OmProtocolSettings> = writable({

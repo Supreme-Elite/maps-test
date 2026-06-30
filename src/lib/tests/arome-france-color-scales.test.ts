@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { standardColorScales } from '$lib/stores/om-protocol-settings';
 
 import { absoluteVorticityScale } from '$lib/color-scales/absolute-vorticity';
+import { geopotentialPv1500Scale } from '$lib/color-scales/geopotential-pv1500';
 import { snowfallSumScale } from '$lib/color-scales/snowfall-sum';
 import { thetaEScale } from '$lib/color-scales/theta-e';
 import { thetaWScale } from '$lib/color-scales/theta-w';
@@ -17,7 +18,8 @@ const scales: [string, BreakpointColorScale][] = [
 	['theta_e_850hPa', thetaEScale],
 	['theta_w_850hPa', thetaWScale],
 	['thickness_500_1000hPa', thicknessScale],
-	['absolute_vorticity_500hPa', absoluteVorticityScale]
+	['absolute_vorticity_500hPa', absoluteVorticityScale],
+	['geopotential_height_pv1500', geopotentialPv1500Scale]
 ];
 
 describe('arome_france color scales', () => {
@@ -41,10 +43,16 @@ describe('arome_france color scales', () => {
 		expect(thetaWScale.unit).toBe('°C');
 		expect(thicknessScale.unit).toBe('gpm');
 		expect(absoluteVorticityScale.unit).toBe('×10⁻⁵ s⁻¹');
+		expect(geopotentialPv1500Scale.unit).toBe('m');
 	});
 
 	it('centres thickness on the 5400 gpm rain/snow line', () => {
 		expect(thicknessScale.breakpoints).toContain(5400);
+	});
+
+	it('covers the observed dynamic tropopause height range (~3700-13800 m)', () => {
+		expect(Math.min(...geopotentialPv1500Scale.breakpoints)).toBeLessThanOrEqual(4000);
+		expect(Math.max(...geopotentialPv1500Scale.breakpoints)).toBeGreaterThanOrEqual(13800);
 	});
 
 	it('registers each scale by exact variable key in standardColorScales', () => {
