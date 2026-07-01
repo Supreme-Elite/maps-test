@@ -288,7 +288,6 @@
 								<Select.Content
 									side="top"
 									class="z-80 border-none bg-glass/45 backdrop-blur-md rounded-lg min-w-20"
-									style="left: calc({$sidebarWidth}px + 0.625rem);"
 								>
 									{#each unitOptions as { value, label } (value)}
 										<Select.Item {value} {label} class="cursor-pointer text-xs" />

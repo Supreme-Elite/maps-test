@@ -285,6 +285,7 @@
 
 	// Contrôles MapLibre en bas-droite : les remonte au-dessus de la barre du temps
 	// (hauteur mesurée dans bottomChromeHeight), sinon ils passeraient dessous.
+	// Le `+ 8` est la marge au-dessus de la barre du temps.
 	$effect(() => {
 		const mapInstance = $map;
 		const h = $bottomChromeHeight;

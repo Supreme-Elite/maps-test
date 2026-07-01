@@ -217,6 +217,8 @@
 		     le contenu (max-height) pour ne jamais couvrir la timeline ni la légende en bas. -->
 		<!-- Conteneur flex colonne, SANS scroll : seul le corps défile, l'en-tête (titre + ✕)
 		     reste figé → fermeture toujours accessible sans scroller, quelle que soit la hauteur. -->
+		<!-- 52 = hauteur du header (44 px, h-11) + 8 px de marge ;
+		     68 = 52 + 16 px de marge basse (ne pas coller le drawer au bord de l'écran). -->
 		<div
 			use:portal
 			class="bg-glass/65 fixed right-0 z-60 flex w-80 flex-col overflow-hidden rounded-l-xl border border-r-0 border-white/15 text-white shadow-lg backdrop-blur-md"
@@ -225,7 +227,7 @@
 			out:fly={{ x: 320, duration: reduceMotion.current ? 0 : 200, easing: cubicIn }}
 		>
 			<div class="flex shrink-0 items-center justify-between px-3 pt-3 pb-2">
-				<h2 class="text-sm font-semibold">Calques &amp; réglages</h2>
+				<h2 class="text-sm font-semibold">Réglages avancés</h2>
 				<button
 					type="button"
 					onclick={() => advancedOpen.set(false)}
@@ -250,7 +252,7 @@
 			<!-- En-tête figé (titre + ✕ intégrée de Sheet, en absolu top-droite) : seul le
 			     corps défile, fermeture toujours visible — même comportement que le rail desktop. -->
 			<div class="flex shrink-0 items-center px-6 pt-4 pb-3">
-				<h2 class="text-sm font-semibold">Calques &amp; réglages</h2>
+				<h2 class="text-sm font-semibold">Réglages avancés</h2>
 			</div>
 			<div class="scrollbar-thin flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pb-8">
 				{@render body()}

@@ -31,6 +31,7 @@
 <button
 	type="button"
 	onclick={() => (open = true)}
+	aria-expanded={open}
 	class="bg-glass/50 hover:bg-glass/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 fixed left-1/2 z-60 flex h-11 -translate-x-1/2 cursor-pointer items-center gap-2 rounded-lg border border-white/20 px-4 text-sm text-white shadow-md glass-blur"
 	style="bottom: calc({$bottomChromeHeight}px + 0.5rem)"
 >
