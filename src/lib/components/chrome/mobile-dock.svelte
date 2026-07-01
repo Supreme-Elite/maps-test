@@ -22,8 +22,8 @@
 	let activeTab: 'layers' | 'display' = $state('layers');
 </script>
 
-<!-- FAB capture, côté pouce, au-dessus de la poignée -->
-<div class="fixed right-2.5 z-60" style="bottom: calc({$bottomChromeHeight}px + 4.5rem)">
+<!-- FAB capture, décalé à gauche des contrôles MapLibre (bas-droite), au-dessus de la poignée -->
+<div class="fixed right-16 z-60" style="bottom: calc({$bottomChromeHeight}px + 4.5rem)">
 	{@render capture?.()}
 </div>
 
