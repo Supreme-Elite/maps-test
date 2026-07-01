@@ -27,7 +27,13 @@ export const CATEGORIES: Category[] = [
 // ancrée à une limite de mot (début de chaîne ou underscore) pour éviter les
 // faux positifs (ex. « rain » dans « terrain », « gust » dans « august »).
 const RULES: { key: CategoryKey; test: RegExp }[] = [
-	{ key: 'temperature', test: /(^|_)(temperature|apparent_temperature|dew_?point|wet_bulb)/ },
+	// `wind_chill` est un indice de température ressentie (°C), pas une composante
+	// de vent : on l'ancre en tête de la règle « temperature » pour qu'elle gagne
+	// avant la règle « wind » (sinon `wind_chill_2m` tomberait dans « Vent »).
+	{
+		key: 'temperature',
+		test: /(^|_)(temperature|apparent_temperature|dew_?point|wet_bulb|wind_chill)/
+	},
 	{ key: 'precipitation', test: /(^|_)(precipitation|rain|snow|showers|sleet)/ },
 	{ key: 'wind', test: /(^|_)(wind|gust)/ },
 	{ key: 'clouds', test: /(^|_)(cloud|visibility|fog)/ },

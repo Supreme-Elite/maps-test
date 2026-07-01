@@ -47,6 +47,21 @@ describe('convertValue', () => {
 	it('convertit une vraie distance en pieds quand la variable n’est pas géopotentielle', () => {
 		expect(convertValue(100, 'm', prefs, 'visibility')).toBeCloseTo(328.084, 2);
 	});
+
+	it('convertit une donnée en kelvins vers des °C (theta_e_850hPa)', () => {
+		// 300 K → 26,85 °C : les 273,15 doivent bien être retirés.
+		expect(convertValue(300, 'K', prefs, 'theta_e_850hPa')).toBeCloseTo(26.85, 2);
+	});
+
+	it('convertit une donnée en kelvins vers des °F', () => {
+		// 300 K → 26,85 °C → 80,33 °F.
+		const fahrenheit: UnitPreferences = { ...prefs, temperature: '°F' };
+		expect(convertValue(300, 'K', fahrenheit, 'theta_e_850hPa')).toBeCloseTo(80.33, 2);
+	});
+
+	it('laisse une donnée déjà en °C inchangée (pas de double soustraction)', () => {
+		expect(convertValue(15, '°C', prefs, 'temperature_2m')).toBe(15);
+	});
 });
 
 describe('getDisplayUnit / getUnitOptions', () => {

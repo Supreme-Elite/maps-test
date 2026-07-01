@@ -61,5 +61,9 @@ describe('categorize', () => {
 		it('wind_v_component_10m est classé wind', () => {
 			expect(categorize('wind_v_component_10m')).toBe('wind');
 		});
+
+		it('wind_chill_2m est classé temperature (indice de ressenti, pas du vent)', () => {
+			expect(categorize('wind_chill_2m')).toBe('temperature');
+		});
 	});
 });
