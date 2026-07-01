@@ -59,7 +59,7 @@ export const DOMAIN_DEFAULT_VARIABLES: Record<string, string> = {
 };
 
 /** Variables masquées du sélecteur (display-only), même si publiées dans le
- *  meta.json du domaine. Filtré par `variable-tabs.svelte`. Une URL partagée
+ *  meta.json du domaine. Filtré par `buildVariableList()` (`src/lib/layer-list.ts`). Une URL partagée
  *  ciblant l'une d'elles résout toujours (comme `DOMAIN_ALLOWLIST` pour les modèles).
  *
  *  `precipitation_type` / `precipitation_type_severe` : variables catégorielles

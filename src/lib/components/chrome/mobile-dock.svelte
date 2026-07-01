@@ -44,6 +44,7 @@
 		side="bottom"
 		class="bg-glass/90 z-100 flex max-h-[85vh] flex-col gap-0 border-none text-white backdrop-blur-xl"
 	>
+		<Sheet.Title class="sr-only">Calques &amp; affichage</Sheet.Title>
 		<!-- Onglets (cibles ≥ 44 px, gap ≥ 8 px) ; le corps seul défile. -->
 		<div role="tablist" aria-label="Réglages carte" class="flex shrink-0 gap-2 px-4 pt-4">
 			<button
