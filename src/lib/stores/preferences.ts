@@ -29,13 +29,7 @@ import {
 	temperatureUnit,
 	windSpeedUnit
 } from './units';
-import {
-	domain,
-	domainSelectionOpen,
-	variable,
-	variableSelectionExtended,
-	variableSelectionOpen
-} from './variables';
+import { domain, domainSelectionOpen, variable } from './variables';
 import { defaultVectorOptions, vectorOptions } from './vector';
 
 export const defaultPreferences = DEFAULT_PREFERENCES;
@@ -118,8 +112,6 @@ export const resetStates = async () => {
 	variable.set(DEFAULT_VARIABLE);
 
 	domainSelectionOpen.set(false);
-	variableSelectionOpen.set(false);
-	variableSelectionExtended.set(undefined);
 
 	tileSize.set(DEFAULT_TILE_SIZE);
 	tileSizeSet.set(false);
