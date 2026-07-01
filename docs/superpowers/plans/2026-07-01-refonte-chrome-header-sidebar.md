@@ -4,7 +4,7 @@
 
 **Goal:** Remplacer la barre haute flottante par un header fin pleine largeur + une sidebar gauche repliable (desktop) / un bottom-sheet à onglets (mobile), conformément à la spec `docs/superpowers/specs/2026-07-01-refonte-interface-precip-design.md`.
 
-**Architecture:** Réorganisation du *chrome* uniquement — le moteur (`om://`, SlotManager, stores de données, playback, popup, soundings) est intouché. Nouveaux composants `chrome/header.svelte`, `chrome/sidebar.svelte`, `chrome/layer-list.svelte`, `chrome/display-section.svelte`, `chrome/style-section.svelte` ; `advanced-panel.svelte` allégé (ouvert depuis le header) ; `mobile-dock.svelte` réécrit en bottom-sheet ; `top-bar.svelte` et `variable-tabs.svelte` supprimés. La logique de liste de variables est extraite en fonctions pures testées (`src/lib/layer-list.ts`).
+**Architecture:** Réorganisation du _chrome_ uniquement — le moteur (`om://`, SlotManager, stores de données, playback, popup, soundings) est intouché. Nouveaux composants `chrome/header.svelte`, `chrome/sidebar.svelte`, `chrome/layer-list.svelte`, `chrome/display-section.svelte`, `chrome/style-section.svelte` ; `advanced-panel.svelte` allégé (ouvert depuis le header) ; `mobile-dock.svelte` réécrit en bottom-sheet ; `top-bar.svelte` et `variable-tabs.svelte` supprimés. La logique de liste de variables est extraite en fonctions pures testées (`src/lib/layer-list.ts`).
 
 **Tech Stack:** SvelteKit (static), Svelte 5 runes, Tailwind v4, shadcn-svelte (`ui/`), Lucide, `svelte-persisted-store`, Vitest (node, logique pure uniquement).
 
@@ -31,11 +31,13 @@
 Extrait les trois dérivations de `variable-tabs.svelte` (liste pliée par préfixe, groupes de niveaux filtrés/triés, groupage par catégorie) en fonctions pures testées, puis refactore `variable-tabs.svelte` pour les consommer. Prépare `chrome/layer-list.svelte` (Task 3) sans dupliquer la logique.
 
 **Files:**
+
 - Create: `src/lib/layer-list.ts`
 - Test: `src/lib/tests/layer-list.test.ts`
 - Modify: `src/lib/components/chrome/variable-tabs.svelte:50-111` et `:136-148` (consomme les fonctions extraites)
 
 **Interfaces:**
+
 - Consumes: `LEVEL_PREFIX`, `LEVEL_REGEX`, `LEVEL_UNIT_REGEX`, `variableOptions` (`@openmeteo/weather-map-layer`) ; `HIDDEN_VARIABLES`, `VISIBLE_PRESSURE_LEVELS_HPA` (`$lib/constants`) ; `sortLevels` (`$lib/level-groups`) ; `CATEGORIES`, `categorize`, type `Category` (`$lib/variable-categories`).
 - Produces (utilisé par Task 3) :
   - `buildVariableList(metaVariables: string[]): string[]`
@@ -47,9 +49,8 @@ Extrait les trois dérivations de `variable-tabs.svelte` (liste pliée par préf
 Créer `src/lib/tests/layer-list.test.ts` :
 
 ```ts
-import { describe, expect, it } from 'vitest';
-
 import { LEVEL_PREFIX } from '@openmeteo/weather-map-layer';
+import { describe, expect, it } from 'vitest';
 
 import { buildLevelGroups, buildVariableList, groupVariablesByCategory } from '$lib/layer-list';
 
@@ -86,9 +87,7 @@ describe('buildLevelGroups', () => {
 		expect(values).not.toContain('temperature_150hPa');
 		// altitude croissante : 2 m < 850 hPa < 500 hPa
 		expect(values.indexOf('temperature_2m')).toBeLessThan(values.indexOf('temperature_850hPa'));
-		expect(values.indexOf('temperature_850hPa')).toBeLessThan(
-			values.indexOf('temperature_500hPa')
-		);
+		expect(values.indexOf('temperature_850hPa')).toBeLessThan(values.indexOf('temperature_500hPa'));
 	});
 });
 
@@ -210,21 +209,21 @@ Dans `src/lib/components/chrome/variable-tabs.svelte` :
 1. Remplacer le bloc `let variableList = $derived.by(() => { … })` (lignes ~50-71) par :
 
 ```ts
-	// Liste de variables, avec les groupes de niveaux repliés sur leur préfixe.
-	let variableList = $derived($metaJson ? buildVariableList($metaJson.variables) : undefined);
+// Liste de variables, avec les groupes de niveaux repliés sur leur préfixe.
+let variableList = $derived($metaJson ? buildVariableList($metaJson.variables) : undefined);
 ```
 
 2. Remplacer le bloc `const levelGroupsList = $derived.by(() => { … })` (lignes ~73-111, y compris `const visiblePressureLevels`) par :
 
 ```ts
-	const levelGroupsList = $derived($metaJson ? buildLevelGroups($metaJson.variables) : undefined);
+const levelGroupsList = $derived($metaJson ? buildLevelGroups($metaJson.variables) : undefined);
 ```
 
 3. Remplacer le bloc `let groupedVariables = $derived.by(() => { … })` (lignes ~136-148) par :
 
 ```ts
-	// Variables disponibles groupées par catégorie pour le sélecteur.
-	let groupedVariables = $derived(groupVariablesByCategory(variableList ?? []));
+// Variables disponibles groupées par catégorie pour le sélecteur.
+let groupedVariables = $derived(groupVariablesByCategory(variableList ?? []));
 ```
 
 4. Ajouter l'import `import { buildLevelGroups, buildVariableList, groupVariablesByCategory } from '$lib/layer-list';` et supprimer les imports devenus inutilisés : `LEVEL_PREFIX`, `LEVEL_REGEX` (garder `LEVEL_UNIT_REGEX`), `HIDDEN_VARIABLES`, `VISIBLE_PRESSURE_LEVELS_HPA`, `sortLevels` (garder `pickDefaultLevel`), `CATEGORIES` (garder `type CategoryKey, categorize`).
@@ -252,12 +251,14 @@ git commit -m "refactor(chrome): extrait la logique de liste de variables dans l
 Header pleine largeur (~44 px, verre sombre) : logo Infoclimat, onglet « Carte » en pilule (réserve l'emplacement des futures pages), bouton « ⚙ Réglages » à droite qui toggle `advancedOpen`. Monté sur desktop **et** mobile. Les chromes existants (top-bar flottante, pastille modèle mobile) descendent sous le header en attendant les tâches suivantes.
 
 **Files:**
+
 - Create: `src/lib/components/chrome/header.svelte`
 - Modify: `src/lib/components/chrome/app-chrome.svelte` (montage)
 - Modify: `src/lib/components/chrome/top-bar.svelte:18` (`top-2.5` → `top-14`, transitoire)
 - Modify: `src/lib/components/chrome/mobile-dock.svelte` (retrait du logo — il vit dans le header ; pastille modèle `top-2.5` → `top-14`)
 
 **Interfaces:**
+
 - Consumes: `advancedOpen` (`$lib/stores/preferences`, `Writable<boolean>` existant).
 - Produces: `<Header />` sans props. Hauteur fixe **44 px** (`h-11`) — constante reprise par la sidebar (Task 3 : `top-11`) et l'ancrage du panneau Avancé (Task 7 : `top: 52px`).
 
@@ -340,6 +341,7 @@ Remplacer le contenu de `src/lib/components/chrome/app-chrome.svelte` par :
 Dans `top-bar.svelte` ligne 18, remplacer `fixed top-2.5 left-1/2` par `fixed top-14 left-1/2`.
 
 Dans `mobile-dock.svelte` :
+
 - Supprimer entièrement le bloc logo (commentaire `<!-- Logo Infoclimat, coin haut-gauche … -->` + le `<a … >…</a>`, lignes ~19-29) et les constantes `SITE_URL` / `LOGO_URL` devenues inutilisées.
 - Dans le conteneur de la pastille modèle, remplacer `top-2.5` par `top-14`.
 
@@ -364,6 +366,7 @@ git commit -m "feat(chrome): header fin façon precip.ai (logo, onglet Carte, bo
 Bascule le desktop sur la disposition cible : sidebar gauche sous le header (sections Modèle + Calques), suppression de `top-bar.svelte`. Le bouton capture passe dans la section Outils du panneau Avancé, dont le bouton déclencheur propre disparaît (le header ⚙ est la seule entrée).
 
 **Files:**
+
 - Modify: `src/lib/stores/preferences.ts` (stores `sidebarCollapsed`, `sidebarWidth` + reset)
 - Create: `src/lib/components/chrome/sidebar.svelte`
 - Create: `src/lib/components/chrome/layer-list.svelte`
@@ -373,6 +376,7 @@ Bascule le desktop sur la disposition cible : sidebar gauche sous le header (sec
 - Delete: `src/lib/components/chrome/top-bar.svelte`
 
 **Interfaces:**
+
 - Consumes: `buildVariableList` / `buildLevelGroups` / `groupVariablesByCategory` (Task 1) ; stores existants `metaJson`, `variable`, `level`, `unit`, `levelGroupSelected`, `selectedVariable` ; `pickDefaultLevel` (`$lib/level-groups`) ; `localizeVariableOption`, `translateVariableLabel` (`$lib/i18n/variables-fr`) ; `levelGroupVariables`, `variableOptions`, `LEVEL_UNIT_REGEX` (package).
 - Produces:
   - `sidebarCollapsed: Persisted<boolean>` et `sidebarWidth: Writable<number>` dans `$lib/stores/preferences` (consommés par Task 6 ; `sidebarWidth` vaut 0 quand la sidebar est démontée — mobile).
@@ -394,7 +398,7 @@ export const sidebarWidth = writable(0);
 Dans `resetStates()`, après `helpOpen.set(false);` ajouter :
 
 ```ts
-	sidebarCollapsed.set(false);
+sidebarCollapsed.set(false);
 ```
 
 - [ ] **Step 2: Créer `src/lib/components/chrome/layer-list.svelte`**
@@ -657,12 +661,12 @@ Dans `src/lib/components/chrome/advanced-panel.svelte` :
 1. Ajouter la prop :
 
 ```ts
-	import type { Snippet } from 'svelte';
+import type { Snippet } from 'svelte';
 
-	interface Props {
-		capture?: Snippet;
-	}
-	let { capture }: Props = $props();
+interface Props {
+	capture?: Snippet;
+}
+let { capture }: Props = $props();
 ```
 
 2. Supprimer entièrement le bouton déclencheur (bloc `<button type="button" onclick={() => advancedOpen.update((v) => !v)} aria-label="Calques et réglages" …>…</button>`, lignes ~303-311). L'ouverture passe exclusivement par le header (`advancedOpen`).
@@ -670,11 +674,11 @@ Dans `src/lib/components/chrome/advanced-panel.svelte` :
 3. Dans la section « Outils », au-dessus du bouton « Découpage », insérer la capture :
 
 ```svelte
-			{#if capture}
-				<div class="flex min-h-11 items-center px-3 py-2.5">
-					{@render capture()}
-				</div>
-			{/if}
+{#if capture}
+	<div class="flex min-h-11 items-center px-3 py-2.5">
+		{@render capture()}
+	</div>
+{/if}
 ```
 
 - [ ] **Step 5: Basculer `app-chrome.svelte` (desktop) et alléger le dock mobile**
@@ -737,12 +741,14 @@ git commit -m "feat(chrome): sidebar gauche repliable avec liste verticale des c
 Monte les toggles « premier plan » dans la sidebar (section Affichage : contours, flèches, valeurs, popup/exploration, départements, villes & pays, relief, fond sombre ; section Style : opacité) et retire tout cela du panneau Avancé, qui garde : calque secondaire, unités, performance (tuiles + cache), réglages avancés (points de grille, sondage, réinitialisation), outils (capture, découpage, aide).
 
 **Files:**
+
 - Create: `src/lib/components/chrome/display-section.svelte`
 - Create: `src/lib/components/chrome/style-section.svelte`
 - Modify: `src/lib/components/chrome/advanced-panel.svelte` (retrait des éléments déplacés)
 - Modify: `src/lib/components/chrome/app-chrome.svelte` (branche les snippets `display`/`style` de la sidebar)
 
 **Interfaces:**
+
 - Consumes: composants `settings/` existants (`ArrowsSettings`, `ContourSettings`, `PopupSettings`, `OpacitySetting`) ; `LayerToggle` ; stores `gridValues`, `showDepartments`, `showLabels`, `preferences`, `basemapTheme` ; `setHillshadeEnabled`, `changeOMfileURL`, `reloadVectorStyle`, `updateUrl`.
 - Produces: `<DisplaySection />` et `<StyleSection />` sans props, montés via les snippets `display`/`style` de `<Sidebar>` (Task 3) puis du bottom-sheet (Task 5).
 
@@ -874,17 +880,17 @@ Dans le snippet `body()` :
 Remplacer `<Sidebar />` par :
 
 ```svelte
-	<Sidebar>
-		{#snippet display()}<DisplaySection />{/snippet}
-		{#snippet style()}<StyleSection />{/snippet}
-	</Sidebar>
+<Sidebar>
+	{#snippet display()}<DisplaySection />{/snippet}
+	{#snippet style()}<StyleSection />{/snippet}
+</Sidebar>
 ```
 
 avec les imports :
 
 ```ts
-	import DisplaySection from './display-section.svelte';
-	import StyleSection from './style-section.svelte';
+import DisplaySection from './display-section.svelte';
+import StyleSection from './style-section.svelte';
 ```
 
 - [ ] **Step 5: Vérifier**
@@ -908,11 +914,13 @@ git commit -m "feat(chrome): sections Affichage/Style en sidebar, panneau Avanc�
 Réécrit `mobile-dock.svelte` : la pastille modèle et les onglets variables disparaissent au profit d'une poignée au-dessus de la timeline qui ouvre un bottom-sheet à deux onglets (Calques = modèle + liste des calques ; Affichage & style = mêmes sections que la sidebar). Le FAB capture est conservé. `variable-tabs.svelte` n'a plus de consommateur → supprimé.
 
 **Files:**
+
 - Modify: `src/lib/components/chrome/mobile-dock.svelte` (réécriture complète)
 - Modify: `src/lib/components/chrome/app-chrome.svelte` (snippets `display`/`style` passés au dock)
 - Delete: `src/lib/components/chrome/variable-tabs.svelte`
 
 **Interfaces:**
+
 - Consumes: `<LayerList />`, `<ModelSelector />`, snippets `display`/`style` (mêmes contenus que la sidebar), `bottomChromeHeight`, primitives `Sheet` (`$lib/components/ui/sheet`).
 - Produces: `<MobileDock capture={Snippet?} display={Snippet?} style={Snippet?} />`.
 
@@ -1010,12 +1018,12 @@ Réécrit `mobile-dock.svelte` : la pastille modèle et les onglets variables di
 Remplacer le bloc mobile par :
 
 ```svelte
-	<MobileDock>
-		{#snippet capture()}<CaptureFlow variant="fab" />{/snippet}
-		{#snippet display()}<DisplaySection />{/snippet}
-		{#snippet style()}<StyleSection />{/snippet}
-	</MobileDock>
-	<AdvancedPanel />
+<MobileDock>
+	{#snippet capture()}<CaptureFlow variant="fab" />{/snippet}
+	{#snippet display()}<DisplaySection />{/snippet}
+	{#snippet style()}<StyleSection />{/snippet}
+</MobileDock>
+<AdvancedPanel />
 ```
 
 - [ ] **Step 3: Supprimer `variable-tabs.svelte`**
@@ -1047,10 +1055,12 @@ git commit -m "feat(chrome): bottom-sheet mobile à onglets Calques / Affichage 
 La timeline (centrée) et la légende (bord gauche) se décalent de la largeur publiée par la sidebar (`sidebarWidth`, 0 sur mobile). Ajout de `tabular-nums` sur leurs conteneurs (hérité par toutes les valeurs numériques — heures, valeurs de légende).
 
 **Files:**
+
 - Modify: `src/lib/components/time/time-selector.svelte:781-786` (wrapper) + import
 - Modify: `src/lib/components/scale/scale.svelte:162-171` et `:198-204` (+ popover d'édition ~`:288`) + import
 
 **Interfaces:**
+
 - Consumes: `sidebarWidth` (`$lib/stores/preferences`, Task 3).
 - Produces: rien de nouveau — comportement visuel seulement.
 
@@ -1088,9 +1098,9 @@ Dans `scale.svelte`, ajouter `sidebarWidth` à l'import existant depuis `$lib/st
 1. Bouton légende repliée (lignes ~162-171) : retirer `left-2.5` de la `class`, ajouter `tabular-nums transition-[left] duration-200 motion-reduce:transition-none`, et préfixer le `style` :
 
 ```svelte
-			style="left: calc({$sidebarWidth}px + 0.625rem);{!desktop.current
-				? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`
-				: ''}"
+style="left: calc({$sidebarWidth}px + 0.625rem);{!desktop.current
+	? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`
+	: ''}"
 ```
 
 2. Conteneur légende dépliée (lignes ~198-204) : même traitement — retirer `left-2.5`, ajouter `tabular-nums transition-[left] duration-200 motion-reduce:transition-none` à la `class`, préfixer le `style` par `left: calc({$sidebarWidth}px + 0.625rem);`.
@@ -1118,11 +1128,13 @@ git commit -m "feat(chrome): timeline et légende décalées par la sidebar, chi
 Déplace les contrôles natifs (zoom/boussole, géoloc, globe, 3D) de haut-droite vers bas-droite, décalés au-dessus de la timeline. Supprime la mesure `measureControls` du panneau Avancé (les contrôles ne sont plus en haut) au profit d'un ancrage fixe sous le header.
 
 **Files:**
+
 - Modify: `src/lib/map-controls.ts:44-59` (position `'bottom-right'`)
 - Modify: `src/routes/+page.svelte` (effet de décalage au-dessus de la timeline)
 - Modify: `src/lib/components/chrome/advanced-panel.svelte` (ancrage fixe, suppression de `measureControls`)
 
 **Interfaces:**
+
 - Consumes: `bottomChromeHeight` (`$lib/stores/preferences`), `$map` (`$lib/stores/map`).
 - Produces: rien de nouveau.
 
@@ -1131,11 +1143,11 @@ Déplace les contrôles natifs (zoom/boussole, géoloc, globe, 3D) de haut-droit
 Dans `src/lib/map-controls.ts`, ajouter `'bottom-right'` comme second argument des quatre `map.addControl(...)` (NavigationControl, GeolocateControl, globeControl, View3DControl) :
 
 ```ts
-	map.addControl(
-		new maplibregl.NavigationControl({ visualizePitch: true, showZoom: true, showCompass: true }),
-		'bottom-right'
-	);
-	// … idem pour GeolocateControl, globeControl et View3DControl
+map.addControl(
+	new maplibregl.NavigationControl({ visualizePitch: true, showZoom: true, showCompass: true }),
+	'bottom-right'
+);
+// … idem pour GeolocateControl, globeControl et View3DControl
 ```
 
 Ne pas toucher à la gestion de l'attribution.
@@ -1145,17 +1157,17 @@ Ne pas toucher à la gestion de l'attribution.
 Dans `src/routes/+page.svelte`, ajouter cet effet après les `$effect` existants :
 
 ```ts
-	// Contrôles MapLibre en bas-droite : les remonte au-dessus de la barre du temps
-	// (hauteur mesurée dans bottomChromeHeight), sinon ils passeraient dessous.
-	$effect(() => {
-		const mapInstance = $map;
-		const h = $bottomChromeHeight;
-		if (!mapInstance) return;
-		const el = mapInstance
-			.getContainer()
-			.querySelector('.maplibregl-ctrl-bottom-right') as HTMLElement | null;
-		if (el) el.style.bottom = `${h + 8}px`;
-	});
+// Contrôles MapLibre en bas-droite : les remonte au-dessus de la barre du temps
+// (hauteur mesurée dans bottomChromeHeight), sinon ils passeraient dessous.
+$effect(() => {
+	const mapInstance = $map;
+	const h = $bottomChromeHeight;
+	if (!mapInstance) return;
+	const el = mapInstance
+		.getContainer()
+		.querySelector('.maplibregl-ctrl-bottom-right') as HTMLElement | null;
+	if (el) el.style.bottom = `${h + 8}px`;
+});
 ```
 
 - [ ] **Step 3: Ancrer le drawer Avancé sous le header**
@@ -1166,7 +1178,7 @@ Dans `advanced-panel.svelte` :
 2. Remplacer le `style` du drawer desktop (`style="top: {controlsBottom + 8}px; max-height: calc(100dvh - {controlsBottom + 24}px);"`) par :
 
 ```svelte
-				style="top: 52px; max-height: calc(100dvh - 68px);"
+style="top: 52px; max-height: calc(100dvh - 68px);"
 ```
 
 (52 = header 44 px + 8 px de marge ; 68 laisse 16 px en bas.)
@@ -1192,11 +1204,13 @@ git commit -m "feat(map): contrôles MapLibre en bas-droite au-dessus de la time
 Met à jour les docs de zone (règle projet : une règle path-scopée périmée est pire que pas de règle), passe la vérification complète et la revue visuelle finale des garde-fous de la spec.
 
 **Files:**
+
 - Modify: `.claude/rules/components.md` (paragraphe chrome)
 - Modify: `.claude/rules/stores.md` (nouveaux stores)
 - Modify: `README.md` (section `## Architecture`, description du chrome)
 
 **Interfaces:**
+
 - Consumes: état final des Tasks 1-7.
 - Produces: docs à jour.
 

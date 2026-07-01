@@ -7,7 +7,7 @@
 
 ## Objectif
 
-Refondre le *chrome* de Open-Meteo Maps (Infoclimat) vers une interface épurée
+Refondre le _chrome_ de Open-Meteo Maps (Infoclimat) vers une interface épurée
 inspirée de `app.precip.ai/map` : thème sombre gris-bleu, verre dépoli, accent
 sky, disposition **header fin + carte plein cadre + sidebar gauche repliable**.
 Le header ménage l'emplacement des futures pages/options du site. Cible
@@ -28,14 +28,14 @@ MapLibre restent inchangés.
 
 ## Décisions de cadrage (issues du brainstorming)
 
-| Question | Décision |
-|---|---|
-| Portée | Refonte **épurée** : fonctions avancées reléguées derrière un mode avancé |
-| Premier plan | Sélecteur de modèle, timeline + playback, légende + échelle, contours + flèches vent |
-| Responsive | **Desktop + mobile à parité** |
-| Palette | **Sombre proche precip.ai**, réutilise les tokens verre + accent sky existants |
-| Disposition | **Approche A′** (révision 2026-07-01) — header fin façon precip.ai **+** sidebar gauche ; le header porte la marque, un onglet « Carte » en pilule (futures pages) et le bouton « Réglages » (ex-« Avancé ») |
-| Typographie | **Chiffres tabulaires uniquement** (`tabular-nums`), police de fond inchangée |
+| Question     | Décision                                                                                                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Portée       | Refonte **épurée** : fonctions avancées reléguées derrière un mode avancé                                                                                                                                    |
+| Premier plan | Sélecteur de modèle, timeline + playback, légende + échelle, contours + flèches vent                                                                                                                         |
+| Responsive   | **Desktop + mobile à parité**                                                                                                                                                                                |
+| Palette      | **Sombre proche precip.ai**, réutilise les tokens verre + accent sky existants                                                                                                                               |
+| Disposition  | **Approche A′** (révision 2026-07-01) — header fin façon precip.ai **+** sidebar gauche ; le header porte la marque, un onglet « Carte » en pilule (futures pages) et le bouton « Réglages » (ex-« Avancé ») |
+| Typographie  | **Chiffres tabulaires uniquement** (`tabular-nums`), police de fond inchangée                                                                                                                                |
 
 ## Disposition (Approche A′)
 
@@ -82,12 +82,12 @@ Header fin en haut, carte MapLibre plein cadre en dessous. En superposition :
 
 Sections dépliables (accordéon), denses et scannables :
 
-| Section | Contenu |
-|---|---|
-| *(haut de sidebar)* | **Sélecteur de modèle** (AROME, ARPEGE, GFS…) + run / échéance |
-| **Calques** | Liste verticale des variables (icône + libellé) ; la variable active déplie ses sous-échéances en radio |
-| **Affichage** | Toggles : Contours · Flèches de vent · Mode exploration (survol = valeur) · Marqueurs · Relief 3D / hillshade · Départements/pays · Thème sombre |
-| **Style** | Opacité du calque · choix / édition d'échelle de couleur |
+| Section             | Contenu                                                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| _(haut de sidebar)_ | **Sélecteur de modèle** (AROME, ARPEGE, GFS…) + run / échéance                                                                                   |
+| **Calques**         | Liste verticale des variables (icône + libellé) ; la variable active déplie ses sous-échéances en radio                                          |
+| **Affichage**       | Toggles : Contours · Flèches de vent · Mode exploration (survol = valeur) · Marqueurs · Relief 3D / hillshade · Départements/pays · Thème sombre |
+| **Style**           | Opacité du calque · choix / édition d'échelle de couleur                                                                                         |
 
 Le panneau des fonctions avancées s'ouvre depuis le bouton **« ⚙ Réglages »**
 du header (il n'y a plus de pied de sidebar).
@@ -108,13 +108,13 @@ du header (il n'y a plus de pied de sidebar).
   grille régulière, support dark complet. Rythme d'espacement 4 / 8 px.
 - **Couleurs** (tokens sémantiques, aucun hex en dur dans les composants) :
   - Actif / primaire = **sky** (déjà en place : switches, calque actif).
-  - **Ambre** (`#D97706` / token dédié) réservé au *highlight / statut* (ex.
+  - **Ambre** (`#D97706` / token dédié) réservé au _highlight / statut_ (ex.
     futures vigilances), distinct de l'accent.
   - **Rouge** destructif = erreurs uniquement.
   - Réutilise `--glass`, l'utilitaire `glass-blur` et les tokens shadcn
     existants de `src/styles.css` ; pas de nouveau système de tokens.
 - **Typographie** : police de fond inchangée ; **`font-variant-numeric:
-  tabular-nums`** sur toutes les données numériques (heures de la timeline,
+tabular-nums`** sur toutes les données numériques (heures de la timeline,
   valeurs de légende, coordonnées du popup) pour supprimer le saut visuel.
 - **Micro-interactions** : survol → tooltip + surlignage de ligne dans la liste
   des calques ; transitions **150–300 ms** ; **skeleton** plutôt que spinner
@@ -135,21 +135,21 @@ du header (il n'y a plus de pied de sidebar).
   ⚙ Réglages) au-dessus de la carte — coûte ~44 px de carte, prix accepté pour
   la parité et l'extensibilité.
 - Sidebar → **bottom-sheet** à poignée, réutilisant le `mobile-dock` existant :
-  onglet *Calques*, onglet *Affichage / Style*.
+  onglet _Calques_, onglet _Affichage / Style_.
 - Timeline reste en barre basse ; légende en overlay compact.
 - Toutes les cibles tactiles respectent les garde-fous ci-dessus.
 
 ## Impact code (réorganisation, pas réécriture moteur)
 
-| Fichier actuel | Devenir |
-|---|---|
-| *(nouveau)* | `chrome/header.svelte` — logo, onglets pilule, bouton « ⚙ Réglages » ; commun desktop/mobile |
-| `chrome/top-bar.svelte` | Remplacé par `chrome/header.svelte` + `chrome/sidebar.svelte` (desktop) ; la sidebar compose `model-selector`, une liste verticale (issue de `variable-tabs`), et les toggles de `advanced-panel` |
-| `chrome/variable-tabs.svelte` | Repensé en **liste verticale** de calques (ou nouveau `chrome/layer-list.svelte`) avec sous-échéances en radio |
-| `chrome/advanced-panel.svelte` | **Scindé** : toggles « premier plan » (contours, flèches, relief, thème…) montent dans la section *Affichage* ; le reste (clipping, capture, calque secondaire, unités/tuiles/popup/cache) va dans un nouveau panneau **« Avancé »** |
-| `chrome/mobile-dock.svelte` | Adapté en **bottom-sheet** à sections/onglets |
-| `chrome/app-chrome.svelte` | Compose le header (toujours présent) et aiguille desktop (`sidebar`) / mobile (bottom-sheet) |
-| Moteur `om://`, slots, stores, playback, `popup.ts`, soundings | **Inchangés** |
+| Fichier actuel                                                 | Devenir                                                                                                                                                                                                                              |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| _(nouveau)_                                                    | `chrome/header.svelte` — logo, onglets pilule, bouton « ⚙ Réglages » ; commun desktop/mobile                                                                                                                                         |
+| `chrome/top-bar.svelte`                                        | Remplacé par `chrome/header.svelte` + `chrome/sidebar.svelte` (desktop) ; la sidebar compose `model-selector`, une liste verticale (issue de `variable-tabs`), et les toggles de `advanced-panel`                                    |
+| `chrome/variable-tabs.svelte`                                  | Repensé en **liste verticale** de calques (ou nouveau `chrome/layer-list.svelte`) avec sous-échéances en radio                                                                                                                       |
+| `chrome/advanced-panel.svelte`                                 | **Scindé** : toggles « premier plan » (contours, flèches, relief, thème…) montent dans la section _Affichage_ ; le reste (clipping, capture, calque secondaire, unités/tuiles/popup/cache) va dans un nouveau panneau **« Avancé »** |
+| `chrome/mobile-dock.svelte`                                    | Adapté en **bottom-sheet** à sections/onglets                                                                                                                                                                                        |
+| `chrome/app-chrome.svelte`                                     | Compose le header (toujours présent) et aiguille desktop (`sidebar`) / mobile (bottom-sheet)                                                                                                                                         |
+| Moteur `om://`, slots, stores, playback, `popup.ts`, soundings | **Inchangés**                                                                                                                                                                                                                        |
 
 Primitives `ui/` déjà customisées (verre, switch sky) : préservées, réappliquées
 après tout `npm run upgrade:ui` (cf. `.claude/rules/components.md`).

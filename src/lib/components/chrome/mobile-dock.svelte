@@ -15,7 +15,7 @@
 
 <!-- Pastille modèle, haut centre -->
 <!-- pointer-events-none sur le conteneur pleine largeur : sans ça, sa zone vide
-     recouvre le logo (même top/z-index) et capte les taps destinés au logo. -->
+     capterait les taps destinés à la carte sous la barre. -->
 <div class="pointer-events-none fixed inset-x-0 top-14 z-60 flex justify-center">
 	<div class="pointer-events-auto"><ModelSelector /></div>
 </div>
