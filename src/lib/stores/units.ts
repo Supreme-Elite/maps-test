@@ -31,9 +31,17 @@ export const geopotentialUnit = persisted<GeopotentialUnit>(
 
 // --- Conversion functions (from base SI unit to selected unit) ---
 
-export function convertTemperature(value: number, unit: TemperatureUnit): number {
-	if (unit === '°F') return value * 1.8 + 32;
-	return value;
+export function convertTemperature(
+	value: number,
+	unit: TemperatureUnit,
+	baseUnit: string = '°C'
+): number {
+	// La donnée peut arriver en kelvins (ex. `theta_e_850hPa`) : on la ramène
+	// d'abord en °C avant d'appliquer l'unité cible, sinon les 273,15 ne sont
+	// jamais retirés et la valeur K s'affiche telle quelle sous l'étiquette °C.
+	const celsius = baseUnit === 'K' ? value - 273.15 : value;
+	if (unit === '°F') return celsius * 1.8 + 32;
+	return celsius;
 }
 
 export function convertPrecipitation(value: number, unit: PrecipitationUnit): number {
@@ -120,7 +128,7 @@ export function convertValue(
 	const category = getUnitCategory(baseUnit, variable);
 	switch (category) {
 		case 'temperature':
-			return convertTemperature(value, units.temperature);
+			return convertTemperature(value, units.temperature, baseUnit);
 		case 'precipitation':
 			return convertPrecipitation(value, units.precipitation);
 		case 'wind_speed':
