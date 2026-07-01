@@ -15,7 +15,8 @@
 		bottomChromeHeight,
 		opacity,
 		preferences,
-		scaleCollapsed
+		scaleCollapsed,
+		sidebarWidth
 	} from '$lib/stores/preferences';
 	import {
 		convertValue,
@@ -164,10 +165,12 @@
 			onclick={() => scaleCollapsed.set(false)}
 			aria-label="Déplier la légende"
 			title="Déplier la légende"
-			class="bg-glass/45 absolute left-2.5 z-60 flex cursor-pointer flex-col items-center overflow-hidden rounded-lg shadow-md backdrop-blur-md {desktop.current
+			class="bg-glass/45 absolute z-60 flex cursor-pointer flex-col items-center overflow-hidden rounded-lg shadow-md backdrop-blur-md tabular-nums transition-[left] duration-200 motion-reduce:transition-none {desktop.current
 				? 'bottom-2.5'
 				: ''}"
-			style={!desktop.current ? `bottom: calc(${$bottomChromeHeight}px + 4.5rem);` : ''}
+			style="left: calc({$sidebarWidth}px + 0.625rem);{!desktop.current
+				? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`
+				: ''}"
 		>
 			{#if colorScale.unit}
 				<span class="px-1 pt-0.5 text-[10px] leading-tight text-white/90">{displayUnit}</span>
@@ -198,10 +201,9 @@
 		<div
 			class="absolute z-60 {desktop.current
 				? 'bottom-2.5'
-				: ''} duration-500 left-2.5 z-10 select-none rounded-lg"
-			style="max-height: {totalHeight + 100}px;{!desktop.current
-				? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`
-				: ''}"
+				: ''} duration-500 select-none rounded-lg tabular-nums transition-[left] duration-200 motion-reduce:transition-none"
+			style="left: calc({$sidebarWidth}px + 0.625rem);max-height: {totalHeight +
+				100}px;{!desktop.current ? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);` : ''}"
 		>
 			<div class="flex flex-col-reverse shadow-md">
 				{#if categorical}
@@ -285,7 +287,8 @@
 								</Select.Trigger>
 								<Select.Content
 									side="top"
-									class="z-80 left-2.5 border-none bg-glass/45 backdrop-blur-md rounded-lg min-w-20"
+									class="z-80 border-none bg-glass/45 backdrop-blur-md rounded-lg min-w-20"
+									style="left: calc({$sidebarWidth}px + 0.625rem);"
 								>
 									{#each unitOptions as { value, label } (value)}
 										<Select.Item {value} {label} class="cursor-pointer text-xs" />

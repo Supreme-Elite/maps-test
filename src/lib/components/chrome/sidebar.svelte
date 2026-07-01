@@ -29,9 +29,13 @@
 	let displayOpen = $state(true);
 	let styleOpen = $state(true);
 
-	// Publie la largeur occupée pour que timeline/légende se décalent (Task 6).
+	// Publie la largeur occupée pour que timeline/légende se décalent.
 	$effect(() => {
 		sidebarWidth.set($sidebarCollapsed ? RAIL_W : OPEN_W);
+	});
+
+	// Remise à zéro au démontage uniquement (mobile) — pas à chaque bascule.
+	$effect(() => {
 		return () => sidebarWidth.set(0);
 	});
 </script>

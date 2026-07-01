@@ -8,7 +8,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import { timeSelectorActions } from '$lib/stores/keyboard';
-	import { bottomChromeHeight, desktop, loading } from '$lib/stores/preferences';
+	import { bottomChromeHeight, desktop, loading, sidebarWidth } from '$lib/stores/preferences';
 	import { metaJson, modelRunLocked } from '$lib/stores/time';
 	import { inProgress, latest, modelRun, now, time } from '$lib/stores/time';
 	import { selectedDomain } from '$lib/stores/variables';
@@ -780,9 +780,10 @@
 
 <div
 	bind:this={chromeWrapper}
-	class="fixed bottom-0 w-full md:w-[unset] md:max-w-[75vw] -translate-x-1/2 left-1/2 z-40 {disabled
+	class="fixed bottom-0 w-full md:w-[unset] md:max-w-[75vw] -translate-x-1/2 z-40 tabular-nums transition-[left] duration-200 motion-reduce:transition-none {disabled
 		? 'text-foreground/50 cursor-not-allowed'
 		: ''}"
+	style="left: calc(50% + {$sidebarWidth / 2}px)"
 >
 	<div
 		class="duration-500 select-none opacity-100 translate-y-0 {disabled
