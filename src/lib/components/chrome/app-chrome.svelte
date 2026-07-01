@@ -24,6 +24,8 @@
 {:else}
 	<MobileDock>
 		{#snippet capture()}<CaptureFlow variant="fab" />{/snippet}
+		{#snippet display()}<DisplaySection />{/snippet}
+		{#snippet style()}<StyleSection />{/snippet}
 	</MobileDock>
 	<AdvancedPanel />
 {/if}
