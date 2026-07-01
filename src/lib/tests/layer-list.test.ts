@@ -1,0 +1,57 @@
+import { LEVEL_PREFIX } from '@openmeteo/weather-map-layer';
+import { describe, expect, it } from 'vitest';
+
+import { buildLevelGroups, buildVariableList, groupVariablesByCategory } from '$lib/layer-list';
+
+// Échantillon réaliste : surface, cumul, variable masquée, groupe de niveaux
+// (2 m + hPa dont un hors whitelist), composantes vent.
+const META_VARIABLES = [
+	'temperature_2m',
+	'precipitation',
+	'precipitation_type', // HIDDEN_VARIABLES
+	'temperature_850hPa',
+	'temperature_500hPa',
+	'temperature_150hPa' // hors VISIBLE_PRESSURE_LEVELS_HPA (1000…200)
+];
+
+// Préfixe de groupe calculé par la même regex que le runtime (contrat de pliage).
+const TEMP_PREFIX = 'temperature_850hPa'.match(LEVEL_PREFIX)!.groups!.prefix!;
+
+describe('buildVariableList', () => {
+	it('plie les niveaux sur leur préfixe, exclut les variables masquées', () => {
+		const list = buildVariableList([...META_VARIABLES]);
+		expect(list).toContain('precipitation');
+		expect(list).not.toContain('precipitation_type');
+		// un seul item pour tout le groupe température, pas les niveaux individuels
+		expect(list.filter((v) => v.startsWith('temperature'))).toEqual([TEMP_PREFIX]);
+	});
+});
+
+describe('buildLevelGroups', () => {
+	it('filtre les hPa hors whitelist et trie par altitude croissante', () => {
+		const groups = buildLevelGroups([...META_VARIABLES]);
+		const values = groups[TEMP_PREFIX].map((o) => o.value);
+		expect(values).toContain('temperature_850hPa');
+		expect(values).toContain('temperature_500hPa');
+		expect(values).not.toContain('temperature_150hPa');
+		// altitude croissante : 2 m < 850 hPa < 500 hPa
+		expect(values.indexOf('temperature_2m')).toBeLessThan(values.indexOf('temperature_850hPa'));
+		expect(values.indexOf('temperature_850hPa')).toBeLessThan(values.indexOf('temperature_500hPa'));
+	});
+});
+
+describe('groupVariablesByCategory', () => {
+	it('groupe par catégorie et exclut composantes _v_ et directions', () => {
+		const grouped = groupVariablesByCategory([
+			'temperature_2m',
+			'precipitation',
+			'wind_v_component_10m',
+			'wind_direction_10m'
+		]);
+		const all = grouped.flatMap((g) => g.items);
+		expect(all).not.toContain('wind_v_component_10m');
+		expect(all).not.toContain('wind_direction_10m');
+		expect(grouped.find((g) => g.cat.key === 'temperature')?.items).toContain('temperature_2m');
+		expect(grouped.find((g) => g.cat.key === 'precipitation')?.items).toContain('precipitation');
+	});
+});

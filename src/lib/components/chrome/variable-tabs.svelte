@@ -11,8 +11,6 @@
 	import Thermometer from '@lucide/svelte/icons/thermometer';
 	import Wind from '@lucide/svelte/icons/wind';
 	import {
-		LEVEL_PREFIX,
-		LEVEL_REGEX,
 		LEVEL_UNIT_REGEX,
 		levelGroupVariables,
 		variableOptions
@@ -33,10 +31,10 @@
 	import * as Command from '$lib/components/ui/command';
 	import * as Popover from '$lib/components/ui/popover';
 
-	import { HIDDEN_VARIABLES, VISIBLE_PRESSURE_LEVELS_HPA } from '$lib/constants';
 	import { localizeVariableOption, translateVariableLabel } from '$lib/i18n/variables-fr';
-	import { pickDefaultLevel, sortLevels } from '$lib/level-groups';
-	import { CATEGORIES, type CategoryKey, categorize } from '$lib/variable-categories';
+	import { buildLevelGroups, buildVariableList, groupVariablesByCategory } from '$lib/layer-list';
+	import { pickDefaultLevel } from '$lib/level-groups';
+	import { type CategoryKey, categorize } from '$lib/variable-categories';
 
 	const ICONS = {
 		temperature: Thermometer,
@@ -48,67 +46,9 @@
 	} as const;
 
 	// Liste de variables, avec les groupes de niveaux repliés sur leur préfixe.
-	let variableList = $derived.by(() => {
-		if ($metaJson) {
-			const variables: string[] = [];
-			for (let mjVariable of $metaJson.variables) {
-				// Variables masquées du sélecteur (rendu cassé en attente de refacto).
-				if (HIDDEN_VARIABLES.includes(mjVariable)) continue;
-				let match = mjVariable.match(LEVEL_REGEX);
-				if (match) {
-					const prefixMatch = mjVariable.match(LEVEL_PREFIX);
-					const prefix = prefixMatch?.groups?.prefix;
-					if (prefix) {
-						if (!variables.includes(prefix)) variables.push(prefix);
-						continue;
-					}
-				}
+	let variableList = $derived($metaJson ? buildVariableList($metaJson.variables) : undefined);
 
-				variables.push(mjVariable);
-			}
-			return variables;
-		}
-	});
-
-	const visiblePressureLevels = new Set<number>(VISIBLE_PRESSURE_LEVELS_HPA);
-
-	const levelGroupsList = $derived.by(() => {
-		if ($metaJson) {
-			const groups: { [key: string]: { value: string; label: string }[] } = {};
-			for (let mjVariable of $metaJson.variables) {
-				let match = mjVariable.match(LEVEL_REGEX);
-				if (match && match.groups) {
-					const prefixMatch = mjVariable.match(LEVEL_PREFIX);
-					const prefix = prefixMatch?.groups?.prefix;
-
-					if (prefix) {
-						// Filtre d'affichage : ne garde que les niveaux hPa whitelistés.
-						// Les autres unités (m) passent toujours.
-						const unitMatch = mjVariable.match(LEVEL_UNIT_REGEX);
-						if (unitMatch?.groups?.unit === 'hPa') {
-							const lvlNum = Number(unitMatch.groups.level);
-							if (!visiblePressureLevels.has(lvlNum)) continue;
-						}
-
-						let variableObject = variableOptions.find(({ value }) => value === mjVariable) ?? {
-							value: mjVariable,
-							label: mjVariable
-						};
-						if (!Object.keys(groups).includes(prefix)) {
-							groups[prefix] = [variableObject];
-						} else {
-							groups[prefix].push(variableObject);
-						}
-					}
-				}
-			}
-			// Niveaux triés par altitude croissante (issue #47) pour l'affichage du sous-sélecteur.
-			for (const prefix of Object.keys(groups)) {
-				groups[prefix] = sortLevels(groups[prefix]);
-			}
-			return groups;
-		}
-	});
+	const levelGroupsList = $derived($metaJson ? buildLevelGroups($metaJson.variables) : undefined);
 
 	let variableSelectionOpen = $state(get(vSO));
 	const unsubVSO = vSO.subscribe((vO) => {
@@ -135,17 +75,7 @@
 
 	// Variables disponibles (préfixes de groupes + variables simples), groupées par
 	// catégorie pour une liste organisée dans le sélecteur.
-	let groupedVariables = $derived.by(() => {
-		const list = variableList ?? [];
-		const groups: { cat: (typeof CATEGORIES)[number]; items: string[] }[] = [];
-		for (const cat of CATEGORIES) {
-			const items = list.filter(
-				(vr) => !vr.includes('_v_') && !vr.includes('_direction') && categorize(vr) === cat.key
-			);
-			if (items.length) groups.push({ cat, items });
-		}
-		return groups;
-	});
+	let groupedVariables = $derived(groupVariablesByCategory(variableList ?? []));
 
 	// Catégorie + libellé de la variable (ou groupe de niveaux) active.
 	let activeCategory = $derived<CategoryKey>(
