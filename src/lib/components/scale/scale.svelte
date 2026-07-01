@@ -201,7 +201,7 @@
 		<div
 			class="absolute z-60 {desktop.current
 				? 'bottom-2.5'
-				: ''} duration-500 select-none rounded-lg tabular-nums transition-[left] duration-200 motion-reduce:transition-none"
+				: ''} select-none rounded-lg tabular-nums transition-[left] duration-200 motion-reduce:transition-none"
 			style="left: calc({$sidebarWidth}px + 0.625rem);max-height: {totalHeight +
 				100}px;{!desktop.current ? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);` : ''}"
 		>
