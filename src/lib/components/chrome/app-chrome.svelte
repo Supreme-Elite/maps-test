@@ -6,19 +6,19 @@
 	import AdvancedPanel from './advanced-panel.svelte';
 	import Header from './header.svelte';
 	import MobileDock from './mobile-dock.svelte';
-	import TopBar from './top-bar.svelte';
+	import Sidebar from './sidebar.svelte';
 </script>
 
 <Header />
 
 {#if desktop.current}
-	<TopBar>
+	<Sidebar />
+	<AdvancedPanel>
 		{#snippet capture()}<CaptureFlow />{/snippet}
-		{#snippet advanced()}<AdvancedPanel />{/snippet}
-	</TopBar>
+	</AdvancedPanel>
 {:else}
 	<MobileDock>
 		{#snippet capture()}<CaptureFlow variant="fab" />{/snippet}
-		{#snippet advanced()}<AdvancedPanel />{/snippet}
 	</MobileDock>
+	<AdvancedPanel />
 {/if}

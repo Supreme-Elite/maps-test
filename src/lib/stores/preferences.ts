@@ -54,6 +54,12 @@ export const preferences = persisted('preferences', defaultPreferences);
 export const url: Writable<URL> = writable();
 
 export const advancedOpen = writable(false);
+
+// Sidebar desktop : état replié (persisté) + largeur effectivement occupée (px),
+// publiée par le composant pour décaler timeline/légende (0 quand démontée — mobile).
+export const sidebarCollapsed = persisted('sidebar-collapsed', false);
+export const sidebarWidth = writable(0);
+
 export const loading = writable(true);
 
 export const tileSize: Persisted<64 | 128 | 256 | 512 | 1024 | 2048> = persisted(
@@ -130,6 +136,7 @@ export const resetStates = async () => {
 	windSpeedUnit.set(DEFAULT_WIND_SPEED_UNIT);
 
 	helpOpen.set(false);
+	sidebarCollapsed.set(false);
 	scaleCollapsed.set(true);
 
 	setMode('dark');

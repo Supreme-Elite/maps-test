@@ -8,9 +8,8 @@
 
 	interface Props {
 		capture?: Snippet;
-		advanced?: Snippet;
 	}
-	let { capture, advanced }: Props = $props();
+	let { capture }: Props = $props();
 </script>
 
 <!-- Pastille modèle, haut centre -->
@@ -31,5 +30,4 @@
 	style="bottom: calc({$bottomChromeHeight}px + 0.5rem)"
 >
 	<VariableTabs />
-	<div class="shrink-0">{@render advanced?.()}</div>
 </div>

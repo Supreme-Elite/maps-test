@@ -14,7 +14,6 @@
 	import MoonIcon from '@lucide/svelte/icons/moon';
 	import MountainIcon from '@lucide/svelte/icons/mountain';
 	import ScissorsIcon from '@lucide/svelte/icons/scissors';
-	import SettingsIcon from '@lucide/svelte/icons/settings-2';
 	import SlidersIcon from '@lucide/svelte/icons/sliders-horizontal';
 	import XIcon from '@lucide/svelte/icons/x';
 
@@ -48,6 +47,13 @@
 	import { updateUrl } from '$lib/url';
 
 	import LayerToggle from './layer-toggle.svelte';
+
+	import type { Snippet } from 'svelte';
+
+	interface Props {
+		capture?: Snippet;
+	}
+	let { capture }: Props = $props();
 
 	// Reactive snapshots driving the toggle UI.
 	const gridDotsOn = $derived($vectorOptions.grid);
@@ -278,6 +284,11 @@
 		<div
 			class="overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
 		>
+			{#if capture}
+				<div class="flex min-h-11 items-center px-3 py-2.5">
+					{@render capture()}
+				</div>
+			{/if}
 			<button
 				type="button"
 				class="hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left text-sm"
@@ -299,16 +310,6 @@
 		</div>
 	</section>
 {/snippet}
-
-<button
-	type="button"
-	onclick={() => advancedOpen.update((v) => !v)}
-	aria-label="Calques et réglages"
-	class="bg-glass/50 hover:bg-glass/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex h-11 md:h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 px-3 text-sm text-white shadow-md glass-blur"
->
-	<SettingsIcon class="size-4" aria-hidden="true" />
-	<span class="hidden sm:inline">Calques &amp; réglages</span>
-</button>
 
 {#if desktop.current}
 	{#if $advancedOpen}
