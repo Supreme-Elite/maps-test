@@ -68,10 +68,13 @@ Header fin en haut, carte MapLibre plein cadre en dessous. En superposition :
   sombre (`bg-glass` + `glass-blur`). Repliée → fine barre d'icônes. En-tête
   simplifié : titre « Réglages carte » + bouton collapse (le logo vit dans le
   header).
-- **Zone flottante haut-droite** : recherche de lieu (reste sur la carte,
-  comme precip.ai — pas dans le header).
+- **Zone flottante haut-droite** : réservée à la future recherche de lieu
+  (fonctionnalité inexistante aujourd'hui, **hors périmètre** de cette
+  refonte ; elle vivra sur la carte comme chez precip.ai, pas dans le header).
 - **Légende couleur** flottante bas-gauche (garde libellés « Moins / Plus »).
-- **Contrôles carte** bas-droite : géoloc, zoom ±, partage.
+- **Contrôles carte** bas-droite : les contrôles MapLibre existants (zoom ±,
+  boussole, géoloc, globe, 3D) passent de haut-droite à bas-droite, au-dessus
+  de la timeline. Le « partage » reste couvert par la capture/export (Avancé).
 - **Timeline + playback** en barre basse, largeur de la zone carte (décalée par
   la sidebar quand ouverte).
 
