@@ -283,6 +283,18 @@
 		};
 	});
 
+	// Contrôles MapLibre en bas-droite : les remonte au-dessus de la barre du temps
+	// (hauteur mesurée dans bottomChromeHeight), sinon ils passeraient dessous.
+	$effect(() => {
+		const mapInstance = $map;
+		const h = $bottomChromeHeight;
+		if (!mapInstance) return;
+		const el = mapInstance
+			.getContainer()
+			.querySelector('.maplibregl-ctrl-bottom-right') as HTMLElement | null;
+		if (el) el.style.bottom = `${h + 8}px`;
+	});
+
 	onDestroy(() => {
 		if ($map) {
 			$map.remove();

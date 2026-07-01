@@ -42,21 +42,23 @@ export const setMapControlSettings = () => {
 		observer.observe(attribEl, { attributes: true, attributeFilter: ['open', 'class'] });
 	}
 	map.addControl(
-		new maplibregl.NavigationControl({ visualizePitch: true, showZoom: true, showCompass: true })
+		new maplibregl.NavigationControl({ visualizePitch: true, showZoom: true, showCompass: true }),
+		'bottom-right'
 	);
 	map.addControl(
 		new maplibregl.GeolocateControl({
 			fitBoundsOptions: { maxZoom: 13.5 },
 			positionOptions: { enableHighAccuracy: true },
 			trackUserLocation: true
-		})
+		}),
+		'bottom-right'
 	);
 
 	const globeControl = new maplibregl.GlobeControl();
-	map.addControl(globeControl);
+	map.addControl(globeControl, 'bottom-right');
 	globeControl._globeButton.addEventListener('click', () => globeHandler());
 
-	map.addControl(new View3DControl());
+	map.addControl(new View3DControl(), 'bottom-right');
 
 	map.scrollZoom.setZoomRate(1 / 85);
 	map.scrollZoom.setWheelZoomRate(1 / 85);

@@ -61,31 +61,12 @@
 	// haute est neutralisé par le navigateur, donc le flou ne s'appliquerait pas.
 	function portal(node: HTMLElement) {
 		document.body.appendChild(node);
-		measureControls(); // cale le top dès le montage, avant la 1re peinture
 		return {
 			destroy() {
 				node.parentNode?.removeChild(node);
 			}
 		};
 	}
-
-	// Les contrôles MapLibre (zoom, boussole, géoloc, globe) s'empilent en haut-droit.
-	// On mesure le bas réel de leur conteneur pour ouvrir le panneau juste en dessous
-	// (plutôt qu'un offset codé en dur, fragile au nombre de contrôles / version MapLibre).
-	const TOP_FALLBACK = 64; // sous la barre haute si les contrôles sont absents
-	let controlsBottom = $state(TOP_FALLBACK);
-
-	function measureControls() {
-		const el = document.querySelector('.maplibregl-ctrl-top-right');
-		controlsBottom = el ? Math.round(el.getBoundingClientRect().bottom) : TOP_FALLBACK;
-	}
-
-	$effect(() => {
-		if (!desktop.current || !$advancedOpen) return;
-		measureControls();
-		window.addEventListener('resize', measureControls);
-		return () => window.removeEventListener('resize', measureControls);
-	});
 </script>
 
 {#snippet sectionLabel(text: string)}
@@ -239,7 +220,7 @@
 		<div
 			use:portal
 			class="bg-glass/65 fixed right-0 z-60 flex w-80 flex-col overflow-hidden rounded-l-xl border border-r-0 border-white/15 text-white shadow-lg backdrop-blur-md"
-			style="top: {controlsBottom + 8}px; max-height: calc(100dvh - {controlsBottom + 24}px);"
+			style="top: 52px; max-height: calc(100dvh - 68px);"
 			in:fly={{ x: 320, duration: reduceMotion.current ? 0 : 260, easing: cubicOut }}
 			out:fly={{ x: 320, duration: reduceMotion.current ? 0 : 200, easing: cubicIn }}
 		>
