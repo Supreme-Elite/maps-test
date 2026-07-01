@@ -4,9 +4,12 @@
 	import CaptureFlow from '$lib/components/capture/capture-flow.svelte';
 
 	import AdvancedPanel from './advanced-panel.svelte';
+	import Header from './header.svelte';
 	import MobileDock from './mobile-dock.svelte';
 	import TopBar from './top-bar.svelte';
 </script>
+
+<Header />
 
 {#if desktop.current}
 	<TopBar>
