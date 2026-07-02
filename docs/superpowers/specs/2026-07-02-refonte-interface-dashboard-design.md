@@ -1,7 +1,7 @@
 # Refonte interface — coquille « tableau de bord » (weather-grid-view)
 
 **Date** : 2026-07-02
-**Statut** : design validé (brainstorming), à transformer en plan d'implémentation
+**Statut** : implémenté — **sauf la timeline** (voir §5) : la refonte du sélecteur de temps (pastilles/recoloration) a été **abandonnée**, le sélecteur d'origine est conservé tel quel.
 **Branche** : `feat/refonte-interface-precip`
 **Référence visuelle** : prototype `weather-grid-view` (Lovable/React/TanStack), `~/Téléchargements/weather-grid-view`
 **Évolue** : `2026-07-01-refonte-interface-precip-design.md` — même intention (chrome sombre, sidebar gauche, mobile à parité) mais **forme « tableau de bord »** : la timeline devient une **barre dédiée en bas** avec bande de pastilles, la carte est **encadrée** (bande de contexte au-dessus, actions flottantes), et le fil d'en-tête s'enrichit.
@@ -23,16 +23,16 @@ C'est une **réorganisation du chrome**, pas une réécriture du moteur. Le pipe
 
 ## Décisions de cadrage (issues du brainstorming)
 
-| Question       | Décision                                                                                                   |
-| -------------- | ---------------------------------------------------------------------------------------------------------- |
-| Portée         | **Toute la mise en page** : coquille tableau de bord complète (en-tête + sidebar gauche + timeline bas)     |
-| Thème          | **Chrome sombre bleuté** (palette du proto), **carte claire par défaut** conservée (fond clair opt-in sombre) |
-| Timeline       | **Look du proto, logique dates conservée** : habillage de `time-selector`, chaque pastille = date réelle du run |
-| Tiroir Avancé  | **Conservé** (bouton en-tête), réaligné sur la nouvelle palette                                             |
-| Sidebar        | **Repliable en rail** conservée (288 ↔ 44 px) ; le proto est fixe mais replier libère la carte              |
-| Mobile         | **Bottom-sheet `mobile-dock` existant conservé**, réhabillé (proto = desktop-only)                          |
-| Section « Zone » | **Retirée** (aucun équivalent live)                                                                        |
-| Sélecteur play | **Mode de plage existant** (`prefetchMode` : Aujourd'hui / 24 h suiv. / 24 h préc. / Run complet) à l'emplacement « vitesse » du proto — pas de changement moteur |
+| Question         | Décision                                                                                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Portée           | **Toute la mise en page** : coquille tableau de bord complète (en-tête + sidebar gauche + timeline bas)                                                           |
+| Thème            | **Chrome sombre bleuté** (palette du proto), **carte claire par défaut** conservée (fond clair opt-in sombre)                                                     |
+| Timeline         | **Look du proto, logique dates conservée** : habillage de `time-selector`, chaque pastille = date réelle du run                                                   |
+| Tiroir Avancé    | **Conservé** (bouton en-tête), réaligné sur la nouvelle palette                                                                                                   |
+| Sidebar          | **Repliable en rail** conservée (288 ↔ 44 px) ; le proto est fixe mais replier libère la carte                                                                    |
+| Mobile           | **Bottom-sheet `mobile-dock` existant conservé**, réhabillé (proto = desktop-only)                                                                                |
+| Section « Zone » | **Retirée** (aucun équivalent live)                                                                                                                               |
+| Sélecteur play   | **Mode de plage existant** (`prefetchMode` : Aujourd'hui / 24 h suiv. / 24 h préc. / Run complet) à l'emplacement « vitesse » du proto — pas de changement moteur |
 
 ## Disposition
 
@@ -93,7 +93,9 @@ Cluster en haut-droite de la zone carte (z au-dessus des contrôles MapLibre) :
 
 Sur mobile, la capture reste le FAB de `mobile-dock` ; le cluster desktop peut se réduire à copier-lien + plein écran.
 
-### 5. Timeline — `time/time-selector.svelte` (réhabillage)
+### 5. Timeline — `time/time-selector.svelte` (ABANDONNÉ)
+
+> **Abandonné (2026-07-02)** : deux tentatives (recoloration des ticks, puis remplacement par des pastilles discrètes) ont été jugées non satisfaisantes visuellement. Le **sélecteur de temps d'origine est conservé tel quel** — aucune modification livrée sur `time-selector.svelte`. La cible ci-dessous n'a pas été retenue.
 
 Habillage visuel du sélecteur existant aux couleurs du proto, **logique inchangée** (navigation run/jour/heure, domaine anomalie, `checkClosestModelRun`, centrage) :
 
@@ -123,18 +125,18 @@ Câbler les nouveaux composants : `context-strip` et `map-actions` rendus au-des
 
 ## Fichiers touchés (synthèse)
 
-| Fichier                              | Nature   |
-| ------------------------------------ | -------- |
-| `chrome/header.svelte`               | modif    |
-| `chrome/sidebar.svelte`              | modif    |
-| `chrome/layer-list.svelte`           | modif    |
-| `chrome/context-strip.svelte`        | nouveau  |
-| `chrome/map-actions.svelte`          | nouveau  |
-| `chrome/app-chrome.svelte`           | modif    |
-| `time/time-selector.svelte`          | modif    |
-| `chrome/advanced-panel.svelte`       | modif (style) |
-| `chrome/mobile-dock.svelte`          | modif (style) |
-| `src/styles.css` (tokens)            | modif    |
+| Fichier                        | Nature        |
+| ------------------------------ | ------------- |
+| `chrome/header.svelte`         | modif         |
+| `chrome/sidebar.svelte`        | modif         |
+| `chrome/layer-list.svelte`     | modif         |
+| `chrome/context-strip.svelte`  | nouveau       |
+| `chrome/map-actions.svelte`    | nouveau       |
+| `chrome/app-chrome.svelte`     | modif         |
+| `time/time-selector.svelte`    | modif         |
+| `chrome/advanced-panel.svelte` | modif (style) |
+| `chrome/mobile-dock.svelte`    | modif (style) |
+| `src/styles.css` (tokens)      | modif         |
 
 Aucun store ni fichier `$lib/*.ts` moteur ne change de contrat.
 

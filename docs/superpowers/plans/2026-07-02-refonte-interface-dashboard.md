@@ -38,26 +38,28 @@ Aucune tâche n'introduit de fonction pure nouvelle ⇒ pas de test Vitest. Si u
 
 ## Structure des fichiers
 
-| Fichier | Responsabilité | Nature |
-| --- | --- | --- |
-| `src/styles.css` | Token `--glass` teinté bleuté (chrome sombre) | modif |
-| `src/lib/components/chrome/header.svelte` | Fil `Variable · Modèle · Run · Validité` + badge « run en cours » | modif |
-| `src/lib/components/chrome/context-strip.svelte` | Bande de contexte `Variable (unité) · description` au-dessus de la carte | **nouveau** |
-| `src/lib/components/chrome/map-actions.svelte` | Cluster flottant carte : copier-lien + plein écran | **nouveau** |
-| `src/lib/components/chrome/app-chrome.svelte` | Câblage `context-strip` + `map-actions` | modif |
-| `src/lib/components/chrome/layer-list.svelte` | Unité alignée à droite façon proto | modif |
-| `src/lib/components/time/time-selector.svelte` | Transport en pastilles + compteur + bande restylée | modif |
-| `src/lib/components/chrome/advanced-panel.svelte` | Alignement palette (aucune logique) | modif style |
-| `src/lib/components/chrome/mobile-dock.svelte` | Alignement palette (aucune logique) | modif style |
+| Fichier                                           | Responsabilité                                                           | Nature      |
+| ------------------------------------------------- | ------------------------------------------------------------------------ | ----------- |
+| `src/styles.css`                                  | Token `--glass` teinté bleuté (chrome sombre)                            | modif       |
+| `src/lib/components/chrome/header.svelte`         | Fil `Variable · Modèle · Run · Validité` + badge « run en cours »        | modif       |
+| `src/lib/components/chrome/context-strip.svelte`  | Bande de contexte `Variable (unité) · description` au-dessus de la carte | **nouveau** |
+| `src/lib/components/chrome/map-actions.svelte`    | Cluster flottant carte : copier-lien + plein écran                       | **nouveau** |
+| `src/lib/components/chrome/app-chrome.svelte`     | Câblage `context-strip` + `map-actions`                                  | modif       |
+| `src/lib/components/chrome/layer-list.svelte`     | Unité alignée à droite façon proto                                       | modif       |
+| `src/lib/components/time/time-selector.svelte`    | Transport en pastilles + compteur + bande restylée                       | modif       |
+| `src/lib/components/chrome/advanced-panel.svelte` | Alignement palette (aucune logique)                                      | modif style |
+| `src/lib/components/chrome/mobile-dock.svelte`    | Alignement palette (aucune logique)                                      | modif style |
 
 ---
 
 ## Task 1: Palette — chrome sombre bleuté
 
 **Files:**
+
 - Modify: `src/styles.css:102` (token `--glass` du bloc `.dark`) et `src/styles.css:67` (bloc `:root`)
 
 **Interfaces:**
+
 - Consumes: rien.
 - Produces: un chrome au voile légèrement bleuté ; les composants continuent d'utiliser `bg-glass/…` sans changement d'API.
 
@@ -68,12 +70,15 @@ Le chrome utilise partout `bg-glass/85 text-white`. Le token `--glass` est aujou
 Dans `src/styles.css`, remplacer les deux déclarations `--glass` :
 
 Bloc `.dark` (ligne ~102) :
+
 ```css
-	--glass: rgb(17 24 34);
+--glass: rgb(17 24 34);
 ```
+
 Bloc `:root` (ligne ~67) — garder clair mais très légèrement bleuté pour cohérence si le chrome retombait en clair :
+
 ```css
-	--glass: rgb(232 237 244);
+--glass: rgb(232 237 244);
 ```
 
 - [ ] **Step 2: `npm run format` puis `npm run check`**
@@ -102,9 +107,11 @@ git commit -m "style(chrome): voile verre teinté bleu-nuit"
 ## Task 2: En-tête — fil contextuel enrichi + badge « run en cours »
 
 **Files:**
+
 - Modify: `src/lib/components/chrome/header.svelte`
 
 **Interfaces:**
+
 - Consumes: `selectedVariable`, `selectedDomain` (`$lib/stores/variables`) ; `modelRun`, `time`, `inProgress` (`$lib/stores/time`) ; `translateVariableLabel` (`$lib/i18n/variables-fr`) ; formatteurs de `$lib/time-format` (`formatUTCTime`/`formatUTCDateTime` — vérifier les noms exacts exportés).
 - Produces: rien (composant terminal).
 
@@ -113,44 +120,40 @@ Le fil actuel montre `variable · modèle`. On l'enrichit en `Variable · Modèl
 - [ ] **Step 1: Ajouter les dérivations run/validité + inProgress**
 
 Dans `<script>` de `header.svelte`, après `domainLabel`, ajouter (déléguer à `svelte-file-editor`) :
+
 ```svelte
-	import { inProgress, modelRun, time } from '$lib/stores/time';
-	import { formatUTCDateTime, formatUTCTime } from '$lib/time-format';
-
-	const runLabel = $derived($modelRun ? formatUTCTime($modelRun) : '');
-	const validLabel = $derived(formatUTCDateTime($time));
-
-	// Badge « run en cours » : le run affiché correspond au run encore en génération.
-	const runIsInProgress = $derived(
-		!!$modelRun &&
-			!!$inProgress?.reference_time &&
-			new Date($inProgress.reference_time).getTime() === $modelRun.getTime()
-	);
+import {(inProgress, modelRun, time)} from '$lib/stores/time'; import {(formatUTCDateTime,
+formatUTCTime)} from '$lib/time-format'; const runLabel = $derived($modelRun ? formatUTCTime($modelRun)
+: ''); const validLabel = $derived(formatUTCDateTime($time)); // Badge « run en cours » : le run affiché
+correspond au run encore en génération. const runIsInProgress = $derived( !!$modelRun && !!$inProgress?.reference_time
+&& new Date($inProgress.reference_time).getTime() === $modelRun.getTime() );
 ```
+
 > Vérifier le champ exact du run en cours dans `DomainMetaDataJson` (`reference_time` supposé) et les noms de formatteurs — ajuster à ce qui existe dans `$lib/time-format` / le type `metaJson`.
 
 - [ ] **Step 2: Étendre le fil dans le markup**
 
 Remplacer le bloc `{#if variableLabel}…{/if}` par un fil enrichi :
+
 ```svelte
-	{#if variableLabel}
-		<p
-			class="hidden min-w-0 flex-1 truncate px-2 text-center text-sm text-white/50 md:block"
-			title={`${variableLabel}${domainLabel ? ` · ${domainLabel}` : ''}`}
-		>
-			<span class="font-medium text-white">{variableLabel}</span>
-			{#if domainLabel}<span> · {domainLabel}</span>{/if}
-			{#if runLabel}<span class="tabular-nums"> · Run {runLabel}</span>{/if}
-			{#if validLabel}<span class="tabular-nums"> · {validLabel}</span>{/if}
-			{#if runIsInProgress}
-				<span
-					class="ml-2 rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-300 uppercase"
-				>
-					Run en cours
-				</span>
-			{/if}
-		</p>
-	{/if}
+{#if variableLabel}
+	<p
+		class="hidden min-w-0 flex-1 truncate px-2 text-center text-sm text-white/50 md:block"
+		title={`${variableLabel}${domainLabel ? ` · ${domainLabel}` : ''}`}
+	>
+		<span class="font-medium text-white">{variableLabel}</span>
+		{#if domainLabel}<span> · {domainLabel}</span>{/if}
+		{#if runLabel}<span class="tabular-nums"> · Run {runLabel}</span>{/if}
+		{#if validLabel}<span class="tabular-nums"> · {validLabel}</span>{/if}
+		{#if runIsInProgress}
+			<span
+				class="ml-2 rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-300 uppercase"
+			>
+				Run en cours
+			</span>
+		{/if}
+	</p>
+{/if}
 ```
 
 - [ ] **Step 3: `svelte-autofixer` + `npm run format` + `npm run check`**
@@ -179,10 +182,12 @@ git commit -m "feat(chrome): fil d'en-tête variable · modèle · run · validi
 ## Task 3: Bande de contexte carte (`context-strip.svelte`)
 
 **Files:**
+
 - Create: `src/lib/components/chrome/context-strip.svelte`
 - Modify: `src/lib/components/chrome/app-chrome.svelte`
 
 **Interfaces:**
+
 - Consumes: `selectedVariable` (`$lib/stores/variables`), `translateVariableLabel` (`$lib/i18n/variables-fr`).
 - Produces: composant sans props, à monter en tête de la zone carte.
 
@@ -214,16 +219,19 @@ git commit -m "feat(chrome): fil d'en-tête variable · modèle · run · validi
 	</div>
 {/if}
 ```
+
 > Vérifier les champs réels de l'objet variable (`label`, `unit`, `description`) dans le type consommé par `selectedVariable` ; adapter si nécessaire.
 
 - [ ] **Step 2: Monter la bande dans `app-chrome.svelte`**
 
 `app-chrome` monte aujourd'hui `Header`, `Sidebar`/`MobileDock`, `AdvancedPanel`. La bande de contexte doit apparaître **en haut de la zone carte** (sous le header, décalée par la sidebar). Ajouter l'import et un conteneur fixe calé sur `sidebarWidth` :
+
 ```svelte
-	import { sidebarWidth } from '$lib/stores/preferences';
-	import ContextStrip from './context-strip.svelte';
+import {sidebarWidth} from '$lib/stores/preferences'; import ContextStrip from './context-strip.svelte';
 ```
+
 Puis, après `<Header>…</Header>` :
+
 ```svelte
 <!-- Bande de contexte : sous le header (44px), décalée à droite par la sidebar. -->
 <div
@@ -233,6 +241,7 @@ Puis, après `<Header>…</Header>` :
 	<ContextStrip />
 </div>
 ```
+
 > Importer `desktop` depuis `$lib/stores/preferences` (déjà importé dans le fichier). Vérifier que `z-40` passe sous header (`z-60`) mais au-dessus de la carte.
 
 - [ ] **Step 3: `svelte-autofixer` + format + check**
@@ -261,10 +270,12 @@ git commit -m "feat(chrome): bande de contexte variable au-dessus de la carte"
 ## Task 4: Actions flottantes carte (`map-actions.svelte`)
 
 **Files:**
+
 - Create: `src/lib/components/chrome/map-actions.svelte`
 - Modify: `src/lib/components/chrome/app-chrome.svelte`
 
 **Interfaces:**
+
 - Consumes: rien (lit `window.location`, `document`).
 - Produces: cluster flottant top-droite. **Desktop uniquement** (mobile a déjà le FAB capture + contrôles MapLibre ; on évite d'encombrer le pouce).
 
@@ -336,17 +347,21 @@ git commit -m "feat(chrome): bande de contexte variable au-dessus de la carte"
 	</button>
 </div>
 ```
+
 > Vérifier que les noms d'icônes Lucide existent (`link`, `maximize`, `minimize`, `check`) dans `@lucide/svelte/icons/*` ; ajuster sinon.
 
 - [ ] **Step 2: Monter dans `app-chrome.svelte` (desktop uniquement)**
 
 ```svelte
-	import MapActions from './map-actions.svelte';
+import MapActions from './map-actions.svelte';
 ```
+
 Dans la branche `{#if desktop.current}`, ajouter :
+
 ```svelte
-	<MapActions />
+<MapActions />
 ```
+
 > Le cluster est en `absolute` : il se place par rapport au conteneur carte positionné (`#map_container`). Vérifier au spot-check qu'il apparaît bien en haut-droite de la carte et non collé au viewport ; si le parent n'est pas positionné, remonter le montage dans le conteneur carte de `+page.svelte`.
 
 - [ ] **Step 3: `svelte-autofixer` + format + check**
@@ -375,9 +390,11 @@ git commit -m "feat(chrome): actions flottantes carte (copier-lien, plein écran
 ## Task 5: Sidebar — unité alignée à droite dans `layer-list`
 
 **Files:**
+
 - Modify: `src/lib/components/chrome/layer-list.svelte`
 
 **Interfaces:**
+
 - Consumes: la source de calques/variables déjà utilisée par `layer-list`.
 - Produces: rien.
 
@@ -386,10 +403,12 @@ Aligner l'unité de chaque calque à droite (`libellé …… °C`) façon proto
 - [ ] **Step 1: Lire `layer-list.svelte` et repérer le rendu d'un item**
 
 Identifier la ligne qui rend un calque/variable. Ajouter l'unité à droite via `flex justify-between` :
+
 ```svelte
 <span class="flex-1 truncate">{label}</span>
 <span class="ml-2 shrink-0 text-[11px] text-white/45 tabular-nums">{unit}</span>
 ```
+
 > Adapter aux noms de variables locales réels (`label`, `unit`) et au wrapper existant (`flex items-center`). Ne pas casser le toggle/clic existant.
 
 - [ ] **Step 2: `svelte-autofixer` + format + check**
@@ -417,10 +436,14 @@ git commit -m "style(chrome): unité alignée à droite dans la liste des calque
 
 ## Task 6: Timeline — transport en pastilles + compteur + bande restylée
 
+> **ABANDONNÉ (2026-07-02)** — non livré. Recoloration puis pastilles discrètes jugées non satisfaisantes ; le sélecteur de temps d'origine est conservé tel quel. Tâche laissée ici pour trace.
+
 **Files:**
+
 - Modify: `src/lib/components/time/time-selector.svelte`
 
 **Interfaces:**
+
 - Consumes: contrôles existants du fichier (`previousHour`, `nextHour`, jump début/fin, `PlaybackButton`, `PrefetchButton`, `timeSteps`, `currentIndex`, `centerDateButton`).
 - Produces: rien. **Logique de navigation inchangée** — uniquement l'habillage.
 
@@ -433,13 +456,19 @@ Repérer : (a) les boutons de transport, (b) l'emplacement de `PlaybackButton` e
 - [ ] **Step 2: Restyler les boutons de transport en pastilles**
 
 Uniformiser début/précédent/play/suivant/fin en pastilles (play accentué). Classe de base :
+
 ```svelte
-class="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 inline-flex size-7 cursor-pointer items-center justify-center rounded-md border border-white/15 bg-white/[0.06] text-white/80 hover:text-white"
+class="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 inline-flex
+size-7 cursor-pointer items-center justify-center rounded-md border border-white/15 bg-white/[0.06]
+text-white/80 hover:text-white"
 ```
+
 Play accentué :
+
 ```svelte
 class="… border-sky-400/50 bg-sky-400/20 text-sky-200"
 ```
+
 > Conserver les `onclick`/`title`/`aria-label` existants. `PlaybackButton` garde sa logique ; l'habiller de la pastille accentuée si l'intégration le permet, sinon laisser tel quel.
 
 - [ ] **Step 3: Placer le contrôle de plage (`PrefetchButton`) à l'emplacement « vitesse »**
@@ -449,17 +478,20 @@ Vérifier que `PrefetchButton` est bien rendu dans la barre ; le grouper visuell
 - [ ] **Step 4: Ajouter/aligner le compteur à droite**
 
 À droite de la rangée transport, un compteur `tabular-nums` :
+
 ```svelte
 <div class="ml-auto text-xs text-white/50 tabular-nums">
 	Échéance <span class="font-medium text-white">{currentLabel}</span>
 	· {currentIndex + 1}/{timeSteps.length}
 </div>
 ```
+
 > `currentLabel` = libellé date/heure de l'échéance courante (réutiliser le formatage déjà présent). **« préchargé % » : n'ajouter QUE si un état de préchargement est déjà exposé dans le composant** ; sinon l'omettre (follow-up spec, ne pas bloquer).
 
 - [ ] **Step 5: Restyler les pastilles-dates de la bande**
 
 Chaque bouton de date en pastille — actif / manquant :
+
 ```svelte
 class={[
 	'inline-flex shrink-0 flex-col items-center justify-center rounded-md border text-[10px] tabular-nums transition-colors',
@@ -473,6 +505,7 @@ class={[
 	.filter(Boolean)
 	.join(' ')}
 ```
+
 > Mapper `isActive`/`isMissing` sur les conditions déjà utilisées dans la bande. **Ne pas toucher** au `centerDateButton`/scroll ni aux `onclick`.
 
 - [ ] **Step 6: `svelte-autofixer` + format + check**
@@ -501,10 +534,12 @@ git commit -m "style(time): timeline en pastilles façon tableau de bord (logiqu
 ## Task 7: Tiroir Avancé + bottom-sheet mobile — alignement palette
 
 **Files:**
+
 - Modify: `src/lib/components/chrome/advanced-panel.svelte`
 - Modify: `src/lib/components/chrome/mobile-dock.svelte`
 
 **Interfaces:**
+
 - Consumes: —
 - Produces: —
 
@@ -534,6 +569,7 @@ Teinte cohérente avec header/sidebar/timeline ; texte lisible.
 git add src/lib/components/chrome/advanced-panel.svelte src/lib/components/chrome/mobile-dock.svelte
 git commit -m "style(chrome): tiroir avancé et bottom-sheet alignés sur le voile bleuté"
 ```
+
 > Si aucun écart n'a été trouvé, ne rien committer et cocher la tâche comme « vérifiée, aucun changement nécessaire ».
 
 ---
@@ -575,6 +611,7 @@ Créer `<scratchpad>/shot.mjs` : lance playwright-core sur le Chrome système av
 
 Run: `node <scratchpad>/shot.mjs`
 Vérifier sur les deux captures, contre le wireframe validé :
+
 - En-tête : fil `Variable · Modèle · Run · Validité` (+ badge run en cours si applicable).
 - Sidebar : Modèle / Calques (unités à droite) / Affichage / Style / Aide ; repli en rail OK.
 - Bande de contexte alignée au bord de la sidebar, se décale au repli.
