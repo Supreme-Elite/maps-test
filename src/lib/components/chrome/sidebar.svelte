@@ -3,10 +3,11 @@
 	import { slide } from 'svelte/transition';
 
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import HelpIcon from '@lucide/svelte/icons/circle-question-mark';
 	import PanelLeftCloseIcon from '@lucide/svelte/icons/panel-left-close';
 	import PanelLeftOpenIcon from '@lucide/svelte/icons/panel-left-open';
 
-	import { sidebarCollapsed, sidebarWidth } from '$lib/stores/preferences';
+	import { helpOpen, sidebarCollapsed, sidebarWidth } from '$lib/stores/preferences';
 
 	import LayerList from './layer-list.svelte';
 	import ModelSelector from './model-selector.svelte';
@@ -24,10 +25,12 @@
 
 	const reduceMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 
-	// Sections dépliables, ouvertes par défaut (état local, non persisté).
+	// Sections dépliables (état local, non persisté). Calques ouvert (action
+	// principale) ; Affichage et Style repliés par défaut pour garder la sidebar
+	// compacte — on les déplie au besoin.
 	let layersOpen = $state(true);
-	let displayOpen = $state(true);
-	let styleOpen = $state(true);
+	let displayOpen = $state(false);
+	let styleOpen = $state(false);
 
 	// Publie la largeur occupée pour que timeline/légende se décalent.
 	$effect(() => {
@@ -75,13 +78,22 @@
 		>
 			<PanelLeftOpenIcon class="size-4" aria-hidden="true" />
 		</button>
+		<button
+			type="button"
+			onclick={() => helpOpen.set(true)}
+			aria-label="Aide"
+			title="Aide"
+			class="hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 mx-auto mt-auto mb-2 inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-white/70 transition-colors hover:text-white"
+		>
+			<HelpIcon class="size-4" aria-hidden="true" />
+		</button>
 	{:else}
-		<div class="flex shrink-0 items-center justify-between px-3 pt-3 pb-2">
-			<h2 class="text-sm font-semibold">Réglages carte</h2>
+		<div class="flex shrink-0 items-center justify-end px-3 pt-3 pb-2">
 			<button
 				type="button"
 				onclick={() => sidebarCollapsed.set(true)}
 				aria-label="Replier les réglages carte"
+				title="Replier"
 				class="hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 -mr-1 inline-flex size-7 cursor-pointer items-center justify-center rounded-md text-white/70 hover:text-white"
 			>
 				<PanelLeftCloseIcon class="size-4" aria-hidden="true" />
@@ -122,6 +134,17 @@
 					{/if}
 				</section>
 			{/if}
+		</div>
+		<!-- Pied de sidebar : accès direct à l'aide (utilitaire persistant). -->
+		<div class="shrink-0 border-t border-white/10 px-3 py-2">
+			<button
+				type="button"
+				onclick={() => helpOpen.set(true)}
+				class="hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 text-left text-sm text-white/70 transition-colors hover:text-white"
+			>
+				<HelpIcon class="size-[18px] shrink-0 text-white/55" aria-hidden="true" />
+				Aide
+			</button>
 		</div>
 	{/if}
 </aside>
