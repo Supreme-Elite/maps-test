@@ -12,7 +12,7 @@
 	const visible = $derived(entries.filter((e) => e.code !== 0));
 </script>
 
-<div class="bg-glass/45 flex flex-col rounded-b-lg backdrop-blur-md">
+<div class="bg-glass/85 flex flex-col rounded-b-lg backdrop-blur-md">
 	{#each visible as entry (entry.code)}
 		{@const alpha = entry.color[3] ?? 1}
 		<div class="flex items-center gap-2 px-2 py-1">

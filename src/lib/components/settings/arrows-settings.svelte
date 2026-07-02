@@ -156,7 +156,7 @@
 				>
 					{levelLabel(selectedLevel)}
 				</Select.Trigger>
-				<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+				<Select.Content class="z-110 border-none bg-glass/85 backdrop-blur-sm">
 					{#each levelOptions as value (value)}
 						<Select.Item {value} label={levelLabel(value)} class="cursor-pointer text-sm" />
 					{/each}

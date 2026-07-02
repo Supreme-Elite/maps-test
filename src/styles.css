@@ -24,7 +24,7 @@
    finement et le texte redevient net (issue #44). On isole donc le flou dans un
    pseudo-élément placé DERRIÈRE le contenu : le voile verre est préservé mais le
    texte reste hors de la couche filtrée, donc net à tout facteur d'échelle.
-   À combiner avec un fond Tailwind (`bg-glass/45`, `hover:bg-glass/70`…), qui
+   À combiner avec un fond Tailwind (`bg-glass/85`, `hover:bg-glass/95`…), qui
    lui ne pose pas de souci de netteté. Remplace `backdrop-blur-md`. */
 @utility glass-blur {
 	position: relative;

@@ -31,7 +31,7 @@
      et à droite les actions : capture/partage (desktop) puis « Avancé ». Sur
      mobile, la capture est un FAB géré par mobile-dock. -->
 <header
-	class="bg-glass/45 fixed inset-x-0 top-0 z-60 flex h-11 items-center gap-3 border-b border-white/15 px-2.5 shadow-lg glass-blur"
+	class="bg-glass/85 fixed inset-x-0 top-0 z-60 flex h-11 items-center gap-3 border-b border-white/15 px-2.5 shadow-lg glass-blur"
 >
 	<a
 		href={SITE_URL}
@@ -69,7 +69,7 @@
 			onclick={() => advancedOpen.update((v) => !v)}
 			aria-label="Réglages avancés"
 			aria-expanded={$advancedOpen}
-			class="bg-glass/50 hover:bg-glass/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 px-3 text-sm text-white shadow-md md:h-8"
+			class="bg-glass/85 hover:bg-glass/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 px-3 text-sm text-white shadow-md md:h-8"
 		>
 			<SettingsIcon class="size-4" aria-hidden="true" />
 			<span class="hidden sm:inline">Avancé</span>

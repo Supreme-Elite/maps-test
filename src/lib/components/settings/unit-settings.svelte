@@ -111,7 +111,7 @@
 					>
 						<span class="truncate">{getLabel(temperatureOptions, $temperatureUnit)}</span>
 					</Select.Trigger>
-					<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+					<Select.Content class="z-110 border-none bg-glass/85 backdrop-blur-sm">
 						{#each temperatureOptions as { value, label } (value)}
 							<Select.Item {value} {label} class="cursor-pointer text-sm" />
 						{/each}
@@ -140,7 +140,7 @@
 					>
 						<span class="truncate">{getLabel(distanceOptions, $distanceUnit)}</span>
 					</Select.Trigger>
-					<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+					<Select.Content class="z-110 border-none bg-glass/85 backdrop-blur-sm">
 						{#each distanceOptions as { value, label } (value)}
 							<Select.Item {value} {label} class="cursor-pointer text-sm" />
 						{/each}
@@ -170,7 +170,7 @@
 					>
 						<span class="truncate">{getLabel(geopotentialOptions, $geopotentialUnit)}</span>
 					</Select.Trigger>
-					<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+					<Select.Content class="z-110 border-none bg-glass/85 backdrop-blur-sm">
 						{#each geopotentialOptions as { value, label } (value)}
 							<Select.Item {value} {label} class="cursor-pointer text-sm" />
 						{/each}
@@ -198,7 +198,7 @@
 					>
 						<span class="truncate">{getLabel(precipitationOptions, $precipitationUnit)}</span>
 					</Select.Trigger>
-					<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+					<Select.Content class="z-110 border-none bg-glass/85 backdrop-blur-sm">
 						{#each precipitationOptions as { value, label } (value)}
 							<Select.Item {value} {label} class="cursor-pointer text-sm" />
 						{/each}
@@ -227,7 +227,7 @@
 					>
 						<span class="truncate">{getLabel(windSpeedOptions, $windSpeedUnit)}</span>
 					</Select.Trigger>
-					<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+					<Select.Content class="z-110 border-none bg-glass/85 backdrop-blur-sm">
 						{#each windSpeedOptions as { value, label } (value)}
 							<Select.Item {value} {label} class="cursor-pointer text-sm" />
 						{/each}

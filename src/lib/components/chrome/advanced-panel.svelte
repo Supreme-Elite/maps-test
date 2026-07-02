@@ -221,7 +221,7 @@
 		     68 = 52 + 16 px de marge basse (ne pas coller le drawer au bord de l'écran). -->
 		<div
 			use:portal
-			class="bg-glass/65 fixed right-0 z-60 flex w-80 flex-col overflow-hidden rounded-l-xl border border-r-0 border-white/15 text-white shadow-lg backdrop-blur-md"
+			class="bg-glass/85 fixed right-0 z-60 flex w-80 flex-col overflow-hidden rounded-l-xl border border-r-0 border-white/15 text-white shadow-lg backdrop-blur-md"
 			style="top: 52px; max-height: calc(100dvh - 68px);"
 			in:fly={{ x: 320, duration: reduceMotion.current ? 0 : 260, easing: cubicOut }}
 			out:fly={{ x: 320, duration: reduceMotion.current ? 0 : 200, easing: cubicIn }}
