@@ -33,7 +33,11 @@
 	import * as Command from '$lib/components/ui/command';
 	import * as Popover from '$lib/components/ui/popover';
 
-	import { HIDDEN_VARIABLES, VISIBLE_PRESSURE_LEVELS_HPA } from '$lib/constants';
+	import {
+		HIDDEN_VARIABLES,
+		NON_LEVEL_GROUP_VARIABLES,
+		VISIBLE_PRESSURE_LEVELS_HPA
+	} from '$lib/constants';
 	import { localizeVariableOption, translateVariableLabel } from '$lib/i18n/variables-fr';
 	import { pickDefaultLevel, sortLevels } from '$lib/level-groups';
 	import { CATEGORIES, type CategoryKey, categorize } from '$lib/variable-categories';
@@ -55,7 +59,9 @@
 				// Variables masquées du sélecteur (rendu cassé en attente de refacto).
 				if (HIDDEN_VARIABLES.includes(mjVariable)) continue;
 				let match = mjVariable.match(LEVEL_REGEX);
-				if (match) {
+				// Variables autonomes que le LEVEL_PREFIX du package replierait à tort
+				// (ex. `wind_chill_2m` → préfixe « wind ») : conservées telles quelles.
+				if (match && !NON_LEVEL_GROUP_VARIABLES.includes(mjVariable)) {
 					const prefixMatch = mjVariable.match(LEVEL_PREFIX);
 					const prefix = prefixMatch?.groups?.prefix;
 					if (prefix) {
@@ -76,6 +82,9 @@
 		if ($metaJson) {
 			const groups: { [key: string]: { value: string; label: string }[] } = {};
 			for (let mjVariable of $metaJson.variables) {
+				// Cf. variableList : ne jamais replier ces variables autonomes dans un
+				// groupe de niveaux (sinon `wind_chill_2m` rejoint le sous-sélecteur « wind »).
+				if (NON_LEVEL_GROUP_VARIABLES.includes(mjVariable)) continue;
 				let match = mjVariable.match(LEVEL_REGEX);
 				if (match && match.groups) {
 					const prefixMatch = mjVariable.match(LEVEL_PREFIX);

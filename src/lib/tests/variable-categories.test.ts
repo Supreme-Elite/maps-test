@@ -1,5 +1,9 @@
+import { LEVEL_PREFIX, LEVEL_REGEX } from '@openmeteo/weather-map-layer';
 import { describe, expect, it } from 'vitest';
 
+import { resolveLevelGroup } from '$lib/stores/variables';
+
+import { NON_LEVEL_GROUP_VARIABLES } from '$lib/constants';
 import { CATEGORIES, categorize } from '$lib/variable-categories';
 
 describe('categorize', () => {
@@ -65,5 +69,28 @@ describe('categorize', () => {
 		it('wind_chill_2m est classé temperature (indice de ressenti, pas du vent)', () => {
 			expect(categorize('wind_chill_2m')).toBe('temperature');
 		});
+	});
+});
+
+describe('NON_LEVEL_GROUP_VARIABLES (anti-repliage abusif)', () => {
+	it('wind_chill_2m serait replié sur le préfixe « wind » par le package', () => {
+		// Démontre pourquoi l'exclusion est nécessaire : le LEVEL_PREFIX du package
+		// capture « wind » pour wind_chill_2m (le `_chill` n'est pas exclu), ce qui
+		// le rangerait sous « Vent » avec un niveau « 2 m ».
+		expect('wind_chill_2m'.match(LEVEL_REGEX)).not.toBeNull();
+		expect('wind_chill_2m'.match(LEVEL_PREFIX)?.groups?.prefix).toBe('wind');
+	});
+
+	it('wind_chill_2m figure dans la liste des variables jamais repliées', () => {
+		expect(NON_LEVEL_GROUP_VARIABLES).toContain('wind_chill_2m');
+	});
+
+	it('resolveLevelGroup ne replie pas wind_chill_2m sur le groupe « wind »', () => {
+		// Sinon la sélection du refroidissement éolien bascule le sélecteur sur « Vent ».
+		expect(resolveLevelGroup('wind_chill_2m')).toBeUndefined();
+	});
+
+	it('resolveLevelGroup replie toujours les vraies composantes de vent', () => {
+		expect(resolveLevelGroup('wind_speed_10m')?.value).toBe('wind');
 	});
 });

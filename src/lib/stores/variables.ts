@@ -14,7 +14,7 @@ import { registerAromeFranceConvectionDomain } from '$lib/arome-france-convectio
 import { registerAromeFranceDomain } from '$lib/arome-france-domain';
 import { registerAromeFranceHdDomain } from '$lib/arome-france-hd-domain';
 import { registerAromeOmDomain } from '$lib/arome-om-domain';
-import { DEFAULT_DOMAIN, DEFAULT_VARIABLE } from '$lib/constants';
+import { DEFAULT_DOMAIN, DEFAULT_VARIABLE, NON_LEVEL_GROUP_VARIABLES } from '$lib/constants';
 import { applyModelSelectorLabels } from '$lib/model-selector-labels';
 
 // Doit tourner avant la première évaluation de `selectedDomain`.
@@ -51,21 +51,26 @@ export const selectedVariable = derived(variable, ($variable) => {
 	return { value: $variable, label: $variable };
 });
 
+/**
+ * Résout le groupe de niveaux d'une variable (ou `undefined` si elle n'en fait pas
+ * partie). Les variables de `NON_LEVEL_GROUP_VARIABLES` sont exclues : le `LEVEL_PREFIX`
+ * du package les replie à tort (ex. `wind_chill_2m` → préfixe « wind »), ce qui
+ * sélectionnait le groupe de niveaux « wind » et faisait basculer le sélecteur sur
+ * « Vent » à la sélection du refroidissement éolien. Doit rester alignée sur le
+ * repliage de `variable-tabs.svelte`.
+ */
+export function resolveLevelGroup(value: string): { value: string; label: string } | undefined {
+	if (NON_LEVEL_GROUP_VARIABLES.includes(value)) return undefined;
+	if (!value.match(LEVEL_REGEX)) return undefined;
+	const prefix = value.match(LEVEL_PREFIX)?.groups?.prefix;
+	return variableOptions.find(({ value: v }) => v === prefix) ?? undefined;
+}
+
 export const levelGroupSelected: Writable<{ value: string; label: string } | undefined> = writable(
-	get(selectedVariable).value.match(LEVEL_REGEX)
-		? (variableOptions.find(
-				({ value }) => value === get(selectedVariable).value.match(LEVEL_PREFIX)?.groups?.prefix
-			) ?? undefined)
-		: undefined
+	resolveLevelGroup(get(selectedVariable).value)
 );
 selectedVariable.subscribe((newVariable) => {
-	levelGroupSelected.set(
-		newVariable.value.match(LEVEL_REGEX)
-			? (variableOptions.find(
-					({ value }) => value === newVariable.value.match(LEVEL_PREFIX)?.groups?.prefix
-				) ?? undefined)
-			: undefined
-	);
+	levelGroupSelected.set(resolveLevelGroup(newVariable.value));
 });
 
 export const level = derived(selectedVariable, (sV) => {
