@@ -5,7 +5,11 @@ import {
 	variableOptions
 } from '@openmeteo/weather-map-layer';
 
-import { HIDDEN_VARIABLES, VISIBLE_PRESSURE_LEVELS_HPA } from '$lib/constants';
+import {
+	HIDDEN_VARIABLES,
+	NON_LEVEL_GROUP_VARIABLES,
+	VISIBLE_PRESSURE_LEVELS_HPA
+} from '$lib/constants';
 import { sortLevels } from '$lib/level-groups';
 import { CATEGORIES, type Category, categorize } from '$lib/variable-categories';
 
@@ -23,7 +27,9 @@ export function buildVariableList(metaVariables: string[]): string[] {
 	const variables: string[] = [];
 	for (const mjVariable of metaVariables) {
 		if (HIDDEN_VARIABLES.includes(mjVariable)) continue;
-		if (mjVariable.match(LEVEL_REGEX)) {
+		// Variables autonomes que le LEVEL_PREFIX du package replierait à tort
+		// (ex. `wind_chill_2m` → préfixe « wind ») : conservées telles quelles.
+		if (mjVariable.match(LEVEL_REGEX) && !NON_LEVEL_GROUP_VARIABLES.includes(mjVariable)) {
 			const prefix = mjVariable.match(LEVEL_PREFIX)?.groups?.prefix;
 			if (prefix) {
 				if (!variables.includes(prefix)) variables.push(prefix);
@@ -44,6 +50,9 @@ export function buildLevelGroups(metaVariables: string[]): Record<string, Variab
 	const visible = new Set<number>(VISIBLE_PRESSURE_LEVELS_HPA);
 	const groups: Record<string, VariableOption[]> = {};
 	for (const mjVariable of metaVariables) {
+		// Cf. buildVariableList : ne jamais replier ces variables autonomes dans un
+		// groupe de niveaux (sinon `wind_chill_2m` rejoint le sous-sélecteur « wind »).
+		if (NON_LEVEL_GROUP_VARIABLES.includes(mjVariable)) continue;
 		if (!mjVariable.match(LEVEL_REGEX)?.groups) continue;
 		const prefix = mjVariable.match(LEVEL_PREFIX)?.groups?.prefix;
 		if (!prefix) continue;

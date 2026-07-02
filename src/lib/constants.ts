@@ -72,6 +72,19 @@ export const HIDDEN_VARIABLES: readonly string[] = [
 	'precipitation_type_severe'
 ];
 
+/** Variables autonomes que le `LEVEL_PREFIX` du package replie **à tort** sur un
+ *  groupe de niveaux. `wind_chill_2m` (refroidissement éolien, un indice de
+ *  température ressentie en °C) est capturé par le préfixe « wind » du package
+ *  (`wind(?!_gusts|_direction)` — le `_chill` n'est pas exclu) : replié, il
+ *  apparaissait sous « Vent » avec un niveau « 2 m » (AROME France / HD), laissant
+ *  croire à un bug puisqu'il affiche des températures.
+ *
+ *  Listées ici, ces variables ne sont **jamais** repliées par `buildVariableList()`
+ *  (`src/lib/layer-list.ts`) :
+ *  elles restent des variables autonomes, classées par `categorize()`
+ *  (`wind_chill` → `temperature`) et libellées via `i18n/variables-fr.ts`. */
+export const NON_LEVEL_GROUP_VARIABLES: readonly string[] = ['wind_chill_2m'];
+
 // Vector options defaults
 export const DEFAULT_VECTOR_OPTIONS = {
 	grid: false,

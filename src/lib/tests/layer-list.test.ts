@@ -25,6 +25,12 @@ describe('buildVariableList', () => {
 		// un seul item pour tout le groupe température, pas les niveaux individuels
 		expect(list.filter((v) => v.startsWith('temperature'))).toEqual([TEMP_PREFIX]);
 	});
+
+	it('ne replie jamais les variables autonomes (NON_LEVEL_GROUP_VARIABLES)', () => {
+		// wind_chill_2m serait capturé par le préfixe « wind » du package (fix PR #109).
+		const list = buildVariableList(['wind_chill_2m', 'wind_speed_10m']);
+		expect(list).toContain('wind_chill_2m');
+	});
 });
 
 describe('buildLevelGroups', () => {
@@ -37,6 +43,13 @@ describe('buildLevelGroups', () => {
 		// altitude croissante : 2 m < 850 hPa < 500 hPa
 		expect(values.indexOf('temperature_2m')).toBeLessThan(values.indexOf('temperature_850hPa'));
 		expect(values.indexOf('temperature_850hPa')).toBeLessThan(values.indexOf('temperature_500hPa'));
+	});
+
+	it('exclut les variables autonomes des groupes de niveaux', () => {
+		const groups = buildLevelGroups(['wind_chill_2m', 'wind_speed_10m']);
+		for (const values of Object.values(groups)) {
+			expect(values.map((o) => o.value)).not.toContain('wind_chill_2m');
+		}
 	});
 });
 
