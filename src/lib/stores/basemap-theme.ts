@@ -8,13 +8,10 @@ import { persisted } from 'svelte-persisted-store';
 // style à chaque changement.
 export type BasemapTheme = 'light' | 'dark';
 
-// Par défaut on suit la préférence système au tout premier chargement ; le choix
-// fait via le toggle est ensuite persisté et prioritaire.
-const osPrefersLight =
-	typeof window !== 'undefined' &&
-	typeof window.matchMedia === 'function' &&
-	window.matchMedia('(prefers-color-scheme: light)').matches;
-
-export const DEFAULT_BASEMAP_THEME: BasemapTheme = osPrefersLight ? 'light' : 'dark';
+// Par défaut : fond de carte CLAIR pour tout le monde. Le mode sombre est opt-in
+// — on ne suit plus prefers-color-scheme de l'OS — et se pilote via le toggle
+// « Fond de carte sombre » (Affichage). Le choix fait via le toggle est ensuite
+// persisté et prioritaire aux chargements suivants.
+export const DEFAULT_BASEMAP_THEME: BasemapTheme = 'light';
 
 export const basemapTheme = persisted<BasemapTheme>('basemap_theme', DEFAULT_BASEMAP_THEME);
