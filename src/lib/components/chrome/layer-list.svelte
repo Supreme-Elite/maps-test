@@ -12,11 +12,15 @@
 	import Wind from '@lucide/svelte/icons/wind';
 	import {
 		LEVEL_UNIT_REGEX,
+		getColorScale,
 		levelGroupVariables,
 		variableOptions
 	} from '@openmeteo/weather-map-layer';
+	import { mode } from 'mode-watcher';
 
+	import { customColorScales, omProtocolSettings } from '$lib/stores/om-protocol-settings';
 	import { metaJson } from '$lib/stores/time';
+	import { getDisplayUnit, unitPreferences } from '$lib/stores/units';
 	import {
 		level,
 		levelGroupSelected,
@@ -42,6 +46,17 @@
 		$metaJson ? groupVariablesByCategory(buildVariableList($metaJson.variables)) : []
 	);
 	const levelGroups = $derived($metaJson ? buildLevelGroups($metaJson.variables) : {});
+
+	// Unité affichée à droite de chaque ligne de variable : même dérivation que
+	// context-strip.svelte/scale.svelte (échelle de couleur → préférence d'unité
+	// de l'utilisateur). Retourne '' pour les variables sans unité pertinente
+	// (catégorielles, directions…) afin que le rendu l'omette proprement.
+	const isDark = $derived(mode.current === 'dark');
+	function unitFor(value: string): string {
+		const base = getColorScale(value, isDark, $omProtocolSettings.colorScales);
+		const scale = $customColorScales[value] ?? base;
+		return getDisplayUnit(scale.unit, $unitPreferences, value);
+	}
 
 	const activeValue = $derived($levelGroupSelected?.value ?? $selectedVariable?.value);
 	// Libellé de la variable sélectionnée, affiché en sous-titre quand sa famille
@@ -134,6 +149,7 @@
 								label: item
 							}}
 							{@const active = activeValue === item}
+							{@const u = unitFor(item)}
 							<button
 								type="button"
 								onclick={() => selectRow(item)}
@@ -143,7 +159,14 @@
 									? 'text-sky-300'
 									: 'text-white'}"
 							>
-								<span class="truncate">{translateVariableLabel(option.label)}</span>
+								<span class="flex-1 truncate">{translateVariableLabel(option.label)}</span>
+								{#if u}
+									<span
+										class="ml-2 shrink-0 text-[11px] tabular-nums {active
+											? 'text-sky-300/70'
+											: 'text-white/45'}">{u}</span
+									>
+								{/if}
 							</button>
 							{#if active && levelGroups[item]?.length}
 								<!-- Niveaux de la variable active, en radios (sous-échéances de la spec) -->
