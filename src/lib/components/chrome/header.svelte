@@ -2,9 +2,10 @@
 	import SettingsIcon from '@lucide/svelte/icons/settings-2';
 
 	import { advancedOpen } from '$lib/stores/preferences';
-	import { selectedDomain, selectedVariable } from '$lib/stores/variables';
+	import { inProgress, latest, modelRun, time } from '$lib/stores/time';
+	import { selectedDomain } from '$lib/stores/variables';
 
-	import { translateVariableLabel } from '$lib/i18n/variables-fr';
+	import { formatUTCDateTime, formatUTCTime } from '$lib/time-format';
 
 	import type { Snippet } from 'svelte';
 
@@ -17,13 +18,31 @@
 	const SITE_URL = 'https://www.infoclimat.fr';
 	const LOGO_URL = 'https://static.infoclimat.net/images/v5.1/logo_IC_5.1.png';
 
-	// Fil contextuel « qu'est-ce que je regarde ? » : variable (en avant) + modèle
-	// (atténué). Reste l'unique rappel modèle/variable quand la sidebar est repliée
-	// en rail. Masqué sur mobile (info dans le bottom-sheet, header trop serré).
-	const variableLabel = $derived(
-		$selectedVariable ? translateVariableLabel($selectedVariable.label) : ''
-	);
+	// Fil contextuel « qu'est-ce que je regarde ? » : modèle (en avant) + run +
+	// validité. La variable est affichée dans la bande de contexte
+	// (context-strip.svelte) pour éviter la duplication. Reste l'unique rappel
+	// modèle/run quand la sidebar est repliée en rail. Masqué sur mobile (info
+	// dans le bottom-sheet, header trop serré).
 	const domainLabel = $derived($selectedDomain?.label ?? '');
+
+	const runLabel = $derived($modelRun ? formatUTCTime($modelRun) : '');
+	const validLabel = $derived($time ? formatUTCDateTime($time) : '');
+
+	// Run en cours de génération : même dérivation que time-selector.svelte
+	// (inProgressReferenceTime) — un `inProgress` dont le reference_time égale
+	// celui de `latest` n'est plus « en cours », il est devenu le dernier run.
+	const inProgressReferenceTime = $derived(
+		$inProgress?.reference_time &&
+			$latest?.reference_time &&
+			$inProgress?.reference_time !== $latest?.reference_time
+			? new Date($inProgress.reference_time)
+			: undefined
+	);
+	const runIsInProgress = $derived(
+		!!$modelRun &&
+			!!inProgressReferenceTime &&
+			inProgressReferenceTime.getTime() === $modelRun.getTime()
+	);
 </script>
 
 <!-- Header fin pleine largeur (44 px) : marque à gauche, onglets pilule (un seul
@@ -52,13 +71,21 @@
 		</span>
 	</nav>
 
-	{#if variableLabel}
+	{#if domainLabel}
 		<p
 			class="hidden min-w-0 flex-1 truncate px-2 text-center text-sm text-white/50 md:block"
-			title={domainLabel ? `${variableLabel} · ${domainLabel}` : variableLabel}
+			title={`${domainLabel}${runLabel ? ` · Run ${runLabel}` : ''}${validLabel ? ` · ${validLabel}` : ''}`}
 		>
-			<span class="font-medium text-white">{variableLabel}</span>
-			{#if domainLabel}<span> · {domainLabel}</span>{/if}
+			<span class="font-medium text-white">{domainLabel}</span>
+			{#if runLabel}<span class="tabular-nums"> · Run {runLabel}</span>{/if}
+			{#if validLabel}<span class="tabular-nums"> · {validLabel}</span>{/if}
+			{#if runIsInProgress}
+				<span
+					class="ml-2 rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-300 uppercase"
+				>
+					Run en cours
+				</span>
+			{/if}
 		</p>
 	{/if}
 
