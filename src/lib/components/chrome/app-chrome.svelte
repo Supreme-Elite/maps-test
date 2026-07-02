@@ -11,16 +11,20 @@
 	import StyleSection from './style-section.svelte';
 </script>
 
-<Header />
+<Header>
+	{#snippet capture()}
+		<!-- Desktop : capture/partage promue dans le header. Sur mobile, c'est le FAB
+		     de mobile-dock qui prend le relais (meilleure accessibilité au pouce). -->
+		{#if desktop.current}<CaptureFlow />{/if}
+	{/snippet}
+</Header>
 
 {#if desktop.current}
 	<Sidebar>
 		{#snippet display()}<DisplaySection />{/snippet}
 		{#snippet style()}<StyleSection />{/snippet}
 	</Sidebar>
-	<AdvancedPanel>
-		{#snippet capture()}<CaptureFlow />{/snippet}
-	</AdvancedPanel>
+	<AdvancedPanel />
 {:else}
 	<MobileDock>
 		{#snippet capture()}<CaptureFlow variant="fab" />{/snippet}
