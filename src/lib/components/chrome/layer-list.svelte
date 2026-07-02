@@ -1,4 +1,9 @@
 <script lang="ts">
+	import { cubicOut } from 'svelte/easing';
+	import { prefersReducedMotion } from 'svelte/motion';
+	import { slide } from 'svelte/transition';
+
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Cloud from '@lucide/svelte/icons/cloud';
 	import CloudRain from '@lucide/svelte/icons/cloud-rain';
 	import Gauge from '@lucide/svelte/icons/gauge';
@@ -39,6 +44,31 @@
 	const levelGroups = $derived($metaJson ? buildLevelGroups($metaJson.variables) : {});
 
 	const activeValue = $derived($levelGroupSelected?.value ?? $selectedVariable?.value);
+	// Libellé de la variable sélectionnée, affiché en sous-titre quand sa famille
+	// est repliée (on garde toujours la sélection courante sous les yeux).
+	const activeLabel = $derived(
+		$selectedVariable ? translateVariableLabel($selectedVariable.label) : ''
+	);
+	// Clé de la famille contenant la variable active (fallback : première famille).
+	const activeCategory = $derived(
+		grouped.find(({ items }) => items.includes(activeValue as string))?.cat.key ??
+			grouped[0]?.cat.key ??
+			''
+	);
+
+	// Accordéon à une seule famille ouverte. `$derived` inscriptible : par défaut
+	// la famille active (chargement initial + deep-link), réassignable au clic pour
+	// ouvrir/replier, et réinitialisé automatiquement quand `activeCategory` change.
+	let openKey: string = $derived(activeCategory);
+
+	function toggleCategory(key: string) {
+		openKey = openKey === key ? '' : key;
+	}
+
+	// Durées d'accordéon : entrée un peu plus lente que la sortie (« exit faster
+	// than enter »), et 0 ms si l'utilisateur a demandé moins d'animations.
+	const enterMs = $derived(prefersReducedMotion.current ? 0 : 200);
+	const exitMs = $derived(prefersReducedMotion.current ? 0 : 140);
 
 	// Sélectionne une ligne : groupe de niveaux → niveau par défaut (2 m > 10 m >
 	// le plus bas), variable simple → sélection directe. Même logique que
@@ -57,63 +87,97 @@
 </script>
 
 {#if $metaJson}
-	<div class="flex flex-col gap-3">
+	<div class="flex flex-col gap-1">
 		{#each grouped as { cat, items } (cat.key)}
 			{@const Icon = ICONS[cat.key]}
+			{@const open = openKey === cat.key}
+			{@const hasActive = items.includes(activeValue as string)}
 			<div>
-				<h4 class="mb-1 px-1 text-[11px] font-medium text-white/40">{cat.label}</h4>
-				<div
-					class="overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
+				<!-- En-tête de famille : ouvre/replie l'accordéon -->
+				<button
+					type="button"
+					onclick={() => toggleCategory(cat.key)}
+					aria-expanded={open}
+					aria-controls="layer-cat-{cat.key}"
+					class="hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 text-left transition-colors md:min-h-9"
 				>
-					{#each items as item (item)}
-						{@const option = variableOptions.find(({ value }) => value === item) ?? {
-							value: item,
-							label: item
-						}}
-						{@const active = activeValue === item}
-						<button
-							type="button"
-							onclick={() => selectRow(item)}
-							aria-pressed={active}
-							class="hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 w-full cursor-pointer items-center gap-3 px-3 py-2 text-left text-sm transition-colors md:min-h-9 {active
-								? 'text-sky-300'
-								: 'text-white'}"
-						>
-							<Icon class="size-[18px] shrink-0" aria-hidden="true" />
-							<span class="truncate">{translateVariableLabel(option.label)}</span>
-						</button>
-						{#if active && levelGroups[item]?.length}
-							<!-- Niveaux de la variable active, en radios (sous-échéances de la spec) -->
-							<div
-								role="radiogroup"
-								aria-label="Niveau"
-								class="flex flex-col border-t border-white/[0.06] bg-white/[0.02] py-1"
+					<Icon
+						class="size-[18px] shrink-0 {hasActive ? 'text-sky-300' : 'text-white/55'}"
+						aria-hidden="true"
+					/>
+					<span class="min-w-0 flex-1">
+						<span class="block truncate text-sm font-medium text-white">{cat.label}</span>
+						{#if !open && hasActive}
+							<span title={activeLabel} class="block truncate text-[11px] text-sky-300"
+								>{activeLabel}</span
 							>
-								{#each levelGroups[item] as { value, label } (value)}
-									{#if !value.includes('v_component') && !value.includes('_direction')}
-										{@const lvl = value.match(LEVEL_UNIT_REGEX)?.groups?.level}
-										{@const u = value.match(LEVEL_UNIT_REGEX)?.groups?.unit}
-										{@const checked = lvl === $level && u === $unit}
-										<label
-											class="flex min-h-11 cursor-pointer items-center gap-2.5 pr-3 pl-10 text-sm md:min-h-9 {checked
-												? 'text-sky-300'
-												: 'text-white/80'}"
-										>
-											<input
-												type="radio"
-												name="layer-level-{item}"
-												{checked}
-												onchange={() => ($variable = value)}
-												class="size-3.5 accent-sky-400"
-											/>
-											{translateVariableLabel(label)}
-										</label>
-									{/if}
-								{/each}
-							</div>
 						{/if}
-					{/each}
-				</div>
+					</span>
+					<ChevronDown
+						class="size-4 shrink-0 text-white/40 transition-transform duration-200 motion-reduce:transition-none {open
+							? ''
+							: '-rotate-90'}"
+						aria-hidden="true"
+					/>
+				</button>
+
+				{#if open}
+					<div
+						id="layer-cat-{cat.key}"
+						in:slide={{ duration: enterMs, easing: cubicOut }}
+						out:slide={{ duration: exitMs, easing: cubicOut }}
+						class="mt-1 overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
+					>
+						{#each items as item (item)}
+							{@const option = variableOptions.find(({ value }) => value === item) ?? {
+								value: item,
+								label: item
+							}}
+							{@const active = activeValue === item}
+							<button
+								type="button"
+								onclick={() => selectRow(item)}
+								title={translateVariableLabel(option.label)}
+								aria-pressed={active}
+								class="hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 w-full cursor-pointer items-center px-3 py-2 text-left text-sm transition-colors md:min-h-9 {active
+									? 'text-sky-300'
+									: 'text-white'}"
+							>
+								<span class="truncate">{translateVariableLabel(option.label)}</span>
+							</button>
+							{#if active && levelGroups[item]?.length}
+								<!-- Niveaux de la variable active, en radios (sous-échéances de la spec) -->
+								<div
+									role="radiogroup"
+									aria-label="Niveau"
+									class="flex flex-col border-t border-white/[0.06] bg-white/[0.02] py-1"
+								>
+									{#each levelGroups[item] as { value, label } (value)}
+										{#if !value.includes('v_component') && !value.includes('_direction')}
+											{@const lvl = value.match(LEVEL_UNIT_REGEX)?.groups?.level}
+											{@const u = value.match(LEVEL_UNIT_REGEX)?.groups?.unit}
+											{@const checked = lvl === $level && u === $unit}
+											<label
+												class="flex min-h-11 cursor-pointer items-center gap-2.5 pr-3 pl-8 text-sm md:min-h-9 {checked
+													? 'text-sky-300'
+													: 'text-white/80'}"
+											>
+												<input
+													type="radio"
+													name="layer-level-{item}"
+													{checked}
+													onchange={() => ($variable = value)}
+													class="size-3.5 accent-sky-400"
+												/>
+												{translateVariableLabel(label)}
+											</label>
+										{/if}
+									{/each}
+								</div>
+							{/if}
+						{/each}
+					</div>
+				{/if}
 			</div>
 		{/each}
 	</div>
