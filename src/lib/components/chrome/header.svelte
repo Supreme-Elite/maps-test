@@ -31,7 +31,7 @@
      et à droite les actions : capture/partage (desktop) puis « Avancé ». Sur
      mobile, la capture est un FAB géré par mobile-dock. -->
 <header
-	class="bg-glass/85 fixed inset-x-0 top-0 z-60 flex h-11 items-center gap-3 border-b border-white/15 px-2.5 shadow-lg glass-blur"
+	class="bg-glass/85 fixed inset-x-0 top-0 z-60 flex h-11 items-center gap-3 border-b border-white/15 px-2.5 glass-blur"
 >
 	<a
 		href={SITE_URL}
