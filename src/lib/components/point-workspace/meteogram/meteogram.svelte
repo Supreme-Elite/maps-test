@@ -31,15 +31,24 @@
 	const cache = new SvelteMap<string, MeteogramData>();
 	let controller: AbortController | undefined;
 
+	// Réactif au domaine sélectionné : un changement de modèle doit déclencher
+	// un refetch même si le point reste le même (spec §1 « Point clé quotas »).
+	const model = $derived(resolveApiModel($selectedDomain.value));
+
 	async function load() {
+		// Capturée en tête de fonction, avant tout `await`, pour qu'un chargement
+		// en vol reste cohérent avec le modèle qui l'a déclenché — un changement
+		// de modèle pendant l'attente relance `load()` via l'effet et abandonne
+		// celui-ci plutôt que de le faire dériver vers la nouvelle valeur.
+		const currentModel = model;
+
 		// Annule systématiquement toute requête en vol — y compris quand cet
 		// appel se résout depuis le cache — sinon une ancienne requête encore en
 		// vol pour un autre point pourrait écraser `data` après coup.
 		controller?.abort();
 		controller = undefined;
 
-		const model = resolveApiModel(get(selectedDomain).value);
-		if (!model) {
+		if (!currentModel) {
 			// Le bouton déclencheur (popup) ne devrait pas apparaître sur un
 			// domaine non mappé — garde défensive si le composant est monté
 			// quand même.
@@ -49,7 +58,7 @@
 			return;
 		}
 
-		const key = `${lat.toFixed(3)},${lng.toFixed(3)},${model}`;
+		const key = `${lat.toFixed(3)},${lng.toFixed(3)},${currentModel}`;
 		const cached = cache.get(key);
 		if (cached) {
 			data = cached;
@@ -64,7 +73,7 @@
 		error = null;
 		data = null;
 		try {
-			const d = await fetchMeteogram(lat, lng, model, ac.signal);
+			const d = await fetchMeteogram(lat, lng, currentModel, ac.signal);
 			if (controller !== ac) return; // supplantée entre-temps
 			if (d.times.length === 0) {
 				error = 'empty';
@@ -81,11 +90,12 @@
 		}
 	}
 
-	// Recharge uniquement au changement de point — jamais sur le scrub du temps
+	// Recharge au changement de point ou de modèle — jamais sur le scrub du temps
 	// ($time n'est volontairement pas lu ici, toute la série est déjà chargée).
 	$effect(() => {
 		void lat;
 		void lng;
+		void model;
 		load();
 	});
 
