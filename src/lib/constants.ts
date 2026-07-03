@@ -286,6 +286,32 @@ export const DOMAIN_ALLOWLIST: readonly string[] = MODEL_SELECTOR_GROUPS.flatMap
 	g.domains.map((d) => d.value)
 );
 
+/**
+ * Domaine affiché (app) → identifiant `models=` de l'API JSON Open-Meteo.
+ * Un domaine absent = pas de meteogram (bouton masqué). `arome_france`/
+ * `arome_france_convection` (bucket maison) et `anomaly_europe` sont volontairement
+ * hors table : absents de l'API publique.
+ *
+ * `dwd_icon` (label « DWD ICON Global ») → `icon_global`, pas `dwd_icon_seamless`
+ * (n'existe pas dans l'enum `models=` — vérifié dans `../open-meteo/openapi/forecast.yml`,
+ * qui ne porte aucun préfixe `dwd_`) ni `icon_seamless` (blend auto multi-résolution,
+ * sémantique différente du modèle Global figé affiché ici).
+ */
+export const DOMAIN_TO_API_MODEL: Readonly<Record<string, string>> = {
+	meteofrance_arpege_europe: 'meteofrance_arpege_europe',
+	meteofrance_arpege_world025: 'meteofrance_arpege_world',
+	arome_france_hd: 'meteofrance_arome_france_hd',
+	dwd_icon: 'icon_global',
+	dwd_icon_eu: 'icon_eu',
+	dwd_icon_d2: 'icon_d2',
+	meteoswiss_icon_ch1: 'meteoswiss_icon_ch1',
+	meteoswiss_icon_ch2: 'meteoswiss_icon_ch2',
+	ecmwf_ifs025: 'ecmwf_ifs025',
+	ecmwf_ifs: 'ecmwf_ifs',
+	ecmwf_aifs025_single: 'ecmwf_aifs025_single',
+	ncep_gfs025: 'ncep_gfs_seamless'
+};
+
 // Descriptions courtes par modèle, affichées sous le nom dans le sélecteur de modèle
 // pour aider à choisir (fournisseur · résolution/zone · échéance). Optionnel par domaine.
 export const MODEL_DESCRIPTIONS: Record<string, string> = {
