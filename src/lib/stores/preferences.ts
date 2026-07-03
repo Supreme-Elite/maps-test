@@ -76,6 +76,12 @@ export const scaleCollapsed = persisted('scale-collapsed', true);
 // la barre du temps. Valeur initiale prudente (~120px) ; le composant la met à jour.
 export const bottomChromeHeight = writable(120);
 
+// Hauteur (en px) occupée par le tiroir « espace point » (meteogram) quand il est
+// ouvert, 0 sinon. Publiée par `point-drawer.svelte`, sert à remonter la légende
+// (`scale.svelte`) et les contrôles MapLibre bas-droite (`+page.svelte`) au-dessus
+// du tiroir — même rôle que `bottomChromeHeight` pour la barre du temps.
+export const pointDrawerHeight = writable(0);
+
 export { cacheBlockSizeKb, cacheMaxBytesMb } from './om-protocol-settings';
 
 export const localStorageVersion: Persisted<string | undefined> = persisted(

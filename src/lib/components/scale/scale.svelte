@@ -14,6 +14,7 @@
 	import {
 		bottomChromeHeight,
 		opacity,
+		pointDrawerHeight,
 		preferences,
 		scaleCollapsed,
 		sidebarWidth
@@ -165,12 +166,10 @@
 			onclick={() => scaleCollapsed.set(false)}
 			aria-label="Déplier la légende"
 			title="Déplier la légende"
-			class="bg-glass/85 absolute z-60 flex cursor-pointer flex-col items-center overflow-hidden rounded-lg shadow-md backdrop-blur-md tabular-nums transition-[left] duration-200 motion-reduce:transition-none {desktop.current
-				? 'bottom-2.5'
-				: ''}"
-			style="left: calc({$sidebarWidth}px + 0.625rem);{!desktop.current
-				? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`
-				: ''}"
+			class="bg-glass/85 absolute z-60 flex cursor-pointer flex-col items-center overflow-hidden rounded-lg shadow-md backdrop-blur-md tabular-nums transition-[left] duration-200 motion-reduce:transition-none"
+			style="left: calc({$sidebarWidth}px + 0.625rem);{desktop.current
+				? ` bottom: calc(${$pointDrawerHeight}px + 0.625rem);`
+				: ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`}"
 		>
 			{#if colorScale.unit}
 				<span class="px-1 pt-0.5 text-[10px] leading-tight text-white/90">{displayUnit}</span>
@@ -199,11 +198,11 @@
 		</button>
 	{:else}
 		<div
-			class="absolute z-60 {desktop.current
-				? 'bottom-2.5'
-				: ''} select-none rounded-lg tabular-nums transition-[left] duration-200 motion-reduce:transition-none"
+			class="absolute z-60 select-none rounded-lg tabular-nums transition-[left] duration-200 motion-reduce:transition-none"
 			style="left: calc({$sidebarWidth}px + 0.625rem);max-height: {totalHeight +
-				100}px;{!desktop.current ? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);` : ''}"
+				100}px;{desktop.current
+				? ` bottom: calc(${$pointDrawerHeight}px + 0.625rem);`
+				: ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`}"
 		>
 			<div class="flex flex-col-reverse shadow-md">
 				{#if categorical}

@@ -5,7 +5,7 @@
 
 	import { map } from '$lib/stores/map';
 	import { pointWorkspace } from '$lib/stores/point-workspace';
-	import { sidebarWidth } from '$lib/stores/preferences';
+	import { pointDrawerHeight, sidebarWidth } from '$lib/stores/preferences';
 	import { selectedDomain } from '$lib/stores/variables';
 
 	import Meteogram from './meteogram/meteogram.svelte';
@@ -64,6 +64,13 @@
 	onDestroy(() => {
 		pinMarker?.remove();
 		pinMarker = undefined;
+		pointDrawerHeight.set(0);
+	});
+
+	// Publie la hauteur occupée par le tiroir (0 quand fermé) pour que la légende
+	// et les contrôles MapLibre bas-droite se placent au-dessus (cf. preferences.ts).
+	$effect(() => {
+		pointDrawerHeight.set($pointWorkspace.open ? height : 0);
 	});
 
 	function computeMaxHeight() {

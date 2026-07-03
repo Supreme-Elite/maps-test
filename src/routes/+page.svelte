@@ -26,6 +26,7 @@
 		exportFrameVisible,
 		loading,
 		localStorageVersion,
+		pointDrawerHeight,
 		resetStates,
 		tileSize,
 		tileSizeSet,
@@ -289,7 +290,9 @@
 	// Le `+ 8` est la marge au-dessus de la barre du temps.
 	$effect(() => {
 		const mapInstance = $map;
-		const h = $bottomChromeHeight;
+		// Le tiroir « espace point » (meteogram), quand il est ouvert, occupe le bas
+		// au-dessus de la barre du temps : on remonte les contrôles au plus haut des deux.
+		const h = Math.max($bottomChromeHeight, $pointDrawerHeight);
 		if (!mapInstance) return;
 		const el = mapInstance
 			.getContainer()
