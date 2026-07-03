@@ -1,3 +1,8 @@
+// Padding partagé du plot SVG des panneaux : panel.svelte l'utilise pour son
+// propre tracé, meteogram.svelte pour aligner la bande de direction du vent
+// (qui ne dessine pas dans le SVG du panneau) sur la même échelle x.
+export const PANEL_PAD = { left: 44, right: 12, top: 18, bottom: 16 } as const;
+
 export interface PanelSeries {
 	key: string;
 	values: (number | null)[];

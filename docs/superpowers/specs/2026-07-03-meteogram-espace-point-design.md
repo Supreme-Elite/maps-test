@@ -72,15 +72,15 @@ GET api.open-meteo.com/v1/forecast
 
 Table `DOMAIN_TO_API_MODEL` (dans `constants.ts`, source de vérité unique) :
 
-| Domaine affiché (app) | `models=` (API) |
-|---|---|
-| `meteofrance_arpege_europe` | `meteofrance_arpege_europe` |
-| `meteofrance_arpege_world` | `meteofrance_arpege_world` |
-| `meteofrance_arome_france0025` | `meteofrance_arome_france_hd` |
-| `meteofrance_arome_france` (bucket) | *(non mappé → bouton masqué)* |
-| `ecmwf_ifs025` | `ecmwf_ifs025` |
-| `dwd_icon` / `icon_eu` / `icon_d2` | `icon_seamless` / `icon_eu` / `icon_d2` |
-| `ncep_gfs*` | `ncep_gfs_seamless` |
+| Domaine affiché (app)               | `models=` (API)                         |
+| ----------------------------------- | --------------------------------------- |
+| `meteofrance_arpege_europe`         | `meteofrance_arpege_europe`             |
+| `meteofrance_arpege_world`          | `meteofrance_arpege_world`              |
+| `meteofrance_arome_france0025`      | `meteofrance_arome_france_hd`           |
+| `meteofrance_arome_france` (bucket) | _(non mappé → bouton masqué)_           |
+| `ecmwf_ifs025`                      | `ecmwf_ifs025`                          |
+| `dwd_icon` / `icon_eu` / `icon_d2`  | `icon_seamless` / `icon_eu` / `icon_d2` |
+| `ncep_gfs*`                         | `ncep_gfs_seamless`                     |
 
 Beaucoup d'identifiants sont **identiques** ; la table gère les écarts et l'exclusion (`arome_france` maison). Un domaine absent de la table ⇒ pas d'entrée meteogram (bouton masqué). Table couverte par un test. **À l'implémentation** : vérifier les identifiants de domaine exacts contre `MODEL_SELECTOR_GROUPS` (`constants.ts`) et les valeurs `models=` contre l'enum du `forecast.yml` (le tableau ci-dessus est indicatif, à confirmer entrée par entrée).
 

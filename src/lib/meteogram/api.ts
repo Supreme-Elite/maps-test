@@ -1,5 +1,9 @@
 import type { MeteogramData, MeteogramKey } from './types';
 
+// `freezing_level_height` a été volontairement retiré (fetché mais jamais
+// rendu par aucun panneau) : le panneau « Avancés » est déjà surchargé en
+// échelles, et un axe secondaire dédié est une refonte différée. Décision
+// réversible — réintroduire ici si un panneau avec axe secondaire arrive.
 export const HOURLY_VARIABLES: readonly MeteogramKey[] = [
 	'temperature_2m',
 	'dew_point_2m',
@@ -13,8 +17,7 @@ export const HOURLY_VARIABLES: readonly MeteogramKey[] = [
 	'cloud_cover_low',
 	'cloud_cover_mid',
 	'cloud_cover_high',
-	'cape',
-	'freezing_level_height'
+	'cape'
 ];
 
 const FORECAST_ENDPOINT = 'https://api.open-meteo.com/v1/forecast';

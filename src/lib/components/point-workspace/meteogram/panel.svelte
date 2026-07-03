@@ -3,6 +3,8 @@
 	import { dayTicks, linScale, niceExtent, timeToX } from '$lib/meteogram/scales';
 	import { formatUTCDate } from '$lib/time-format';
 
+	import { PANEL_PAD } from './panel-types';
+
 	let {
 		title,
 		times,
@@ -16,7 +18,7 @@
 		onSeek
 	}: import('./panel-types').PanelProps = $props();
 
-	const PAD = { left: 44, right: 12, top: 18, bottom: 16 };
+	const PAD = PANEL_PAD;
 
 	const x = $derived(timeToX(times, width, PAD.left, PAD.right));
 	const allValues = $derived(series.flatMap((s) => s.values));
@@ -49,6 +51,7 @@
 	const formatTick = (v: number) => (Math.abs(v) < 10 ? v.toFixed(1) : Math.round(v).toString());
 
 	function handleMove(e: MouseEvent) {
+		if (times.length === 0) return;
 		const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
 		const px = e.clientX - rect.left;
 		let best = 0;
@@ -126,7 +129,7 @@
 		{/if}
 
 		<!-- crosshair : index survolé, partagé entre panneaux -->
-		{#if hoverIndex !== null}
+		{#if hoverIndex !== null && hoverIndex < times.length}
 			<line
 				x1={x(times[hoverIndex])}
 				y1={plotTop}

@@ -11,8 +11,7 @@ export type MeteogramKey =
 	| 'cloud_cover_low'
 	| 'cloud_cover_mid'
 	| 'cloud_cover_high'
-	| 'cape'
-	| 'freezing_level_height';
+	| 'cape';
 
 export interface MeteogramData {
 	times: Date[];

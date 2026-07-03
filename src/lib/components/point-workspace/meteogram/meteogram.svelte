@@ -12,6 +12,7 @@
 	import { nearestValidTime } from '$lib/meteogram/snap';
 	import { goToValidTime } from '$lib/time-navigation';
 
+	import { PANEL_PAD } from './panel-types';
 	import Panel from './panel.svelte';
 	import WindDirection from './wind-direction.svelte';
 
@@ -62,6 +63,7 @@
 		const cached = cache.get(key);
 		if (cached) {
 			data = cached;
+			hoverIndex = null; // évite un crosshair déréférençant un index d'une série précédente plus longue
 			error = null;
 			loading = false;
 			return;
@@ -80,6 +82,7 @@
 			} else {
 				cache.set(key, d);
 				data = d;
+				hoverIndex = null; // idem : nouvelle série, ancien hoverIndex potentiellement hors bornes
 			}
 		} catch (e) {
 			if ((e as Error).name === 'AbortError') return;
@@ -126,12 +129,10 @@
 	const panelWidth = $derived(Math.max(containerWidth, 240));
 	const PANEL_HEIGHT = 110;
 
-	// Doit rester alignée sur `PAD.left`/`PAD.right` de panel.svelte : la bande
-	// de direction du vent partage l'axe temps du panneau vent, mais panel.svelte
-	// n'expose pas son échelle x en dehors de son propre SVG.
-	const WIND_PAD_LEFT = 44;
-	const WIND_PAD_RIGHT = 12;
-	const windX = $derived(timeToX(data?.times ?? [], panelWidth, WIND_PAD_LEFT, WIND_PAD_RIGHT));
+	// Partage `PANEL_PAD` avec panel.svelte : la bande de direction du vent
+	// partage l'axe temps du panneau vent, mais panel.svelte n'expose pas son
+	// échelle x en dehors de son propre SVG.
+	const windX = $derived(timeToX(data?.times ?? [], panelWidth, PANEL_PAD.left, PANEL_PAD.right));
 
 	const tempUnit = $derived(getDisplayUnit('°C', $unitPreferences, 'temperature_2m'));
 	const windUnit = $derived(getDisplayUnit('m/s', $unitPreferences, 'wind_speed_10m'));

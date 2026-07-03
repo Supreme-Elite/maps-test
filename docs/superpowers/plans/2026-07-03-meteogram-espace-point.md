@@ -23,22 +23,22 @@
 
 ## File Structure
 
-- `src/lib/time-navigation.ts` *(créer)* — `goToValidTime(date)` extrait de `time-selector.svelte`.
-- `src/lib/constants.ts` *(modifier)* — table `DOMAIN_TO_API_MODEL`.
-- `src/lib/meteogram/model-map.ts` *(créer)* — `resolveApiModel(domain)`.
-- `src/lib/meteogram/types.ts` *(créer)* — `MeteogramData`, `MeteogramSeries`.
-- `src/lib/meteogram/api.ts` *(créer)* — `buildForecastUrl`, `parseForecast`, `fetchMeteogram`.
-- `src/lib/meteogram/scales.ts` *(créer)* — échelles pures temps↔x, valeur↔y, ticks.
-- `src/lib/meteogram/paths.ts` *(créer)* — génération de paths SVG (ligne, barres, flèches).
-- `src/lib/meteogram/snap.ts` *(créer)* — `nearestValidTime(target, validTimes)`.
-- `src/lib/stores/point-workspace.ts` *(créer)* — store `{ open, lat, lng }`.
-- `src/lib/components/point-workspace/point-drawer.svelte` *(créer)* — shell tiroir bas.
-- `src/lib/components/point-workspace/meteogram/meteogram.svelte` *(créer)* — orchestration.
-- `src/lib/components/point-workspace/meteogram/panel.svelte` *(créer)* — panneau SVG générique.
-- `src/lib/components/point-workspace/meteogram/wind-direction.svelte` *(créer)* — bande de flèches.
-- `src/lib/components/point-workspace/meteogram/png-export.ts` *(créer)* — sérialisation SVG → PNG.
-- `src/lib/popup.ts` *(modifier)* — bouton « Meteogram » + pin.
-- `src/routes/+page.svelte` *(modifier)* — monter `<PointDrawer />`, init pin.
+- `src/lib/time-navigation.ts` _(créer)_ — `goToValidTime(date)` extrait de `time-selector.svelte`.
+- `src/lib/constants.ts` _(modifier)_ — table `DOMAIN_TO_API_MODEL`.
+- `src/lib/meteogram/model-map.ts` _(créer)_ — `resolveApiModel(domain)`.
+- `src/lib/meteogram/types.ts` _(créer)_ — `MeteogramData`, `MeteogramSeries`.
+- `src/lib/meteogram/api.ts` _(créer)_ — `buildForecastUrl`, `parseForecast`, `fetchMeteogram`.
+- `src/lib/meteogram/scales.ts` _(créer)_ — échelles pures temps↔x, valeur↔y, ticks.
+- `src/lib/meteogram/paths.ts` _(créer)_ — génération de paths SVG (ligne, barres, flèches).
+- `src/lib/meteogram/snap.ts` _(créer)_ — `nearestValidTime(target, validTimes)`.
+- `src/lib/stores/point-workspace.ts` _(créer)_ — store `{ open, lat, lng }`.
+- `src/lib/components/point-workspace/point-drawer.svelte` _(créer)_ — shell tiroir bas.
+- `src/lib/components/point-workspace/meteogram/meteogram.svelte` _(créer)_ — orchestration.
+- `src/lib/components/point-workspace/meteogram/panel.svelte` _(créer)_ — panneau SVG générique.
+- `src/lib/components/point-workspace/meteogram/wind-direction.svelte` _(créer)_ — bande de flèches.
+- `src/lib/components/point-workspace/meteogram/png-export.ts` _(créer)_ — sérialisation SVG → PNG.
+- `src/lib/popup.ts` _(modifier)_ — bouton « Meteogram » + pin.
+- `src/routes/+page.svelte` _(modifier)_ — monter `<PointDrawer />`, init pin.
 - Tests : `src/lib/tests/meteogram-model-map.test.ts`, `meteogram-api.test.ts`, `meteogram-scales.test.ts`, `meteogram-paths.test.ts`, `meteogram-snap.test.ts`, `point-workspace.test.ts`.
 
 ---
@@ -46,10 +46,12 @@
 ## Task 1: Extraire `goToValidTime` (helper temps partagé)
 
 **Files:**
+
 - Create: `src/lib/time-navigation.ts`
 - Modify: `src/lib/components/time/time-selector.svelte:301-307` (remplacer le corps de `playbackAdvance`)
 
 **Interfaces:**
+
 - Produces: `goToValidTime(date: Date): void` — set `$time` + `updateUrl('time', …)` + `changeOMfileURL()`. **Ne fait pas** le centrage (spécifique à la timeline) ni `checkClosestModelRun` (l'échéance sort du run courant).
 
 **Contexte :** `playbackAdvance` (`time-selector.svelte:301`) fait aujourd'hui : `$time = new SvelteDate(date)` ; `currentDate = …` ; `updateUrl('time', formatISOWithoutTimezone($time))` ; `changeOMfileURL()` ; `centerDateButton(date)`. Le meteogram a besoin des 3 effets « modèle » (store + URL + reload) mais pas du `currentDate`/centrage propres au composant. On extrait le cœur réutilisable.
@@ -118,11 +120,13 @@ git commit -m "refactor(time): extraire goToValidTime pour partage timeline/mete
 ## Task 2: Table domaine → modèle API + résolveur
 
 **Files:**
+
 - Modify: `src/lib/constants.ts` (ajouter `DOMAIN_TO_API_MODEL`)
 - Create: `src/lib/meteogram/model-map.ts`
 - Test: `src/lib/tests/meteogram-model-map.test.ts`
 
 **Interfaces:**
+
 - Produces: `DOMAIN_TO_API_MODEL: Readonly<Record<string, string>>`, `resolveApiModel(domain: string): string | null`, `hasMeteogram(domain: string): boolean`.
 
 **Vérification préalable (obligatoire) :** confirmer chaque valeur de domaine dans `MODEL_SELECTOR_GROUPS` (`constants.ts`) et chaque valeur `models=` dans `../open-meteo/openapi/forecast.yml`. Valeurs connues à ce jour : domaines `meteofrance_arpege_europe`, `meteofrance_arpege_world025`, `arome_france_hd`, `arome_france` (bucket, exclu), `arome_france_convection` (bucket, exclu), `dwd_icon`, `dwd_icon_eu`, `dwd_icon_d2`, `meteoswiss_icon_ch1`, `meteoswiss_icon_ch2`, `ecmwf_ifs025`, `ecmwf_ifs`, `ecmwf_aifs025_single`, `ncep_gfs025`, `anomaly_europe` (exclu), `arome_om_*` (exclus). Enum API : `meteofrance_arpege_europe`, `meteofrance_arpege_world`, `meteofrance_arome_france_hd`, `meteofrance_arome_france`, `dwd_icon_seamless`/`icon_global`, `icon_eu`, `icon_d2`, `meteoswiss_icon_ch1`, `meteoswiss_icon_ch2`, `ecmwf_ifs025`, `ecmwf_ifs`, `ecmwf_aifs025_single`, `ncep_gfs_seamless`.
@@ -216,10 +220,12 @@ git commit -m "feat(meteogram): table domaine→modèle API + résolveur"
 ## Task 3: Types + client API (URL + parse + fetch)
 
 **Files:**
+
 - Create: `src/lib/meteogram/types.ts`, `src/lib/meteogram/api.ts`
 - Test: `src/lib/tests/meteogram-api.test.ts`
 
 **Interfaces:**
+
 - Consumes: `resolveApiModel` (Task 2).
 - Produces:
   - `interface MeteogramData { times: Date[]; series: Record<MeteogramKey, (number | null)[]>; model: string; }`
@@ -384,9 +390,11 @@ Note : le format de `hourly.time` d'Open-Meteo est `YYYY-MM-DDTHH:MM`. Simplifie
 
 Run: `npx vitest run src/lib/tests/meteogram-api.test.ts`
 Si l'assertion ISO échoue sur le format de date, remplacer la ligne `times` par :
+
 ```ts
 const times = hourly.time.map((t) => new Date(`${t}Z`));
 ```
+
 Expected après ajustement: PASS.
 
 - [ ] **Step 6: Commit**
@@ -401,10 +409,12 @@ git commit -m "feat(meteogram): client API Open-Meteo (URL + parse + fetch)"
 ## Task 4: Store `point-workspace`
 
 **Files:**
+
 - Create: `src/lib/stores/point-workspace.ts`
 - Test: `src/lib/tests/point-workspace.test.ts`
 
 **Interfaces:**
+
 - Produces: `pointWorkspace` store `{ subscribe, open(lat, lng), close() }` où l'état est `{ open: boolean; lat: number | null; lng: number | null }`.
 
 - [ ] **Step 1: Écrire le test**
@@ -412,6 +422,7 @@ git commit -m "feat(meteogram): client API Open-Meteo (URL + parse + fetch)"
 ```ts
 // src/lib/tests/point-workspace.test.ts
 import { get } from 'svelte/store';
+
 import { describe, expect, it } from 'vitest';
 
 import { pointWorkspace } from '$lib/stores/point-workspace';
@@ -474,10 +485,12 @@ git commit -m "feat(meteogram): store point-workspace"
 ## Task 5: Échelles pures (temps↔x, valeur↔y, ticks)
 
 **Files:**
+
 - Create: `src/lib/meteogram/scales.ts`
 - Test: `src/lib/tests/meteogram-scales.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `linScale(domainMin, domainMax, rangeMin, rangeMax): (v: number) => number`
   - `timeToX(times: Date[], width: number, padLeft: number, padRight: number): (t: Date) => number`
@@ -578,9 +591,7 @@ export const niceExtent = (values: (number | null)[], pad = 0.08): [number, numb
 };
 
 export const dayTicks = (times: Date[]): { index: number; date: Date }[] =>
-	times
-		.map((date, index) => ({ index, date }))
-		.filter(({ date }) => date.getUTCHours() === 0);
+	times.map((date, index) => ({ index, date })).filter(({ date }) => date.getUTCHours() === 0);
 ```
 
 - [ ] **Step 4: Lancer — succès attendu**
@@ -600,10 +611,12 @@ git commit -m "feat(meteogram): échelles pures (temps/valeur/ticks)"
 ## Task 6: Génération de paths SVG + snapping
 
 **Files:**
+
 - Create: `src/lib/meteogram/paths.ts`, `src/lib/meteogram/snap.ts`
 - Test: `src/lib/tests/meteogram-paths.test.ts`, `src/lib/tests/meteogram-snap.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `linePath(points: { x: number; y: number | null }[]): string` — `M/L`, coupe le trait sur `null`.
   - `barRects(points, x0Width, baselineY): { x, y, w, h }[]` — pour les barres de précip.
@@ -619,11 +632,20 @@ import { linePath } from '$lib/meteogram/paths';
 
 describe('linePath', () => {
 	it('génère un tracé continu', () => {
-		expect(linePath([{ x: 0, y: 10 }, { x: 5, y: 20 }])).toBe('M0,10 L5,20');
+		expect(
+			linePath([
+				{ x: 0, y: 10 },
+				{ x: 5, y: 20 }
+			])
+		).toBe('M0,10 L5,20');
 	});
 	it('interrompt le trait sur null (nouveau sous-tracé)', () => {
 		expect(
-			linePath([{ x: 0, y: 10 }, { x: 5, y: null }, { x: 10, y: 30 }])
+			linePath([
+				{ x: 0, y: 10 },
+				{ x: 5, y: null },
+				{ x: 10, y: 30 }
+			])
 		).toBe('M0,10 M10,30');
 	});
 });
@@ -729,23 +751,31 @@ git commit -m "feat(meteogram): paths SVG + snapping valid_time"
 ## Task 7: Composant `panel.svelte` (SVG générique + playhead + hover)
 
 **Files:**
+
 - Create: `src/lib/components/point-workspace/meteogram/panel.svelte`
 
 **Interfaces:**
+
 - Consumes: `linePath`, `barRects` (Task 6), `linScale`, `timeToX`, `niceExtent`, `dayTicks` (Task 5).
 - Props :
   ```ts
   interface PanelProps {
-    title: string;
-    times: Date[];
-    width: number;
-    height: number;
-    series: { key: string; values: (number | null)[]; color: string; dash?: string; kind?: 'line' | 'bar' }[];
-    unitLabel: string;
-    playheadTime: Date | null;          // $time projeté
-    hoverIndex: number | null;          // index survolé (partagé entre panneaux)
-    onHover: (index: number | null) => void;
-    onSeek: (t: Date) => void;          // clic → piloter la carte
+  	title: string;
+  	times: Date[];
+  	width: number;
+  	height: number;
+  	series: {
+  		key: string;
+  		values: (number | null)[];
+  		color: string;
+  		dash?: string;
+  		kind?: 'line' | 'bar';
+  	}[];
+  	unitLabel: string;
+  	playheadTime: Date | null; // $time projeté
+  	hoverIndex: number | null; // index survolé (partagé entre panneaux)
+  	onHover: (index: number | null) => void;
+  	onSeek: (t: Date) => void; // clic → piloter la carte
   }
   ```
 
@@ -757,8 +787,8 @@ Squelette (Svelte 5 runes ; compléter le SVG) :
 
 ```svelte
 <script lang="ts">
-	import { linScale, niceExtent, timeToX } from '$lib/meteogram/scales';
 	import { barRects, linePath } from '$lib/meteogram/paths';
+	import { linScale, niceExtent, timeToX } from '$lib/meteogram/scales';
 
 	let {
 		title,
@@ -841,12 +871,14 @@ git commit -m "feat(meteogram): panneau SVG générique (playhead + crosshair)"
 ## Task 8: Composant `wind-direction.svelte` (bande de flèches)
 
 **Files:**
+
 - Create: `src/lib/components/point-workspace/meteogram/wind-direction.svelte`
 
 **Interfaces:**
+
 - Props : `{ times: Date[]; directions: (number|null)[]; width: number; x: (t: Date) => number; step?: number }`.
 
-**Contexte :** bande fine sous le panneau vent. Une flèche tous les `step` pas (défaut : ~toutes les 3 h en indices), orientée selon la direction météo (d'où vient le vent → flèche pointant *vers* où il va = `rotate(direction + 180)`). Réutilise l'`x` fourni par le parent pour l'alignement temporel.
+**Contexte :** bande fine sous le panneau vent. Une flèche tous les `step` pas (défaut : ~toutes les 3 h en indices), orientée selon la direction météo (d'où vient le vent → flèche pointant _vers_ où il va = `rotate(direction + 180)`). Réutilise l'`x` fourni par le parent pour l'alignement temporel.
 
 - [ ] **Step 1: Écrire le composant** (déléguer à `svelte-file-editor`)
 
@@ -885,7 +917,7 @@ git commit -m "feat(meteogram): panneau SVG générique (playhead + crosshair)"
 ```
 
 - [ ] **Step 2: Valider Svelte** (`svelte-autofixer`) + `npm run check`.
-Expected: 0 avertissement / 0 erreur.
+      Expected: 0 avertissement / 0 erreur.
 
 - [ ] **Step 3: Commit**
 
@@ -899,9 +931,11 @@ git commit -m "feat(meteogram): bande de flèches de direction du vent"
 ## Task 9: Composant `meteogram.svelte` (orchestration : fetch + conversion + états)
 
 **Files:**
+
 - Create: `src/lib/components/point-workspace/meteogram/meteogram.svelte`
 
 **Interfaces:**
+
 - Consumes: `fetchMeteogram` (Task 3), `resolveApiModel` (Task 2), `convertValue`/`getDisplayUnit`/`unitPreferences` (`$lib/stores/units`), `selectedDomain` (`$lib/stores/variables`), `time` (`$lib/stores/time`), `metaJson` (`$lib/stores/*`), `goToValidTime` (Task 1), `nearestValidTime` (Task 6), `Panel`, `WindDirection`.
 - Props : `{ lat: number; lng: number }`.
 
@@ -915,15 +949,16 @@ Points d'implémentation obligatoires :
 <script lang="ts">
 	import { get } from 'svelte/store';
 
-	import { metaJson } from '$lib/stores/metadata'; // vérifier le chemin exact du store metaJson
+	import { metaJson } from '$lib/stores/metadata';
+	// vérifier le chemin exact du store metaJson
 	import { time } from '$lib/stores/time';
 	import { convertValue, getDisplayUnit, unitPreferences } from '$lib/stores/units';
 	import { selectedDomain } from '$lib/stores/variables';
 
-	import { goToValidTime } from '$lib/time-navigation';
 	import { fetchMeteogram } from '$lib/meteogram/api';
 	import { resolveApiModel } from '$lib/meteogram/model-map';
 	import { nearestValidTime } from '$lib/meteogram/snap';
+	import { goToValidTime } from '$lib/time-navigation';
 
 	import Panel from './panel.svelte';
 	import WindDirection from './wind-direction.svelte';
@@ -1000,7 +1035,7 @@ Run: `rg -n "export const metaJson" src/lib/stores`
 Adapter l'import à l'emplacement réel et le type de `valid_times`.
 
 - [ ] **Step 3: Valider Svelte** (`svelte-autofixer`) + `npm run check`.
-Expected: 0 avertissement / 0 erreur.
+      Expected: 0 avertissement / 0 erreur.
 
 - [ ] **Step 4: Commit**
 
@@ -1014,9 +1049,11 @@ git commit -m "feat(meteogram): module orchestration (fetch, conversion, états,
 ## Task 10: Composant `point-drawer.svelte` (tiroir bas + en-tête « dernier run »)
 
 **Files:**
+
 - Create: `src/lib/components/point-workspace/point-drawer.svelte`
 
 **Interfaces:**
+
 - Consumes: `pointWorkspace` (Task 4), `selectedDomain`, `Meteogram` (Task 9). Bouton export : `exportMeteogramPng` (Task 12, câblé après).
 
 **Contexte :** shell du tiroir. `fixed` en bas, pleine largeur, `bg-glass glass-blur`, bord sky, hauteur redimensionnable via une poignée (drag → `$state` de hauteur, défaut `40vh`, bornes `220px`..`70vh`). En-tête : « Meteogram — {lat}, {lng} » + `<Modèle> · dernier run` + bouton Export + bouton fermer (`pointWorkspace.close()`). Sur mobile (`!desktop`), occupe une plus grande part / bottom-sheet. Décale les contrôles MapLibre comme la timeline si besoin (réutiliser `bottomChromeHeight` — voir `+page.svelte`).
@@ -1079,7 +1116,7 @@ git commit -m "feat(meteogram): module orchestration (fetch, conversion, états,
 ```
 
 - [ ] **Step 2: Valider Svelte** (`svelte-autofixer`) + `npm run check`.
-Expected: 0 avertissement / 0 erreur (si `window` pose souci au typecheck SSR, garder derrière `$effect`/valeur initiale sûre).
+      Expected: 0 avertissement / 0 erreur (si `window` pose souci au typecheck SSR, garder derrière `$effect`/valeur initiale sûre).
 
 - [ ] **Step 3: Commit**
 
@@ -1093,10 +1130,12 @@ git commit -m "feat(meteogram): tiroir bas espace point (redim + en-tête dernie
 ## Task 11: Monter le tiroir + déclencheur popup + pin carte
 
 **Files:**
+
 - Modify: `src/routes/+page.svelte` (monter `<PointDrawer />`)
 - Modify: `src/lib/popup.ts` (bouton « Meteogram » + pin MapLibre)
 
 **Interfaces:**
+
 - Consumes: `pointWorkspace` (Task 4), `hasMeteogram` (Task 2), `PointDrawer` (Task 10).
 
 **Contexte :** `popup.ts` a déjà le bouton « Sondage vertical » (`soundingBtn`, l.78-84) créé dans `initPopupDiv` et affiché/masqué dans `updatePopupContent` (l.95-98). On ajoute le même schéma pour un bouton « Meteogram », visible si `hasMeteogram(get(selectedDomain).value)`, qui appelle `pointWorkspace.open(lat, lng)`. Un marqueur MapLibre dédié matérialise le point.
@@ -1136,9 +1175,11 @@ Run: `rg -n "popup-sounding-btn" src/styles.css`
 - [ ] **Step 4: Monter le tiroir dans `+page.svelte`**
 
 Importer et rendre `<PointDrawer />` près des autres composants de chrome :
+
 ```svelte
 import PointDrawer from '$lib/components/point-workspace/point-drawer.svelte';
 ```
+
 puis dans le markup (au niveau des overlays) : `<PointDrawer />`.
 
 - [ ] **Step 5: Pin carte** (marqueur MapLibre)
@@ -1166,10 +1207,12 @@ git commit -m "feat(meteogram): déclencheur popup + montage tiroir + pin carte"
 ## Task 12: Export PNG
 
 **Files:**
+
 - Create: `src/lib/components/point-workspace/meteogram/png-export.ts`
 - Modify: `point-drawer.svelte` (câbler le bouton export)
 
 **Interfaces:**
+
 - Produces: `exportMeteogramPng(svg: SVGSVGElement, filename: string): Promise<void>`.
 
 **Contexte :** sérialiser le SVG composite (les panneaux dans un conteneur ; le plus simple : envelopper tous les `<svg>` panneaux dans **un** `<svg>` racine, ou capturer un `<svg>` d'export dédié). Styles **inline** + `font-family` système explicite pour fidélité hors-DOM. Sérialiser → `Image` (data URL) → `<canvas>` (×2 pour la netteté) → `toBlob('image/png')` → download.
@@ -1178,15 +1221,11 @@ git commit -m "feat(meteogram): déclencheur popup + montage tiroir + pin carte"
 
 ```ts
 // src/lib/components/point-workspace/meteogram/png-export.ts
-export const exportMeteogramPng = async (
-	svg: SVGSVGElement,
-	filename: string
-): Promise<void> => {
+export const exportMeteogramPng = async (svg: SVGSVGElement, filename: string): Promise<void> => {
 	const clone = svg.cloneNode(true) as SVGSVGElement;
 	clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 	clone.style.background = '#0b1220'; // verre bleu-nuit opaque pour l'image
-	clone.style.fontFamily =
-		'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+	clone.style.fontFamily = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 	const xml = new XMLSerializer().serializeToString(clone);
 	const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(xml)}`;
 
@@ -1223,18 +1262,25 @@ export const exportMeteogramPng = async (
 - [ ] **Step 2: Câbler le bouton dans `point-drawer.svelte`**
 
 Envelopper le contenu meteogram dans un conteneur avec `bind:this` sur le `<svg>` racine exporté (ou exposer une méthode depuis `meteogram.svelte`). Ajouter le bouton :
+
 ```svelte
 <button
 	class="rounded px-2 py-1 hover:bg-white/10"
-	onclick={() => exportEl && exportMeteogramPng(exportEl, `meteogram_${$pointWorkspace.lat?.toFixed(3)}_${$pointWorkspace.lng?.toFixed(3)}.png`)}
+	onclick={() =>
+		exportEl &&
+		exportMeteogramPng(
+			exportEl,
+			`meteogram_${$pointWorkspace.lat?.toFixed(3)}_${$pointWorkspace.lng?.toFixed(3)}.png`
+		)}
 >
 	Exporter PNG
 </button>
 ```
+
 Le plus simple : `meteogram.svelte` rend tous les panneaux dans **un** `<svg>` racine (empilement vertical via `y` offsets) et l'expose via `bind:this` remontée par prop `bind`. Sinon, capturer un SVG d'export dédié construit à la volée. Choisir l'empilement dans un seul `<svg>` (facilite aussi le crosshair partagé).
 
 - [ ] **Step 3: Valider + typecheck** (`svelte-autofixer`, `npm run check`).
-Expected: 0 erreur.
+      Expected: 0 erreur.
 
 - [ ] **Step 4: Vérif fonctionnelle**
 
@@ -1252,6 +1298,7 @@ git commit -m "feat(meteogram): export PNG"
 ## Task 13: Documentation
 
 **Files:**
+
 - Modify: `.claude/rules/architecture.md`, `.claude/rules/components.md`, `.claude/rules/stores.md`
 
 - [ ] **Step 1: `architecture.md`** — ajouter une section « Meteogram / Espace point » : source API JSON Open-Meteo (1 requête/point, `DOMAIN_TO_API_MODEL`, exclusion `arome_france`), rendu SVG maison, **couplage temporel bidirectionnel** via `goToValidTime` partagé + snapping `nearestValidTime`, limite « dernier run ».
