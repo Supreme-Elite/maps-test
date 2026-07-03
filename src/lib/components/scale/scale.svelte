@@ -15,7 +15,8 @@
 		bottomChromeHeight,
 		opacity,
 		preferences,
-		scaleCollapsed
+		scaleCollapsed,
+		sidebarWidth
 	} from '$lib/stores/preferences';
 	import {
 		convertValue,
@@ -164,10 +165,12 @@
 			onclick={() => scaleCollapsed.set(false)}
 			aria-label="Déplier la légende"
 			title="Déplier la légende"
-			class="bg-glass/45 absolute left-2.5 z-60 flex cursor-pointer flex-col items-center overflow-hidden rounded-lg shadow-md backdrop-blur-md {desktop.current
+			class="bg-glass/85 absolute z-60 flex cursor-pointer flex-col items-center overflow-hidden rounded-lg shadow-md backdrop-blur-md tabular-nums transition-[left] duration-200 motion-reduce:transition-none {desktop.current
 				? 'bottom-2.5'
 				: ''}"
-			style={!desktop.current ? `bottom: calc(${$bottomChromeHeight}px + 4.5rem);` : ''}
+			style="left: calc({$sidebarWidth}px + 0.625rem);{!desktop.current
+				? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`
+				: ''}"
 		>
 			{#if colorScale.unit}
 				<span class="px-1 pt-0.5 text-[10px] leading-tight text-white/90">{displayUnit}</span>
@@ -198,16 +201,15 @@
 		<div
 			class="absolute z-60 {desktop.current
 				? 'bottom-2.5'
-				: ''} duration-500 left-2.5 z-10 select-none rounded-lg"
-			style="max-height: {totalHeight + 100}px;{!desktop.current
-				? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`
-				: ''}"
+				: ''} select-none rounded-lg tabular-nums transition-[left] duration-200 motion-reduce:transition-none"
+			style="left: calc({$sidebarWidth}px + 0.625rem);max-height: {totalHeight +
+				100}px;{!desktop.current ? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);` : ''}"
 		>
 			<div class="flex flex-col-reverse shadow-md">
 				{#if categorical}
 					<CategoricalLegend entries={categoryEntries} opacity={$opacity} />
 				{:else}
-					<div class="flex flex-col-reverse bg-glass/45 backdrop-blur-md rounded-b-lg">
+					<div class="flex flex-col-reverse bg-glass/85 backdrop-blur-md rounded-b-lg">
 						{#each labeledColors as lc, i (lc)}
 							{@const alphaValue = getAlpha(lc.color)}
 							<button
@@ -259,7 +261,7 @@
 
 				{#if colorScale.unit}
 					<div
-						class="bg-glass/45 backdrop-blur-md shadow-md h-6 w-full overflow-hidden text-center text-xs {editable
+						class="bg-glass/85 backdrop-blur-md shadow-md h-6 w-full overflow-hidden text-center text-xs {editable
 							? ''
 							: 'rounded-t-lg'}"
 					>
@@ -285,7 +287,7 @@
 								</Select.Trigger>
 								<Select.Content
 									side="top"
-									class="z-80 left-2.5 border-none bg-glass/45 backdrop-blur-md rounded-lg min-w-20"
+									class="z-80 border-none bg-glass/85 backdrop-blur-md rounded-lg min-w-20"
 								>
 									{#each unitOptions as { value, label } (value)}
 										<Select.Item {value} {label} class="cursor-pointer text-xs" />
@@ -303,8 +305,8 @@
 						type="button"
 						onclick={resetColorScale}
 						disabled={!hasCustomScale}
-						class="bg-glass/45 backdrop-blur-md shadow-md h-4 w-full text-center text-[11px] leading-4 {hasCustomScale
-							? 'hover:bg-glass/65 cursor-pointer'
+						class="bg-glass/85 backdrop-blur-md shadow-md h-4 w-full text-center text-[11px] leading-4 {hasCustomScale
+							? 'hover:bg-glass/95 cursor-pointer'
 							: 'cursor-default opacity-40'}"
 						title={hasCustomScale
 							? 'Réinitialiser aux couleurs standard'
@@ -319,7 +321,7 @@
 				<button
 					type="button"
 					onclick={() => scaleCollapsed.set(true)}
-					class="bg-glass/45 hover:bg-glass/65 h-4 w-full cursor-pointer rounded-t-lg text-center text-[11px] leading-4 shadow-md backdrop-blur-md"
+					class="bg-glass/85 hover:bg-glass/95 h-4 w-full cursor-pointer rounded-t-lg text-center text-[11px] leading-4 shadow-md backdrop-blur-md"
 					title="Replier la légende"
 					aria-label="Replier la légende"
 				>

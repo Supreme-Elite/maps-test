@@ -4,59 +4,40 @@
 	import { get } from 'svelte/store';
 	import { fly, slide } from 'svelte/transition';
 
-	import Building2Icon from '@lucide/svelte/icons/building-2';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import HelpIcon from '@lucide/svelte/icons/circle-question-mark';
 	import GaugeIcon from '@lucide/svelte/icons/gauge';
 	import Grid3x3Icon from '@lucide/svelte/icons/grid-3x3';
-	import HashIcon from '@lucide/svelte/icons/hash';
-	import MapIcon from '@lucide/svelte/icons/map';
-	import MoonIcon from '@lucide/svelte/icons/moon';
-	import MountainIcon from '@lucide/svelte/icons/mountain';
 	import ScissorsIcon from '@lucide/svelte/icons/scissors';
-	import SettingsIcon from '@lucide/svelte/icons/settings-2';
 	import SlidersIcon from '@lucide/svelte/icons/sliders-horizontal';
 	import XIcon from '@lucide/svelte/icons/x';
 
-	import { basemapTheme } from '$lib/stores/basemap-theme';
 	import { clippingPanelOpen } from '$lib/stores/clipping';
-	import { DEFAULT_SHOW_DEPARTMENTS, showDepartments } from '$lib/stores/departments';
-	import { DEFAULT_SHOW_LABELS, showLabels } from '$lib/stores/labels';
-	import {
-		advancedOpen,
-		defaultPreferences,
-		desktop,
-		helpOpen,
-		preferences
-	} from '$lib/stores/preferences';
-	import { gridValues, vectorOptions } from '$lib/stores/vector';
+	import { advancedOpen, desktop, helpOpen } from '$lib/stores/preferences';
+	import { vectorOptions } from '$lib/stores/vector';
 
 	import SecondaryLayerPanel from '$lib/components/secondary-layer/secondary-layer-panel.svelte';
-	import ArrowsSettings from '$lib/components/settings/arrows-settings.svelte';
 	import CacheSettings from '$lib/components/settings/cache-settings.svelte';
-	import ContourSettings from '$lib/components/settings/contour-settings.svelte';
-	import OpacitySetting from '$lib/components/settings/opacity-setting.svelte';
-	import PopupSettings from '$lib/components/settings/popup-settings.svelte';
 	import SoundingSettings from '$lib/components/settings/sounding-settings.svelte';
 	import StateSettings from '$lib/components/settings/state-settings.svelte';
 	import TileSizeSettings from '$lib/components/settings/tile-size-settings.svelte';
 	import UnitSettings from '$lib/components/settings/unit-settings.svelte';
 	import * as Sheet from '$lib/components/ui/sheet';
 
-	import { setHillshadeEnabled } from '$lib/hillshade';
-	import { changeOMfileURL, reloadVectorStyle } from '$lib/layers';
+	import { changeOMfileURL } from '$lib/layers';
 	import { updateUrl } from '$lib/url';
 
 	import LayerToggle from './layer-toggle.svelte';
 
+	import type { Snippet } from 'svelte';
+
+	interface Props {
+		capture?: Snippet;
+	}
+	let { capture }: Props = $props();
+
 	// Reactive snapshots driving the toggle UI.
 	const gridDotsOn = $derived($vectorOptions.grid);
-	const gridValuesOn = $derived($gridValues);
-	const departmentsOn = $derived($showDepartments);
-	const labelsOn = $derived($showLabels);
-	const hillshadeOn = $derived($preferences.hillshade);
-	// Thème du FOND DE CARTE (le chrome reste sombre en permanence — cf. basemap-theme.ts).
-	const darkOn = $derived($basemapTheme === 'dark');
 
 	// Points de grille (cercles) : changer le flag `grid` modifie l'URL des tuiles
 	// vecteur → `changeOMfileURL()` recharge la source.
@@ -64,40 +45,6 @@
 		vectorOptions.update((o) => ({ ...o, grid: next }));
 		updateUrl('grid', String(next));
 		changeOMfileURL();
-	}
-
-	// Valeurs aux nœuds : activer force `&grid=true` dans l'URL. Si les points étaient
-	// off, l'URL change → `changeOMfileURL()` refait la source ; s'ils étaient déjà on,
-	// l'URL est inchangée → `reloadVectorStyle()` reconstruit la couche vecteur en place
-	// pour ajouter/retirer le symbol layer. Appeler les deux couvre tous les cas.
-	function toggleGridValues(next: boolean) {
-		gridValues.set(next);
-		updateUrl('grid_values', String(next));
-		changeOMfileURL();
-		reloadVectorStyle();
-	}
-
-	// --- IControl behaviors ported to plain handlers ---
-	function toggleDepartments(next: boolean) {
-		showDepartments.set(next);
-		updateUrl('departments', String(next), String(DEFAULT_SHOW_DEPARTMENTS));
-	}
-
-	function toggleLabels(next: boolean) {
-		showLabels.set(next);
-		updateUrl('labels', String(next), String(DEFAULT_SHOW_LABELS));
-	}
-
-	function toggleHillshade(next: boolean) {
-		preferences.update((p) => ({ ...p, hillshade: next }));
-		setHillshadeEnabled(next);
-		updateUrl('hillshade', String(next), String(defaultPreferences.hillshade));
-	}
-
-	// Bascule le fond de carte clair/sombre (persisté). Le ré-affichage du basemap +
-	// couches météo est piloté par l'effet réactif sur `basemapTheme` dans +page.svelte.
-	function toggleDark(next: boolean) {
-		basemapTheme.set(next ? 'dark' : 'light');
 	}
 
 	// Respecte prefers-reduced-motion : neutralise la transition JS du rail desktop.
@@ -114,31 +61,12 @@
 	// haute est neutralisé par le navigateur, donc le flou ne s'appliquerait pas.
 	function portal(node: HTMLElement) {
 		document.body.appendChild(node);
-		measureControls(); // cale le top dès le montage, avant la 1re peinture
 		return {
 			destroy() {
 				node.parentNode?.removeChild(node);
 			}
 		};
 	}
-
-	// Les contrôles MapLibre (zoom, boussole, géoloc, globe) s'empilent en haut-droit.
-	// On mesure le bas réel de leur conteneur pour ouvrir le panneau juste en dessous
-	// (plutôt qu'un offset codé en dur, fragile au nombre de contrôles / version MapLibre).
-	const TOP_FALLBACK = 64; // sous la barre haute si les contrôles sont absents
-	let controlsBottom = $state(TOP_FALLBACK);
-
-	function measureControls() {
-		const el = document.querySelector('.maplibregl-ctrl-top-right');
-		controlsBottom = el ? Math.round(el.getBoundingClientRect().bottom) : TOP_FALLBACK;
-	}
-
-	$effect(() => {
-		if (!desktop.current || !$advancedOpen) return;
-		measureControls();
-		window.addEventListener('resize', measureControls);
-		return () => window.removeEventListener('resize', measureControls);
-	});
 </script>
 
 {#snippet sectionLabel(text: string)}
@@ -146,49 +74,24 @@
 {/snippet}
 
 {#snippet body()}
-	<!-- Niveau 1 — calques qu'on bascule au quotidien. Deux cartes encartées :
-	     d'abord les calques riches (dépliables), puis les bascules simples. -->
+	<!-- Niveau 1 — calque secondaire (le calque principal, ses toggles et son opacité
+	     vivent désormais dans la sidebar, sections Affichage/Style). -->
 	<section>
-		{@render sectionLabel('Calques')}
+		{@render sectionLabel('Calque secondaire')}
 		<div
 			class="overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
 		>
-			<ArrowsSettings />
-			<ContourSettings />
-			<!-- Valeurs voisine des isocontours : c'est une façon de lire le champ
-			     (valeur exacte au nœud) au même titre que les isolignes. -->
-			<LayerToggle label="Valeurs" checked={gridValuesOn} onCheckedChange={toggleGridValues}>
-				{#snippet icon()}<HashIcon class="size-[18px]" aria-hidden="true" />{/snippet}
-			</LayerToggle>
 			<SecondaryLayerPanel />
-		</div>
-		<div
-			class="mt-2.5 overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
-		>
-			<LayerToggle label="Départements" checked={departmentsOn} onCheckedChange={toggleDepartments}>
-				{#snippet icon()}<MapIcon class="size-[18px]" aria-hidden="true" />{/snippet}
-			</LayerToggle>
-			<LayerToggle label="Villes &amp; pays" checked={labelsOn} onCheckedChange={toggleLabels}>
-				{#snippet icon()}<Building2Icon class="size-[18px]" aria-hidden="true" />{/snippet}
-			</LayerToggle>
-			<LayerToggle label="Relief ombré" checked={hillshadeOn} onCheckedChange={toggleHillshade}>
-				{#snippet icon()}<MountainIcon class="size-[18px]" aria-hidden="true" />{/snippet}
-			</LayerToggle>
-			<OpacitySetting />
 		</div>
 	</section>
 
-	<!-- Niveau 2 — préférences d'affichage occasionnelles. -->
+	<!-- Niveau 2 — unités. -->
 	<section>
-		{@render sectionLabel('Affichage')}
+		{@render sectionLabel('Unités')}
 		<div
 			class="overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
 		>
 			<UnitSettings />
-			<PopupSettings />
-			<LayerToggle label="Mode sombre" checked={darkOn} onCheckedChange={toggleDark}>
-				{#snippet icon()}<MoonIcon class="size-[18px]" aria-hidden="true" />{/snippet}
-			</LayerToggle>
 		</div>
 	</section>
 
@@ -278,6 +181,11 @@
 		<div
 			class="overflow-hidden rounded-xl bg-white/[0.04] [&>*+*]:border-t [&>*+*]:border-white/[0.06]"
 		>
+			{#if capture}
+				<div class="flex min-h-11 items-center px-3 py-2.5">
+					{@render capture()}
+				</div>
+			{/if}
 			<button
 				type="button"
 				class="hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex min-h-11 w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left text-sm"
@@ -300,16 +208,6 @@
 	</section>
 {/snippet}
 
-<button
-	type="button"
-	onclick={() => advancedOpen.update((v) => !v)}
-	aria-label="Calques et réglages"
-	class="bg-glass/50 hover:bg-glass/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 flex h-11 md:h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 px-3 text-sm text-white shadow-md glass-blur"
->
-	<SettingsIcon class="size-4" aria-hidden="true" />
-	<span class="hidden sm:inline">Calques &amp; réglages</span>
-</button>
-
 {#if desktop.current}
 	{#if $advancedOpen}
 		<!-- use:portal → rendu sur <body> pour que le backdrop-blur s'applique vraiment
@@ -319,15 +217,17 @@
 		     le contenu (max-height) pour ne jamais couvrir la timeline ni la légende en bas. -->
 		<!-- Conteneur flex colonne, SANS scroll : seul le corps défile, l'en-tête (titre + ✕)
 		     reste figé → fermeture toujours accessible sans scroller, quelle que soit la hauteur. -->
+		<!-- 52 = hauteur du header (44 px, h-11) + 8 px de marge ;
+		     68 = 52 + 16 px de marge basse (ne pas coller le drawer au bord de l'écran). -->
 		<div
 			use:portal
-			class="bg-glass/65 fixed right-0 z-60 flex w-80 flex-col overflow-hidden rounded-l-xl border border-r-0 border-white/15 text-white shadow-lg backdrop-blur-md"
-			style="top: {controlsBottom + 8}px; max-height: calc(100dvh - {controlsBottom + 24}px);"
+			class="bg-glass/85 fixed right-0 z-60 flex w-80 flex-col overflow-hidden rounded-l-xl border border-r-0 border-white/15 text-white shadow-lg backdrop-blur-md"
+			style="top: 52px; max-height: calc(100dvh - 68px);"
 			in:fly={{ x: 320, duration: reduceMotion.current ? 0 : 260, easing: cubicOut }}
 			out:fly={{ x: 320, duration: reduceMotion.current ? 0 : 200, easing: cubicIn }}
 		>
 			<div class="flex shrink-0 items-center justify-between px-3 pt-3 pb-2">
-				<h2 class="text-sm font-semibold">Calques &amp; réglages</h2>
+				<h2 class="text-sm font-semibold">Réglages avancés</h2>
 				<button
 					type="button"
 					onclick={() => advancedOpen.set(false)}
@@ -352,7 +252,7 @@
 			<!-- En-tête figé (titre + ✕ intégrée de Sheet, en absolu top-droite) : seul le
 			     corps défile, fermeture toujours visible — même comportement que le rail desktop. -->
 			<div class="flex shrink-0 items-center px-6 pt-4 pb-3">
-				<h2 class="text-sm font-semibold">Calques &amp; réglages</h2>
+				<h2 class="text-sm font-semibold">Réglages avancés</h2>
 			</div>
 			<div class="scrollbar-thin flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pb-8">
 				{@render body()}

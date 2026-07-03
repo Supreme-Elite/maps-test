@@ -102,7 +102,7 @@
 					>
 						{labelFor($variable2)}
 					</Select.Trigger>
-					<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm">
+					<Select.Content class="z-110 border-none bg-glass/85 backdrop-blur-sm">
 						{#each availableVars as { value, label } (value)}
 							<Select.Item {value} {label} class="cursor-pointer text-sm" />
 						{/each}

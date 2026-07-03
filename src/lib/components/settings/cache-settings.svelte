@@ -63,7 +63,7 @@
 					{blockSizeOptions.find((o) => o.value === String($cacheBlockSizeKb))?.label ??
 						`${$cacheBlockSizeKb} KiB`}
 				</Select.Trigger>
-				<Select.Content class="z-110 border-none bg-glass/65 backdrop-blur-sm min-w-25">
+				<Select.Content class="z-110 border-none bg-glass/85 backdrop-blur-sm min-w-25">
 					{#each blockSizeOptions as option (option.value)}
 						<Select.Item value={option.value}>{option.label}</Select.Item>
 					{/each}

@@ -88,7 +88,7 @@
 		{prefetchModeLabel}
 	</Select.Trigger>
 	<Select.Content
-		class="left-5 border-none max-h-60 bg-glass/65 backdrop-blur-sm"
+		class="left-5 border-none max-h-60 bg-glass/85 backdrop-blur-sm"
 		sideOffset={4}
 		align="end"
 	>

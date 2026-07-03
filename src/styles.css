@@ -24,7 +24,7 @@
    finement et le texte redevient net (issue #44). On isole donc le flou dans un
    pseudo-élément placé DERRIÈRE le contenu : le voile verre est préservé mais le
    texte reste hors de la couche filtrée, donc net à tout facteur d'échelle.
-   À combiner avec un fond Tailwind (`bg-glass/45`, `hover:bg-glass/70`…), qui
+   À combiner avec un fond Tailwind (`bg-glass/85`, `hover:bg-glass/95`…), qui
    lui ne pose pas de souci de netteté. Remplace `backdrop-blur-md`. */
 @utility glass-blur {
 	position: relative;
@@ -43,6 +43,19 @@
 	}
 }
 
+/* Barre de marque Infoclimat — « instrument posé sur le ciel ».
+   Teal profond confiant (l'ADN Infoclimat, exécution moderne : pas de gloss),
+   surmonté d'une fine lumière haute (lit-from-above) et fermé par une LIGNE
+   D'HORIZON cyan lumineuse (--ic-sky) qui irradie doucement sur la carte —
+   le geste signature. Opaque, texte blanc ~9:1. */
+@utility ic-brand-bar {
+	background-image: linear-gradient(180deg, #1c6270 0%, #103c45 100%);
+	box-shadow:
+		inset 0 1px 0 0 rgb(255 255 255 / 0.1),
+		inset 0 -1.5px 0 0 var(--ic-sky),
+		0 3px 18px -6px rgb(41 186 239 / 0.35);
+}
+
 /* =============================================================================
    Theme Configuration
    ============================================================================= */
@@ -58,13 +71,18 @@
 /* Light mode color tokens */
 :root {
 	--radius: 0.625rem;
+	/* Couleurs de marque Infoclimat (extraites du site officiel) — indépendantes
+	   du thème, utilisées pour la barre de marque et les accents. */
+	--ic-teal: #40a9bf;
+	--ic-teal-dark: #1e535f;
+	--ic-sky: #29baef; /* cyan électrique — l'unique accent « pop » (états actifs, horizon) */
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.129 0.042 264.695);
 	--card: oklch(1 0 0);
 	--card-foreground: oklch(0.129 0.042 264.695);
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.129 0.042 264.695);
-	--glass: rgba(240, 240, 240);
+	--glass: rgb(232 237 244);
 	--primary: oklch(0.208 0.042 265.755);
 	--primary-foreground: oklch(0.984 0.003 247.858);
 	--secondary: oklch(0.968 0.007 247.896);
@@ -99,7 +117,11 @@
 	--card-foreground: oklch(0.984 0.003 247.858);
 	--popover: oklch(0.208 0.042 265.755);
 	--popover-foreground: oklch(0.984 0.003 247.858);
-	--glass: rgba(15, 15, 15);
+	/* Abysse teal Infoclimat : base des surfaces (sidebar, panneaux, dropdowns).
+	   Teal profond et calme — assez sombre pour que le cyan --ic-sky y claque,
+	   contraste texte blanc ~11:1. Le chrome est toujours en thème sombre.
+	   Était rgb(17 24 34) (bleu-nuit générique). */
+	--glass: rgb(11 39 45);
 	--primary: oklch(0.929 0.013 255.508);
 	--primary-foreground: oklch(0.208 0.042 265.755);
 	--secondary: oklch(0.279 0.041 260.031);

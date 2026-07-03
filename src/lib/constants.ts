@@ -59,7 +59,7 @@ export const DOMAIN_DEFAULT_VARIABLES: Record<string, string> = {
 };
 
 /** Variables masquées du sélecteur (display-only), même si publiées dans le
- *  meta.json du domaine. Filtré par `variable-tabs.svelte`. Une URL partagée
+ *  meta.json du domaine. Filtré par `buildVariableList()` (`src/lib/layer-list.ts`). Une URL partagée
  *  ciblant l'une d'elles résout toujours (comme `DOMAIN_ALLOWLIST` pour les modèles).
  *
  *  `precipitation_type` / `precipitation_type_severe` : variables catégorielles
@@ -79,7 +79,8 @@ export const HIDDEN_VARIABLES: readonly string[] = [
  *  apparaissait sous « Vent » avec un niveau « 2 m » (AROME France / HD), laissant
  *  croire à un bug puisqu'il affiche des températures.
  *
- *  Listées ici, ces variables ne sont **jamais** repliées par `variable-tabs.svelte` :
+ *  Listées ici, ces variables ne sont **jamais** repliées par `buildVariableList()`
+ *  (`src/lib/layer-list.ts`) :
  *  elles restent des variables autonomes, classées par `categorize()`
  *  (`wind_chill` → `temperature`) et libellées via `i18n/variables-fr.ts`. */
 export const NON_LEVEL_GROUP_VARIABLES: readonly string[] = ['wind_chill_2m'];

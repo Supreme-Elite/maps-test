@@ -8,7 +8,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import { timeSelectorActions } from '$lib/stores/keyboard';
-	import { bottomChromeHeight, desktop, loading } from '$lib/stores/preferences';
+	import { bottomChromeHeight, desktop, loading, sidebarWidth } from '$lib/stores/preferences';
 	import { metaJson, modelRunLocked } from '$lib/stores/time';
 	import { inProgress, latest, modelRun, now, time } from '$lib/stores/time';
 	import { selectedDomain } from '$lib/stores/variables';
@@ -780,8 +780,11 @@
 
 <div
 	bind:this={chromeWrapper}
-	class="fixed bottom-0 w-full md:w-[unset] md:max-w-[75vw] -translate-x-1/2 left-1/2 z-40 {disabled
+	class="fixed bottom-0 w-full md:w-[unset] -translate-x-1/2 z-40 tabular-nums transition-[left] duration-200 motion-reduce:transition-none {disabled
 		? 'text-foreground/50 cursor-not-allowed'
+		: ''}"
+	style="left: calc(50% + {$sidebarWidth / 2}px);{desktop.current
+		? ` max-width: min(75vw, calc(100vw - ${$sidebarWidth}px - 2rem));`
 		: ''}"
 >
 	<div
@@ -870,7 +873,7 @@
 		<!-- Model Run Selection Dropdown -->
 		<div
 			bind:clientWidth={runControlsWidth}
-			class="-top-4.5 h-4.5 z-10 right-0 absolute flex rounded-t-lg items-center px-2 gap-0.5 bg-glass/65 backdrop-blur-sm"
+			class="-top-4.5 h-4.5 z-10 right-0 absolute flex rounded-t-lg items-center px-2 gap-0.5 bg-glass/85 backdrop-blur-sm"
 		>
 			<PlaybackButton advance={playbackAdvance} />
 			<PrefetchButton />
@@ -904,7 +907,7 @@
 					{/if}
 				</Select.Trigger>
 				<Select.Content
-					class="left-5 border-none max-h-60 bg-glass/65 backdrop-blur-sm"
+					class="left-5 border-none max-h-60 bg-glass/85 backdrop-blur-sm"
 					sideOffset={4}
 					align="end"
 				>
@@ -991,7 +994,7 @@
 					? 'background: linear-gradient(to right, rgba(15,15,15,1), rgba(15,15,15,0.95), rgba(15,15,15,0.9), rgba(15,15,15,0.5), rgba(15,15,15,0));'
 					: 'background: linear-gradient(to right, rgba(240,240,240,1), rgba(240,240,240,0.95), rgba(240,240,240,0.9), rgba(240,240,240,0.5), rgba(240,240,240,0));'}
 			class="absolute z-50 h-full flex items-center {desktop.current
-				? '-left-7 w-7 rounded-s-xl bg-glass/45 backdrop-blur-md'
+				? '-left-7 w-7 rounded-s-xl bg-glass/85 backdrop-blur-md'
 				: 'left-0 w-12 backdrop-blur-xxs'}"
 		>
 			<button
@@ -1023,7 +1026,7 @@
 					? 'background: linear-gradient(to left, rgba(15,15,15,1), rgba(15,15,15,0.95), rgba(15,15,15,0.9), rgba(15,15,15,0.5), rgba(15,15,15,0));'
 					: 'background: linear-gradient(to left, rgba(240,240,240,1), rgba(240,240,240,0.95), rgba(240,240,240,0.9), rgba(240,240,240,0.5), rgba(240,240,240,0));'}
 			class="absolute z-50 h-full flex items-center justify-end {desktop.current
-				? '-right-7 w-7 rounded-e-xl bg-glass/45 backdrop-blur-md'
+				? '-right-7 w-7 rounded-e-xl bg-glass/85 backdrop-blur-md'
 				: 'right-0 w-12 h-full backdrop-blur-xxs'}"
 		>
 			<button
@@ -1049,7 +1052,7 @@
 			</button>
 		</div>
 		<div
-			class="time-selector md:px-0 h-20 md:h-12.5 relative bg-glass/45 backdrop-blur-md max-md:rounded-xl max-md:border max-md:border-white/15 duration-500"
+			class="time-selector md:px-0 h-20 md:h-12.5 relative bg-glass/85 backdrop-blur-md max-md:rounded-xl max-md:border max-md:border-white/15 duration-500"
 		>
 			{#if hoverX || currentDate.getTime() !== $time.getTime()}
 				<div

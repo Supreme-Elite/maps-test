@@ -6,7 +6,6 @@
 	import Building2Icon from '@lucide/svelte/icons/building-2';
 	import CalendarClockIcon from '@lucide/svelte/icons/calendar-clock';
 	import CameraIcon from '@lucide/svelte/icons/camera';
-	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import ClockIcon from '@lucide/svelte/icons/clock';
 	import CompassIcon from '@lucide/svelte/icons/compass';
@@ -131,20 +130,7 @@
 						<li class="flex items-center gap-2.5">
 							<Kbd.Root>d</Kbd.Root> <span>Sélection du domaine (modèle)</span>
 						</li>
-						<li class="flex items-center gap-2.5">
-							<Kbd.Root>v</Kbd.Root> <span>Sélection de la variable</span>
-						</li>
-						<li class="flex items-center gap-2.5">
-							<Kbd.Root>l</Kbd.Root> <span>Sélection du niveau</span>
-						</li>
 					{/if}
-					<li class="flex items-start gap-2.5">
-						<ChevronLeftIcon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
-						<span
-							><span class="font-medium">Sélection de variable</span> — afficher / masquer le panneau
-							de choix</span
-						>
-					</li>
 					<li class="flex items-start gap-2.5">
 						<Layers2Icon class="mt-0.5 size-4.5 shrink-0 opacity-75" />
 						<span
@@ -356,7 +342,7 @@
 				</h3>
 				<p class="mb-2 text-sm opacity-90">
 					Si l'affichage est lent ou saccadé (ordinateur ancien, carte graphique modeste), trois
-					réglages du dépliant « Performance » (panneau « Calques &amp; réglages », section Avancé)
+					réglages du dépliant « Performance » (panneau « Réglages avancés », section Avancé)
 					améliorent la fluidité :
 				</p>
 				<ul class="flex list-disc flex-col gap-1.5 pl-5 text-sm opacity-90">

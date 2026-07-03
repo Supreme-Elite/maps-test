@@ -9,12 +9,7 @@
 	import { timeSelectorActions } from '$lib/stores/keyboard';
 	import { popup, popupMode } from '$lib/stores/map';
 	import { helpOpen } from '$lib/stores/preferences';
-	import {
-		domainSelectionOpen,
-		pressureLevelsSelectionOpen,
-		variableSelectionExtended,
-		variableSelectionOpen
-	} from '$lib/stores/variables';
+	import { domainSelectionOpen } from '$lib/stores/variables';
 
 	import { switchPopupMode } from '$lib/popup';
 
@@ -53,30 +48,14 @@
 			return;
 		}
 
-		// Variable Selection Navigation
-		const canNavigateSelection =
-			get(variableSelectionExtended) &&
-			!get(variableSelectionOpen) &&
-			!get(domainSelectionOpen) &&
-			!get(pressureLevelsSelectionOpen);
-
-		if (canNavigateSelection && !event.ctrlKey) {
-			if (event.key === 'v') {
-				variableSelectionOpen.set(true);
-				return;
-			}
-			if (event.key === 'd') {
-				domainSelectionOpen.set(true);
-				return;
-			}
-			if (event.key === 'l') {
-				pressureLevelsSelectionOpen.set(true);
-				return;
-			}
+		// Model Selection Navigation
+		if (!event.ctrlKey && !get(domainSelectionOpen) && event.key === 'd') {
+			domainSelectionOpen.set(true);
+			return;
 		}
 
 		// Time Selector Navigation
-		const canNavigateTime = !(get(domainSelectionOpen) || get(variableSelectionOpen));
+		const canNavigateTime = !get(domainSelectionOpen);
 		if (canNavigateTime) {
 			const isTimeAction = [
 				'ArrowLeft',
