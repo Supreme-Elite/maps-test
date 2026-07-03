@@ -150,6 +150,22 @@ La couche lecture est source-agnostique : `SOUNDING_LEVELS_BY_DOMAIN` dans `src/
 
 Le bouton « Sondage vertical » du popup n'est affiché que si `isSoundingDomain(domaine)` (domaine dont la **source** est listée dans `SOUNDING_LEVELS_BY_DOMAIN` — AROME 0,025° en direct, ou `arome_france` via sa redirection) **et** si le toggle persisté `soundingButtonEnabled` (réglages → `sounding-settings.svelte`) est activé. Sur les autres modèles le bouton est masqué (`display:none` dans `updatePopupContent`).
 
+## Meteogram / Espace point
+
+`src/lib/meteogram/` + `src/lib/components/point-workspace/` implémentent un « espace point » : un tiroir bas ouvert depuis le popup, dont le premier module est un meteogram temporel. Contrairement au sondage vertical (qui lit le `.om` en cours via `WeatherMapLayerFileReader`), le meteogram **ne lit pas les OMfiles S3** : il interroge l'**API JSON publique** `api.open-meteo.com/v1/forecast` (`src/lib/meteogram/api.ts → buildForecastUrl/fetchMeteogram`, `timezone=UTC` + `wind_speed_unit=ms` pour un parse déterministe et une unité de base cohérente avec le reste de l'app), **une requête par point** (pas de pré-agrégation, pas de worker). `HOURLY_VARIABLES` fixe les 14 variables demandées (température, point de rosée, ressenti, précipitations + probabilité, vent 10 m vitesse/rafales/direction, pression, nébulosité bas/moyen/haut, CAPE, altitude 0 °C). `parseForecast()` indexe défensivement chaque série sur `hourly.time` (une variable absente de la réponse devient un tableau de `null`, jamais `undefined`).
+
+Le domaine affiché n'est pas forcément un `models=` valide côté API publique : `DOMAIN_TO_API_MODEL` (`constants.ts`) mappe les domaines app → identifiants API, résolu par `resolveApiModel()`/`hasMeteogram()` (`src/lib/meteogram/model-map.ts`). Un domaine absent de la table masque le bouton « Meteogram » du popup (`popup.ts`) — c'est le cas des pseudo-domaines bucket maison (`arome_france`, `arome_france_convection`) et de `anomaly_europe`, non exposés par l'API publique.
+
+**Le meteogram affiche toujours le dernier run disponible côté API**, pas le run actuellement sélectionné sur la carte (l'API publique ne permet pas de cibler un run passé par ce endpoint) — le tiroir l'étiquette explicitement « dernier run » (`point-drawer.svelte`) pour éviter toute confusion avec le run affiché en carte, qui peut différer.
+
+**Couplage temporel bidirectionnel**, sans re-fetch de la série au scrubbing :
+
+- _Carte → meteogram_ : le playhead vertical du panneau (`panel.svelte`) est un simple `$derived` sur le store `time` — bouger le scrubber de la carte ne déclenche jamais un nouveau `fetch`, seule la position du trait est recalculée.
+- _Meteogram → carte_ : un clic sur un panneau capture l'échéance sous le curseur, la fait « claquer » sur l'échéance valide la plus proche du run affiché (`nearestValidTime()`, `src/lib/meteogram/snap.ts`, contre `$metaJson.valid_times`) puis appelle `goToValidTime()` — nécessaire car les pas horaires de l'API publique (toutes les heures) ne coïncident pas forcément avec les `valid_times` du modèle affiché (échéances 3-horaires, etc.).
+- `src/lib/time-navigation.ts → goToValidTime(date)` est la fonction **partagée** (store `time` + `updateUrl('time', …)` + `changeOMfileURL()`, sans recalage de run) extraite de `playbackAdvance` dans `time-selector.svelte` : la lecture (bouton play) et le meteogram empruntent désormais le même chemin de navigation temporelle. `time-selector.svelte` continue d'appeler `centerDateButton()` par-dessus (spécifique à la barre de dates), que `goToValidTime` ne fait pas.
+
+Rendu **SVG maison** (pas de lib de charting) : `src/lib/meteogram/scales.ts` (échelles linéaires, `timeToX`, `niceExtent`, graduations jour à minuit UTC) et `src/lib/meteogram/paths.ts` (`linePath` avec gestion des trous `null`, `barRects`) sont des fonctions pures testées, consommées par `panel.svelte`. Mémoïsation de session dans `meteogram.svelte` (`SvelteMap` clé `lat.toFixed(3),lng.toFixed(3),model` — un changement de modèle force le refetch même à point identique), perdue au rechargement (MVP, comme le sondage).
+
 ## infoclimat-om-worker integration
 
 The worker URL (`getOmWorkerUrl()`, read from `VITE_OM_WORKER_URL` at build time or `/runtime-config.js` for Docker runtime templating) backs the basemap tile-proxy (`map-controls.ts`). When the URL is unset, that feature is disabled.
