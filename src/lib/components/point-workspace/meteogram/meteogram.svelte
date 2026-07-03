@@ -10,6 +10,7 @@
 	import { resolveApiModel } from '$lib/meteogram/model-map';
 	import { timeToX } from '$lib/meteogram/scales';
 	import { nearestValidTime } from '$lib/meteogram/snap';
+	import { formatUTCDateTime } from '$lib/time-format';
 	import { goToValidTime } from '$lib/time-navigation';
 
 	import { PANEL_PAD } from './panel-types';
@@ -142,6 +143,11 @@
 
 	const handleHover = (i: number | null) => (hoverIndex = i);
 
+	// Heure survolée (UTC), affichée une fois en haut du meteogram.
+	const hoverTime = $derived(
+		hoverIndex !== null && data && hoverIndex < data.times.length ? data.times[hoverIndex] : null
+	);
+
 	const SKELETON_ROWS = Array.from({ length: 4 });
 </script>
 
@@ -166,6 +172,15 @@
 		<p class="p-4 text-sm text-white/60">Aucune donnée à ce point pour ce modèle.</p>
 	{:else if data && data.times.length}
 		{@const meteo = data}
+		<div
+			class="bg-glass/80 glass-blur sticky top-0 z-10 -mx-2 mb-1 px-3 py-1 text-[11px] tabular-nums text-white/80"
+		>
+			{#if hoverTime}
+				{formatUTCDateTime(hoverTime)}Z
+			{:else}
+				<span class="text-white/40">Survolez un panneau pour lire les valeurs</span>
+			{/if}
+		</div>
 		<Panel
 			title="Température"
 			times={meteo.times}

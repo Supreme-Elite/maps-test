@@ -49,6 +49,15 @@
 		times.map((t, i) => ({ x: x(t), value: values[i] }));
 
 	const formatTick = (v: number) => (Math.abs(v) < 10 ? v.toFixed(1) : Math.round(v).toString());
+	const formatValue = (v: number | null | undefined) =>
+		v == null || !Number.isFinite(v) ? '—' : formatTick(v);
+
+	// Valeurs de chaque série à l'échéance survolée (pour la légende + les points).
+	const hoverValues = $derived(
+		hoverIndex !== null && hoverIndex < times.length
+			? series.map((s) => ({ key: s.key, color: s.color, value: s.values[hoverIndex] }))
+			: null
+	);
 
 	function handleMove(e: MouseEvent) {
 		if (times.length === 0) return;
@@ -68,8 +77,18 @@
 </script>
 
 <figure class="m-0">
-	<figcaption class="flex justify-between px-1 text-xs text-muted-foreground">
-		<span>{title}</span><span class="tabular-nums">{unitLabel}</span>
+	<figcaption class="flex items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
+		<span>{title}</span>
+		{#if hoverValues}
+			<span class="flex items-center gap-1.5 tabular-nums">
+				{#each hoverValues as v (v.key)}
+					<span style="color: {v.color}">{formatValue(v.value)}</span>
+				{/each}
+				<span>{unitLabel}</span>
+			</span>
+		{:else}
+			<span class="tabular-nums">{unitLabel}</span>
+		{/if}
 	</figcaption>
 	<svg {width} {height} role="img" aria-label={title}>
 		<!-- grille jour : ligne verticale faible + libellé date à minuit UTC -->
@@ -128,7 +147,7 @@
 			/>
 		{/if}
 
-		<!-- crosshair : index survolé, partagé entre panneaux -->
+		<!-- crosshair : index survolé, partagé entre panneaux + point sur chaque série -->
 		{#if hoverIndex !== null && hoverIndex < times.length}
 			<line
 				x1={x(times[hoverIndex])}
@@ -137,6 +156,12 @@
 				y2={baselineY}
 				class="stroke-white/30"
 			/>
+			{#each series as s (s.key)}
+				{@const v = s.values[hoverIndex]}
+				{#if v != null && Number.isFinite(v)}
+					<circle cx={x(times[hoverIndex])} cy={y(v as number)} r="2.5" fill={s.color} />
+				{/if}
+			{/each}
 		{/if}
 
 		<!--
