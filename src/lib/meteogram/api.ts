@@ -54,6 +54,32 @@ export const parseForecast = (json: unknown, model: string): MeteogramData => {
 	return { times, series, model };
 };
 
+/**
+ * Rogne les heures de fin où *toutes* les séries sont nulles. L'API renvoie un
+ * axe de 7 jours par défaut ; un modèle à horizon court (AROME HD ~51 h) laisse
+ * le reste en `null`, ce qui étalerait l'axe temps du meteogram bien au-delà des
+ * données (courbes tassées à gauche, grille vide à droite). On borne l'axe au
+ * dernier pas réellement renseigné. Si aucune valeur finie n'existe, renvoie une
+ * série vide (le composant affiche alors « aucune donnée »).
+ */
+export const trimTrailingNulls = (data: MeteogramData): MeteogramData => {
+	const seriesArrays = Object.values(data.series);
+	let last = -1;
+	for (let i = data.times.length - 1; i >= 0; i--) {
+		if (seriesArrays.some((arr) => arr[i] !== null && Number.isFinite(arr[i]))) {
+			last = i;
+			break;
+		}
+	}
+	const end = last + 1;
+	if (end === data.times.length) return data;
+	const series = {} as Record<MeteogramKey, (number | null)[]>;
+	for (const key of HOURLY_VARIABLES) {
+		series[key] = data.series[key].slice(0, end);
+	}
+	return { ...data, times: data.times.slice(0, end), series };
+};
+
 export const fetchMeteogram = async (
 	lat: number,
 	lng: number,
@@ -63,5 +89,5 @@ export const fetchMeteogram = async (
 	const res = await fetch(buildForecastUrl(lat, lng, model), { signal });
 	if (res.status === 429) throw new Error('rate-limit');
 	if (!res.ok) throw new Error(`HTTP ${res.status}`);
-	return parseForecast(await res.json(), model);
+	return trimTrailingNulls(parseForecast(await res.json(), model));
 };

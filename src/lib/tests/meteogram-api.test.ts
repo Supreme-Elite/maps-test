@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildForecastUrl, parseForecast } from '$lib/meteogram/api';
+import { buildForecastUrl, parseForecast, trimTrailingNulls } from '$lib/meteogram/api';
 
 describe('buildForecastUrl', () => {
 	it('inclut lat/lng, models, timezone UTC, wind en m/s et toutes les variables', () => {
@@ -38,5 +38,36 @@ describe('parseForecast', () => {
 
 	it('lève sur réponse sans hourly.time', () => {
 		expect(() => parseForecast({ error: true, reason: 'x' }, 'm')).toThrow();
+	});
+});
+
+describe('trimTrailingNulls', () => {
+	const build = (temps: (number | null)[]) => {
+		const time = temps.map((_, i) => `2026-07-03T${String(i).padStart(2, '0')}:00`);
+		return parseForecast(
+			{ hourly: { time, temperature_2m: temps } },
+			'meteofrance_arome_france_hd'
+		);
+	};
+
+	it('rogne les heures de fin toutes nulles (horizon court sur axe 7 j)', () => {
+		const trimmed = trimTrailingNulls(build([12, 13, 14, null, null]));
+		expect(trimmed.times).toHaveLength(3);
+		expect(trimmed.series.temperature_2m).toEqual([12, 13, 14]);
+	});
+
+	it('ne touche à rien si la dernière heure est renseignée', () => {
+		const data = build([12, 13, 14]);
+		expect(trimTrailingNulls(data)).toBe(data);
+	});
+
+	it('conserve les trous internes (null au milieu)', () => {
+		const trimmed = trimTrailingNulls(build([12, null, 14, null]));
+		expect(trimmed.times).toHaveLength(3);
+		expect(trimmed.series.temperature_2m).toEqual([12, null, 14]);
+	});
+
+	it('renvoie une série vide si tout est nul', () => {
+		expect(trimTrailingNulls(build([null, null])).times).toHaveLength(0);
 	});
 });
