@@ -229,6 +229,7 @@
 				}
 			] as PanelSeries[]}
 			unitLabel={`${precipUnit} · %`}
+			floorZero
 			{playheadTime}
 			{hoverIndex}
 			onHover={handleHover}
@@ -256,6 +257,7 @@
 				}
 			] as PanelSeries[]}
 			unitLabel={windUnit}
+			floorZero
 			{playheadTime}
 			{hoverIndex}
 			onHover={handleHover}
@@ -305,6 +307,7 @@
 				}
 			] as PanelSeries[]}
 			unitLabel={`${pressureUnit} · % · ${capeUnit}`}
+			floorZero
 			{playheadTime}
 			{hoverIndex}
 			onHover={handleHover}

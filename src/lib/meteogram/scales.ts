@@ -17,7 +17,14 @@ export const timeToX = (
 	return (t: Date) => s(t.getTime());
 };
 
-export const niceExtent = (values: (number | null)[], pad = 0.08): [number, number] => {
+// `floorZero` borne le bas de l'axe à 0 : pour les grandeurs jamais négatives
+// (précipitations, probabilité, vitesse de vent, nébulosité, CAPE…), la marge
+// basse ne doit pas descendre sous 0. La température garde `false` (peut geler).
+export const niceExtent = (
+	values: (number | null)[],
+	pad = 0.08,
+	floorZero = false
+): [number, number] => {
 	const nums = values.filter((v): v is number => v !== null && Number.isFinite(v));
 	if (nums.length === 0) return [0, 1];
 	let lo = Math.min(...nums);
@@ -27,7 +34,9 @@ export const niceExtent = (values: (number | null)[], pad = 0.08): [number, numb
 		hi += 1;
 	}
 	const margin = (hi - lo) * pad;
-	return [lo - margin, hi + margin];
+	let outLo = lo - margin;
+	if (floorZero && outLo < 0) outLo = 0;
+	return [outLo, hi + margin];
 };
 
 export const dayTicks = (times: Date[]): { index: number; date: Date }[] =>

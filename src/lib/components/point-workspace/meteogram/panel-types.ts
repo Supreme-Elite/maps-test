@@ -19,6 +19,7 @@ export interface PanelProps {
 	height: number;
 	series: PanelSeries[];
 	unitLabel: string;
+	floorZero?: boolean; // borne le bas de l'axe Y à 0 (grandeurs non négatives)
 	playheadTime: Date | null; // $time projeté
 	hoverIndex: number | null; // index survolé (partagé entre panneaux)
 	onHover: (index: number | null) => void;

@@ -12,6 +12,7 @@
 		height,
 		series,
 		unitLabel,
+		floorZero = false,
 		playheadTime,
 		hoverIndex,
 		onHover,
@@ -22,7 +23,7 @@
 
 	const x = $derived(timeToX(times, width, PAD.left, PAD.right));
 	const allValues = $derived(series.flatMap((s) => s.values));
-	const [lo, hi] = $derived(niceExtent(allValues));
+	const [lo, hi] = $derived(niceExtent(allValues, 0.08, floorZero));
 	const y = $derived(linScale(lo, hi, height - PAD.bottom, PAD.top));
 	const baselineY = $derived(height - PAD.bottom);
 	const plotTop = PAD.top;

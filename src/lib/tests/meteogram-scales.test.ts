@@ -31,6 +31,16 @@ describe('niceExtent', () => {
 		const [lo, hi] = niceExtent([5, 5, 5]);
 		expect(hi).toBeGreaterThan(lo);
 	});
+	it('borne le bas à 0 avec floorZero (grandeurs non négatives)', () => {
+		const [lo, hi] = niceExtent([0, 2, 5], 0.1, true);
+		expect(lo).toBe(0);
+		expect(hi).toBeGreaterThan(5);
+	});
+	it('floorZero ne remonte pas un bas déjà positif', () => {
+		const [lo] = niceExtent([950, 1000, 1030], 0.08, true);
+		expect(lo).toBeGreaterThan(0);
+		expect(lo).toBeLessThan(950);
+	});
 });
 
 describe('dayTicks', () => {
