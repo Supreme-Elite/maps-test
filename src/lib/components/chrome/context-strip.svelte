@@ -30,7 +30,7 @@
 	     de la carte, y compris sur mobile où le fil contextuel du header est masqué.
 	     Masquée si aucune variable sélectionnée. -->
 	<div
-		class="bg-glass/70 flex h-[26px] shrink-0 items-center gap-2 border-b border-white/10 px-3 text-xs text-white/60 glass-blur"
+		class="bg-glass/95 flex h-[26px] shrink-0 items-center gap-2 border-b border-white/10 px-3 text-xs text-white/60 glass-blur"
 	>
 		<span class="font-medium text-white">{label}</span>
 		{#if displayUnit}<span class="tabular-nums text-white/50">({displayUnit})</span>{/if}

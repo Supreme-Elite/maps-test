@@ -64,7 +64,7 @@
      en rail d'icônes. La largeur est animée en CSS (transition-[width]) — pas de
      transform : le contenu carte derrière n'est pas déplacé. -->
 <aside
-	class="bg-glass/85 fixed top-11 bottom-0 left-0 z-50 flex flex-col overflow-hidden border-r border-white/15 text-white shadow-lg glass-blur transition-[width] duration-200 motion-reduce:transition-none"
+	class="bg-glass/95 fixed top-11 bottom-0 left-0 z-50 flex flex-col overflow-hidden border-r border-white/15 text-white shadow-lg glass-blur transition-[width] duration-200 motion-reduce:transition-none"
 	style="width: {$sidebarCollapsed ? RAIL_W : OPEN_W}px"
 	aria-label="Réglages carte"
 >
