@@ -74,11 +74,11 @@
 	{#if domainLabel}
 		<p
 			class="hidden min-w-0 flex-1 truncate px-2 text-center text-sm text-white/50 md:block"
-			title={`${domainLabel}${runLabel ? ` · Run ${runLabel}` : ''}${validLabel ? ` · ${validLabel}` : ''}`}
+			title={`${domainLabel}${runLabel ? ` · Run ${runLabel}Z` : ''}${validLabel ? ` · ${validLabel}Z` : ''}`}
 		>
 			<span class="font-medium text-white">{domainLabel}</span>
-			{#if runLabel}<span class="tabular-nums"> · Run {runLabel}</span>{/if}
-			{#if validLabel}<span class="tabular-nums"> · {validLabel}</span>{/if}
+			{#if runLabel}<span class="tabular-nums"> · Run {runLabel}Z</span>{/if}
+			{#if validLabel}<span class="tabular-nums"> · {validLabel}Z</span>{/if}
 			{#if runIsInProgress}
 				<span
 					class="ml-2 rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-300 uppercase"
