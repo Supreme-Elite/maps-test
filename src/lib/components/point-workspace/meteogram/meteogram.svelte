@@ -188,17 +188,18 @@
 			height={PANEL_HEIGHT}
 			series={[
 				{
-					key: 'apparent_temperature',
-					values: convertSeries('apparent_temperature', '°C'),
-					color: 'rgba(255,255,255,0.35)'
-				},
-				{
 					key: 'dew_point_2m',
+					label: 'Point de rosée',
 					values: convertSeries('dew_point_2m', '°C'),
 					color: '#38bdf8',
 					dash: '4 3'
 				},
-				{ key: 'temperature_2m', values: convertSeries('temperature_2m', '°C'), color: '#fbbf24' }
+				{
+					key: 'temperature_2m',
+					label: 'Température',
+					values: convertSeries('temperature_2m', '°C'),
+					color: '#fbbf24'
+				}
 			] as PanelSeries[]}
 			unitLabel={tempUnit}
 			{playheadTime}
@@ -215,12 +216,14 @@
 			series={[
 				{
 					key: 'precipitation',
+					label: 'Précipitation',
 					values: convertSeries('precipitation', 'mm'),
 					color: '#38bdf8',
 					kind: 'bar'
 				},
 				{
 					key: 'precipitation_probability',
+					label: 'Probabilité',
 					values: seriesValues('precipitation_probability'),
 					color: '#34d399'
 				}
@@ -240,11 +243,17 @@
 			series={[
 				{
 					key: 'wind_gusts_10m',
+					label: 'Rafales',
 					values: convertSeries('wind_gusts_10m', 'm/s'),
 					color: '#fb7185',
 					dash: '4 3'
 				},
-				{ key: 'wind_speed_10m', values: convertSeries('wind_speed_10m', 'm/s'), color: '#38bdf8' }
+				{
+					key: 'wind_speed_10m',
+					label: 'Vent',
+					values: convertSeries('wind_speed_10m', 'm/s'),
+					color: '#38bdf8'
+				}
 			] as PanelSeries[]}
 			unitLabel={windUnit}
 			{playheadTime}
@@ -269,23 +278,31 @@
 			series={[
 				{
 					key: 'cloud_cover_low',
+					label: 'Nuages bas',
 					values: seriesValues('cloud_cover_low'),
 					color: 'rgba(56,189,248,0.35)'
 				},
 				{
 					key: 'cloud_cover_mid',
+					label: 'Nuages moyens',
 					values: seriesValues('cloud_cover_mid'),
 					color: 'rgba(56,189,248,0.65)',
 					dash: '2 2'
 				},
 				{
 					key: 'cloud_cover_high',
+					label: 'Nuages hauts',
 					values: seriesValues('cloud_cover_high'),
 					color: 'rgba(56,189,248,0.9)',
 					dash: '6 3'
 				},
-				{ key: 'cape', values: convertSeries('cape', 'J/kg'), color: '#fb7185' },
-				{ key: 'pressure_msl', values: convertSeries('pressure_msl', 'hPa'), color: '#fbbf24' }
+				{ key: 'cape', label: 'CAPE', values: convertSeries('cape', 'J/kg'), color: '#fb7185' },
+				{
+					key: 'pressure_msl',
+					label: 'Pression',
+					values: convertSeries('pressure_msl', 'hPa'),
+					color: '#fbbf24'
+				}
 			] as PanelSeries[]}
 			unitLabel={`${pressureUnit} · % · ${capeUnit}`}
 			{playheadTime}

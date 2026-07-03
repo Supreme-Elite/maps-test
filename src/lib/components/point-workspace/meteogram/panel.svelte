@@ -78,7 +78,22 @@
 
 <figure class="m-0">
 	<figcaption class="flex items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
-		<span>{title}</span>
+		<span class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+			<span class="font-medium text-white/80">{title}</span>
+			{#each series as s (s.key)}
+				<span class="flex items-center gap-1">
+					{#if s.kind === 'bar'}
+						<span class="inline-block h-2 w-2.5 rounded-[1px]" style="background: {s.color}"></span>
+					{:else}
+						<span
+							class="inline-block w-3.5 align-middle"
+							style="border-top: 2px {s.dash ? 'dashed' : 'solid'} {s.color}"
+						></span>
+					{/if}
+					<span>{s.label}</span>
+				</span>
+			{/each}
+		</span>
 		{#if hoverValues}
 			<span class="flex items-center gap-1.5 tabular-nums">
 				{#each hoverValues as v (v.key)}

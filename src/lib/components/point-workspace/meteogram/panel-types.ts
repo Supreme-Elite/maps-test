@@ -5,6 +5,7 @@ export const PANEL_PAD = { left: 44, right: 12, top: 18, bottom: 16 } as const;
 
 export interface PanelSeries {
 	key: string;
+	label: string;
 	values: (number | null)[];
 	color: string;
 	dash?: string;

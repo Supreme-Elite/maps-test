@@ -7,7 +7,6 @@ import type { MeteogramData, MeteogramKey } from './types';
 export const HOURLY_VARIABLES: readonly MeteogramKey[] = [
 	'temperature_2m',
 	'dew_point_2m',
-	'apparent_temperature',
 	'precipitation',
 	'precipitation_probability',
 	'wind_speed_10m',
