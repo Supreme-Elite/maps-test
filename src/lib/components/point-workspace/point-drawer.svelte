@@ -5,6 +5,7 @@
 
 	import { map } from '$lib/stores/map';
 	import { pointWorkspace } from '$lib/stores/point-workspace';
+	import { sidebarWidth } from '$lib/stores/preferences';
 	import { selectedDomain } from '$lib/stores/variables';
 
 	import Meteogram from './meteogram/meteogram.svelte';
@@ -125,8 +126,8 @@
 
 {#if $pointWorkspace.open && $pointWorkspace.lat !== null && $pointWorkspace.lng !== null}
 	<section
-		class="bg-glass glass-blur fixed inset-x-0 bottom-0 z-40 flex flex-col border-t border-sky-500/30 text-white"
-		style={`height:${height}px`}
+		class="bg-glass glass-blur fixed right-0 bottom-0 z-40 flex flex-col border-t border-sky-500/30 text-white"
+		style={`height:${height}px;left:${$sidebarWidth}px`}
 		aria-label="Espace point — meteogram"
 	>
 		<!--
