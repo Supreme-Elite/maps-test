@@ -1,0 +1,64 @@
+import type { MeteogramData, MeteogramKey } from './types';
+
+export const HOURLY_VARIABLES: readonly MeteogramKey[] = [
+	'temperature_2m',
+	'dew_point_2m',
+	'apparent_temperature',
+	'precipitation',
+	'precipitation_probability',
+	'wind_speed_10m',
+	'wind_gusts_10m',
+	'wind_direction_10m',
+	'pressure_msl',
+	'cloud_cover_low',
+	'cloud_cover_mid',
+	'cloud_cover_high',
+	'cape',
+	'freezing_level_height'
+];
+
+const FORECAST_ENDPOINT = 'https://api.open-meteo.com/v1/forecast';
+
+export const buildForecastUrl = (lat: number, lng: number, model: string): string => {
+	const params = new URLSearchParams({
+		latitude: String(lat),
+		longitude: String(lng),
+		models: model,
+		timezone: 'UTC',
+		wind_speed_unit: 'ms',
+		hourly: HOURLY_VARIABLES.join(',')
+	});
+	return `${FORECAST_ENDPOINT}?${params.toString()}`;
+};
+
+interface ForecastResponse {
+	hourly?: { time?: string[] } & Partial<Record<MeteogramKey, (number | null)[]>>;
+}
+
+export const parseForecast = (json: unknown, model: string): MeteogramData => {
+	const hourly = (json as ForecastResponse).hourly;
+	if (!hourly || !Array.isArray(hourly.time)) {
+		throw new Error('Réponse Open-Meteo invalide (hourly.time manquant)');
+	}
+	// L'API renvoie les timestamps en heure locale du timezone demandé ; avec
+	// timezone=UTC, la chaîne 'YYYY-MM-DDTHH:MM' est déjà en UTC — on ajoute
+	// simplement le suffixe Z pour un parse Date déterministe.
+	const times = hourly.time.map((t) => new Date(`${t}Z`));
+	const series = {} as Record<MeteogramKey, (number | null)[]>;
+	for (const key of HOURLY_VARIABLES) {
+		series[key] = hourly[key] ?? [];
+	}
+	return { times, series, model };
+};
+
+export const fetchMeteogram = async (
+	lat: number,
+	lng: number,
+	model: string,
+	signal?: AbortSignal
+): Promise<MeteogramData> => {
+	const res = await fetch(buildForecastUrl(lat, lng, model), { signal });
+	if (res.status === 429) throw new Error('rate-limit');
+	if (!res.ok) throw new Error(`HTTP ${res.status}`);
+	return parseForecast(await res.json(), model);
+};
