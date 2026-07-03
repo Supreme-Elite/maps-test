@@ -1,3 +1,5 @@
+import { downloadBlob } from '$lib/png-export';
+
 // Export PNG du meteogram — Task 12.
 //
 // Contrairement à l'hypothèse initiale du brief (« un seul <svg> racine »),
@@ -66,10 +68,6 @@ function svgToImage(svg: SVGSVGElement): Promise<HTMLImageElement> {
 	const clone = svg.cloneNode(true) as SVGSVGElement;
 	clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 	clone.style.fontFamily = FONT_STACK;
-	// `currentColor` (ex. flèches de vent dans wind-direction.svelte) hérite
-	// normalement de la couleur de texte du conteneur DOM ambiant, perdue à
-	// la sérialisation isolée — on la refixe explicitement sur le clone.
-	clone.setAttribute('color', HEADER_TEXT_COLOR);
 	inlineComputedStyles(svg, clone);
 
 	const xml = new XMLSerializer().serializeToString(clone);
@@ -88,14 +86,6 @@ function svgPixelSize(svg: SVGSVGElement): { width: number; height: number } {
 		width: Number(svg.getAttribute('width')) || svg.clientWidth,
 		height: Number(svg.getAttribute('height')) || svg.clientHeight
 	};
-}
-
-function triggerDownload(blob: Blob, filename: string): void {
-	const a = document.createElement('a');
-	a.href = URL.createObjectURL(blob);
-	a.download = filename;
-	a.click();
-	URL.revokeObjectURL(a.href);
 }
 
 /**
@@ -145,5 +135,5 @@ export async function exportMeteogramPng(
 	const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
 	if (!blob) throw new Error('toBlob null');
 
-	triggerDownload(blob, filename);
+	downloadBlob(blob, filename);
 }
