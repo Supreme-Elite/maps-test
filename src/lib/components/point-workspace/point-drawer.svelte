@@ -22,14 +22,24 @@
 	// `window` n'existe pas au rendu serveur : la valeur par défaut ci-dessus
 	// sert de repli sûr, ajustée à la taille réelle du viewport une fois montée
 	// (build statique sans SSR, mais on reste défensif).
+	//
+	// Le calcul de la hauteur initiale évite `clampHeight` (qui lit l'état
+	// réactif `maxHeight`) : sinon l'effet dépendrait d'un état qu'il écrit
+	// lui-même, et toute écriture ultérieure de `maxHeight` par `onResize`
+	// (déclenchée par un simple événement DOM, hors du run de l'effet) le
+	// re-déclencherait — réinitialisant `height` à sa valeur par défaut et
+	// écrasant la hauteur choisie par l'utilisateur à chaque redimensionnement
+	// de fenêtre.
 	$effect(() => {
 		if (typeof window === 'undefined') return;
-		maxHeight = computeMaxHeight();
-		height = clampHeight(Math.round(window.innerHeight * 0.4));
-		const onResize = () => {
+		const initialMaxHeight = computeMaxHeight();
+		maxHeight = initialMaxHeight;
+		height = Math.max(MIN_HEIGHT, Math.min(initialMaxHeight, Math.round(window.innerHeight * 0.4)));
+
+		function onResize() {
 			maxHeight = computeMaxHeight();
 			height = clampHeight(height);
-		};
+		}
 		window.addEventListener('resize', onResize);
 		return () => window.removeEventListener('resize', onResize);
 	});
