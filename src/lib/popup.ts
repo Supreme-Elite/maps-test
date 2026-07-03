@@ -13,11 +13,13 @@ import { mode } from 'mode-watcher';
 
 import { map as m, popup as p, popupMode } from '$lib/stores/map';
 import { omProtocolSettings } from '$lib/stores/om-protocol-settings';
+import { pointWorkspace } from '$lib/stores/point-workspace';
 import { sounding, soundingButtonEnabled } from '$lib/stores/sounding';
 import { convertValue, getDisplayUnit, unitPreferences } from '$lib/stores/units';
 import { selectedDomain, variable as v } from '$lib/stores/variables';
 
 import { isSoundingDomain } from '$lib/constants';
+import { hasMeteogram } from '$lib/meteogram/model-map';
 
 import { textWhite } from './helpers';
 import { arrowManager, rasterManager } from './layers';
@@ -34,6 +36,7 @@ let unitSpan: HTMLSpanElement | undefined;
 let elevationSpan: HTMLSpanElement | undefined;
 let windSpan: HTMLSpanElement | undefined;
 let soundingBtn: HTMLButtonElement | undefined;
+let meteogramBtn: HTMLButtonElement | undefined;
 let lastCoords: maplibregl.LngLat | undefined;
 
 const WIND_VARIABLE_REGEX = /_(?:u|v)_component_/;
@@ -83,6 +86,14 @@ const initPopupDiv = (): void => {
 	});
 	wrapperDiv.append(soundingBtn);
 
+	meteogramBtn = document.createElement('button');
+	meteogramBtn.className = 'popup-meteogram-btn';
+	meteogramBtn.innerText = 'Meteogram';
+	meteogramBtn.addEventListener('click', () => {
+		if (lastCoords) pointWorkspace.open(lastCoords.lat, lastCoords.lng);
+	});
+	wrapperDiv.append(meteogramBtn);
+
 	el.append(wrapperDiv);
 };
 
@@ -95,6 +106,10 @@ const updatePopupContent = async (coordinates: maplibregl.LngLat): Promise<void>
 	if (soundingBtn) {
 		const enabled = isSoundingDomain(get(selectedDomain).value) && get(soundingButtonEnabled);
 		soundingBtn.style.display = enabled ? '' : 'none';
+	}
+
+	if (meteogramBtn) {
+		meteogramBtn.style.display = hasMeteogram(get(selectedDomain).value) ? '' : 'none';
 	}
 
 	if (!el || !contentDiv || !valueSpan || !unitSpan || !windSpan || !elevationSpan) return;

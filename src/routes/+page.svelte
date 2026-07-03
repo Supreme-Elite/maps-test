@@ -42,6 +42,7 @@
 	import HelpDialog from '$lib/components/help/help-dialog.svelte';
 	import KeyboardHandler from '$lib/components/keyboard/keyboard-handler.svelte';
 	import Spinner from '$lib/components/loading/spinner.svelte';
+	import PointDrawer from '$lib/components/point-workspace/point-drawer.svelte';
 	import Scale from '$lib/components/scale/scale.svelte';
 	import SoundingPanel from '$lib/components/sounding/sounding-panel.svelte';
 	import TimeSelector from '$lib/components/time/time-selector.svelte';
@@ -372,6 +373,7 @@
 <TimeSelector />
 <HelpDialog />
 <SoundingPanel />
+<PointDrawer />
 <KeyboardHandler />
 <Dropzone
 	ondrop={(features) => {

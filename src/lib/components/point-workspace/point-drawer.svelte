@@ -1,4 +1,9 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
+
+	import * as maplibregl from 'maplibre-gl';
+
+	import { map } from '$lib/stores/map';
 	import { pointWorkspace } from '$lib/stores/point-workspace';
 	import { selectedDomain } from '$lib/stores/variables';
 
@@ -10,6 +15,34 @@
 
 	let height = $state(DEFAULT_HEIGHT);
 	let maxHeight = $state(DEFAULT_HEIGHT);
+
+	// Marqueur dédié matérialisant le point choisi pour le meteogram, distinct du
+	// popup de valeur (couleur ambre) — créé/déplacé/retiré selon l'état du tiroir.
+	let pinMarker: maplibregl.Marker | undefined;
+
+	$effect(() => {
+		const currentMap = $map;
+		const { open, lat, lng } = $pointWorkspace;
+
+		if (!currentMap || !open || lat === null || lng === null) {
+			pinMarker?.remove();
+			pinMarker = undefined;
+			return;
+		}
+
+		if (!pinMarker) {
+			pinMarker = new maplibregl.Marker({ color: '#f59e0b' })
+				.setLngLat([lng, lat])
+				.addTo(currentMap);
+		} else {
+			pinMarker.setLngLat([lng, lat]);
+		}
+	});
+
+	onDestroy(() => {
+		pinMarker?.remove();
+		pinMarker = undefined;
+	});
 
 	function computeMaxHeight() {
 		return Math.round(window.innerHeight * 0.7);
