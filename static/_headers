@@ -12,6 +12,25 @@
 /site.webmanifest
   Content-Type: application/manifest+json
 
+# Coquille HTML (entrée SPA) : jamais servie sans revalidation, pour qu'un
+# nouveau déploiement (qui pointe vers de nouveaux bundles hashés) soit pris en
+# compte immédiatement. `no-cache` = le navigateur peut stocker mais doit
+# revalider avant usage (304 si inchangé).
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+
+# Bundles hash-nommés (SvelteKit) : le nom change à chaque build → sûr de les
+# figer à vie côté navigateur. Évite les revalidations 304 à chaque visite.
+/_app/immutable/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Config runtime : stub servi tel quel (config vide) → ne jamais la mettre en
+# cache, sinon une future valeur resterait figée. Miroir du nginx (no-store).
+/runtime-config.js
+  Cache-Control: no-store
+
 # Contours départements : asset stable, non hashé, régénéré très rarement.
 # Edge Cloudflare ~1 an (s-maxage), navigateur 7 j, puis revalidation en
 # arrière-plan (stale-while-revalidate) → pas d'`immutable` pour éviter de figer

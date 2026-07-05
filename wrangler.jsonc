@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "maps",
+	"name": "infoclimat-numeric",
 	"compatibility_date": "2026-05-30",
 	// Déploiement statique (SvelteKit adapter-static → ./build). Pas de `main` :
 	// Worker "assets-only", aucun script serveur. La présence de ce fichier empêche
@@ -11,6 +11,7 @@
 		"not_found_handling": "single-page-application"
 	},
 	"observability": {
-		"enabled": true
+		"enabled": true,
+		"head_sampling_rate": 0.1
 	}
 }
