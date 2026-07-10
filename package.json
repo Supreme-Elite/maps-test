@@ -69,5 +69,8 @@
 	},
 	"overrides": {
 		"@openmeteo/file-reader": "npm:@cm3r/file-reader@0.0.18"
+	},
+	"dependencies": {
+		"highcharts": "^12.6.0"
 	}
 }
