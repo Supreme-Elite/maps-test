@@ -92,6 +92,13 @@ describe('buildChartOptions', () => {
 		expect((long.xAxis as { minorTickInterval?: number }[])[0].minorTickInterval).toBeUndefined();
 	});
 
+	it('désactive le menu contextuel exporting (libellés anglais, redondant)', () => {
+		const o = buildChartOptions(input());
+		const exporting = (o as { exporting?: { buttons?: { contextButton?: { enabled?: boolean } } } })
+			.exporting;
+		expect(exporting?.buttons?.contextButton?.enabled).toBe(false);
+	});
+
 	it('unités injectées dans tooltips/axes', () => {
 		const o = buildChartOptions(
 			input({ units: { temperature: '°F', precipitation: 'inch', pressure: 'hPa' } })

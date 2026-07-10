@@ -114,7 +114,15 @@
 			await import('highcharts/modules/windbarb');
 			await import('highcharts/modules/exporting');
 			await import('highcharts/modules/offline-exporting');
-			hc.setOptions({ lang: { locale: 'fr' } });
+			// `locale: 'fr'` couvre dates/nombres (Intl) mais pas les libellés d'UI
+			// (bouton « Reset zoom » du zoom X) — traduits explicitement.
+			hc.setOptions({
+				lang: {
+					locale: 'fr',
+					resetZoom: 'Réinitialiser le zoom',
+					resetZoomTitle: 'Revenir à l’échelle initiale'
+				}
+			});
 			return hc;
 		})();
 		return hcPromise;

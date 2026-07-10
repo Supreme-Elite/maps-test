@@ -122,7 +122,7 @@
 	<section
 		class="bg-glass glass-blur fixed right-0 bottom-0 z-40 flex flex-col border-t border-sky-500/30 text-white"
 		style={`height:${height}px;left:${$sidebarWidth}px`}
-		aria-label="Espace point — meteogram"
+		aria-label="Espace point — météogramme"
 	>
 		<!--
 			Poignée de redimensionnement : un « separator » focusable qui pilote une
@@ -149,7 +149,7 @@
 		></div>
 		<header class="flex shrink-0 items-center justify-between gap-2 px-3 py-1 text-sm">
 			<span class="tabular-nums">
-				Meteogram — {$pointWorkspace.lat.toFixed(3)}, {$pointWorkspace.lng.toFixed(3)}
+				Météogramme — {$pointWorkspace.lat.toFixed(3)}, {$pointWorkspace.lng.toFixed(3)}
 			</span>
 			<span class="text-xs text-sky-300">{$selectedDomain.label} · dernier run</span>
 			<div class="flex items-center gap-2">

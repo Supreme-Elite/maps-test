@@ -85,6 +85,10 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 		title: { text: undefined },
 		credits: { enabled: false },
 		accessibility: { enabled: false },
+		// Pas de menu contextuel Highcharts (libellés anglais, redondant avec le
+		// bouton « Exporter PNG » du tiroir) ; le module exporting reste chargé
+		// pour `exportChartLocal`.
+		exporting: { buttons: { contextButton: { enabled: false } } },
 		tooltip: {
 			shared: true,
 			useHTML: false,

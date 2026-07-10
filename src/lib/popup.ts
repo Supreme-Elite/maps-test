@@ -88,7 +88,7 @@ const initPopupDiv = (): void => {
 
 	meteogramBtn = document.createElement('button');
 	meteogramBtn.className = 'popup-meteogram-btn';
-	meteogramBtn.innerText = 'Meteogram';
+	meteogramBtn.innerText = 'Météogramme';
 	meteogramBtn.addEventListener('click', () => {
 		if (lastCoords) pointWorkspace.open(lastCoords.lat, lastCoords.lng);
 	});
