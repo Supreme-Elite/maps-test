@@ -54,10 +54,24 @@ describe('buildChartOptions', () => {
 		expect(barbs.data![0]).toMatchObject({ value: 5, direction: 230 });
 	});
 
-	it('grille horaire : 2 h sur horizon court, 6 h au-delà de 72 points', () => {
+	it('grille horaire : 2 h sur horizon court, 6 h au-delà de 72 points, sans grille mineure', () => {
 		const short = buildChartOptions(input());
 		expect((short.xAxis as { tickInterval?: number }[])[0].tickInterval).toBe(2 * 36e5);
-		expect((short.xAxis as { minorTickInterval?: number }[])[0].minorTickInterval).toBe(36e5);
+		// Garde anti-régression « barres blanches » : pas de grille mineure (le
+		// défaut Highcharts #f2f2f2 ressort en barres blanches sur fond sombre),
+		// et tout élément d'axe posé explicitement (jamais les défauts clairs).
+		const shortAxis = (
+			short.xAxis as {
+				minorTickInterval?: number;
+				minorGridLineWidth?: number;
+				lineColor?: string;
+				tickColor?: string;
+			}[]
+		)[0];
+		expect(shortAxis.minorTickInterval).toBeUndefined();
+		expect(shortAxis.minorGridLineWidth).toBe(0);
+		expect(shortAxis.lineColor).toBeDefined();
+		expect(shortAxis.tickColor).toBeDefined();
 
 		const n = 96;
 		const times = Array.from({ length: n }, (_, h) => new Date(Date.UTC(2026, 6, 10) + h * 36e5));
@@ -75,7 +89,7 @@ describe('buildChartOptions', () => {
 			})
 		);
 		expect((long.xAxis as { tickInterval?: number }[])[0].tickInterval).toBe(6 * 36e5);
-		expect((long.xAxis as { minorTickInterval?: number }[])[0].minorTickInterval).toBe(3 * 36e5);
+		expect((long.xAxis as { minorTickInterval?: number }[])[0].minorTickInterval).toBeUndefined();
 	});
 
 	it('unités injectées dans tooltips/axes', () => {

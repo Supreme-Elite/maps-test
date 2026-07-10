@@ -14,7 +14,13 @@ export interface MeteogramChartInput {
 	onTimeClick: (date: Date) => void;
 }
 
-const GRID = 'rgba(255, 255, 255, 0.08)';
+// Thème sombre : TOUT élément d'axe/grille doit être stylé explicitement.
+// Les défauts Highcharts (grille mineure #f2f2f2, axes #ccd6eb, crosshair
+// #cccccc) sont pensés pour fond clair et ressortent en barres blanches sur
+// le tiroir sombre — régression corrigée, verrouillée par test.
+const GRID = 'rgba(255, 255, 255, 0.06)';
+const GRID_DAY = 'rgba(255, 255, 255, 0.16)';
+const AXIS = 'rgba(255, 255, 255, 0.18)';
 const TEXT = 'rgba(255, 255, 255, 0.7)';
 const TEXT_STRONG = 'rgba(255, 255, 255, 0.9)';
 
@@ -50,18 +56,19 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 
 	// Densité de grille adaptative : au-delà de 72 h, une gridline toutes les
 	// 2 h sature le tracé (l'API renvoie jusqu'à 7 jours) — on passe à 6 h.
+	// Pas de grille mineure : sur fond sombre elle ne fait que du bruit.
 	const longRange = input.times.length > 72;
 	const tickInterval = (longRange ? 6 : 2) * 36e5;
-	const minorTickInterval = (longRange ? 3 : 1) * 36e5;
 
 	return {
 		chart: {
 			backgroundColor: 'transparent',
+			style: { fontFamily: 'inherit' },
 			marginBottom: 70,
 			marginRight: 44,
 			marginTop: 44,
 			plotBorderWidth: 1,
-			plotBorderColor: 'rgba(255, 255, 255, 0.2)',
+			plotBorderColor: 'rgba(255, 255, 255, 0.14)',
 			alignTicks: false,
 			zooming: { type: 'x' },
 			scrollablePlotArea: { minWidth: 720 },
@@ -90,8 +97,10 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 			{
 				type: 'datetime',
 				tickInterval,
-				minorTickInterval,
+				minorGridLineWidth: 0,
 				tickLength: 0,
+				lineColor: AXIS,
+				tickColor: AXIS,
 				gridLineWidth: 1,
 				gridLineColor: GRID,
 				startOnTick: false,
@@ -101,7 +110,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				offset: 30,
 				showLastLabel: true,
 				labels: { format: '{value:%H}', style: { color: TEXT } },
-				crosshair: true
+				crosshair: { width: 1, color: 'rgba(255, 255, 255, 0.25)' }
 			},
 			{
 				linkedTo: 0,
@@ -116,8 +125,10 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				},
 				opposite: true,
 				tickLength: 20,
+				lineColor: AXIS,
+				tickColor: AXIS,
 				gridLineWidth: 1,
-				gridLineColor: GRID
+				gridLineColor: GRID_DAY
 			}
 		] as XAxisOptions[],
 		yAxis: [
@@ -183,7 +194,8 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				marker: { enabled: false, states: { hover: { enabled: true } } },
 				tooltip: { valueSuffix: ` ${input.units.temperature}` },
 				zIndex: 2,
-				color: '#FF3333',
+				lineWidth: 2.5,
+				color: '#ff4d4d',
 				negativeColor: '#48AFE8'
 			},
 			{
@@ -194,7 +206,8 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				dashStyle: 'ShortDash',
 				tooltip: { valueSuffix: ` ${input.units.temperature}` },
 				zIndex: 1,
-				color: '#2F9E5F'
+				lineWidth: 1.5,
+				color: '#34d399'
 			},
 			{
 				name: 'Précipitations',
@@ -213,11 +226,14 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				tooltip: { valueSuffix: ` ${input.units.precipitation}` }
 			},
 			{
+				// Discrète (repère de tendance) : fine et translucide pour ne pas
+				// concurrencer la température — l'axe ambre à droite porte la lecture.
 				name: 'Pression',
 				data: pressureData,
 				type: 'spline',
 				marker: { enabled: false },
-				color: '#fbbf24',
+				lineWidth: 1,
+				color: 'rgba(251, 191, 36, 0.55)',
 				dashStyle: 'ShortDot',
 				yAxis: 2,
 				tooltip: { valueSuffix: ` ${input.units.pressure}` }
