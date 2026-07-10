@@ -219,6 +219,13 @@ export const renderPopup = async (coordinates: maplibregl.LngLat): Promise<void>
 	if (!el || !contentDiv || !valueSpan || !unitSpan || !elevationSpan) initPopupDiv();
 	if (!el || !contentDiv || !valueSpan || !unitSpan || !elevationSpan) return;
 
+	// En mode « follow », la bulle suit le curseur : elle passe donc sous chaque
+	// clic destiné à la carte. Sans ça, le bouton « Meteogram » (visible par
+	// défaut, contrairement au sondage opt-in) avale le clic d'épinglage et
+	// ouvre le tiroir à la place. La bulle-viseur est traversante ; ses boutons
+	// ne deviennent cliquables qu'une fois la bulle épinglée (mode « drag »).
+	el.style.pointerEvents = get(popupMode) === 'follow' ? 'none' : '';
+
 	let popup = get(p);
 	if (!popup) {
 		popup = new maplibregl.Marker({ element: el, draggable: get(popupMode) === 'drag' })
