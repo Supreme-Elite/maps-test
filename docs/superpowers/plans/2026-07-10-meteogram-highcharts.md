@@ -25,18 +25,21 @@
 ## File Structure
 
 **Créés**
+
 - `src/lib/meteogram/weather-symbols.ts` — mapping pur WMO→icône yr + libellé FR.
 - `src/lib/meteogram/meteogram-chart.ts` — builder pur d'options Highcharts.
 - `static/weather-symbols/*.svg` (30 icônes) + `static/weather-symbols/LICENSE`.
 - Tests : `src/lib/tests/weather-symbols.test.ts`, `src/lib/tests/meteogram-chart.test.ts`.
 
 **Modifiés**
+
 - `src/lib/meteogram/types.ts`, `src/lib/meteogram/api.ts` (+ leur test), `src/lib/tests/meteogram-api.test.ts`.
 - `src/lib/components/point-workspace/meteogram/meteogram.svelte` (réécrit).
 - `src/lib/components/point-workspace/point-drawer.svelte` (export PNG rebranché).
 - `package.json` (dep `highcharts`), `README.md` (note licence), `.claude/rules/components.md`, `.claude/rules/architecture.md`, spec (statut).
 
 **Supprimés**
+
 - `src/lib/components/point-workspace/meteogram/panel.svelte`, `panel-types.ts`, `wind-direction.svelte`, `png-export.ts`.
 - `src/lib/meteogram/paths.ts`, `src/lib/meteogram/scales.ts`.
 - `src/lib/tests/meteogram-paths.test.ts`, `src/lib/tests/meteogram-scales.test.ts`.
@@ -46,11 +49,13 @@
 ### Task 1: Données — variables `weather_code`/`is_day`, retrait nébulosité/CAPE/probabilité
 
 **Files:**
+
 - Modify: `src/lib/meteogram/types.ts`
 - Modify: `src/lib/meteogram/api.ts` (bloc `HOURLY_VARIABLES`)
 - Test: `src/lib/tests/meteogram-api.test.ts`
 
 **Interfaces:**
+
 - Produces : `MeteogramKey` =
   `'temperature_2m' | 'dew_point_2m' | 'precipitation' | 'wind_speed_10m' | 'wind_gusts_10m' | 'wind_direction_10m' | 'pressure_msl' | 'weather_code' | 'is_day'`.
   `MeteogramData` inchangé de forme (`times`, `series`, `model`).
@@ -61,12 +66,12 @@
 Dans `src/lib/tests/meteogram-api.test.ts`, remplacer les deux assertions de variables du test `buildForecastUrl` :
 
 ```ts
-		expect(url).toContain('temperature_2m');
-		expect(url).toContain('weather_code');
-		expect(url).toContain('is_day');
-		expect(url).not.toContain('cloud_cover_low');
-		expect(url).not.toContain('cape');
-		expect(url).not.toContain('precipitation_probability');
+expect(url).toContain('temperature_2m');
+expect(url).toContain('weather_code');
+expect(url).toContain('is_day');
+expect(url).not.toContain('cloud_cover_low');
+expect(url).not.toContain('cape');
+expect(url).not.toContain('precipitation_probability');
 ```
 
 (supprimer les anciennes lignes `expect(url).toContain('precipitation_probability');` et `expect(url).toContain('cape');`).
@@ -139,11 +144,13 @@ git commit -m "feat(meteogram): variables du graphe unique (weather_code/is_day,
 ### Task 2: Mapping symboles météo WMO → icônes yr + icônes bundlées
 
 **Files:**
+
 - Create: `src/lib/meteogram/weather-symbols.ts`
 - Create: `static/weather-symbols/*.svg` + `static/weather-symbols/LICENSE`
 - Test: `src/lib/tests/weather-symbols.test.ts`
 
 **Interfaces:**
+
 - Produces : `symbolForWmo(code: number, isDay: boolean): { icon: string; label: string }` —
   `icon` = nom de fichier sans extension (ex. `'01d'`), servi depuis `/weather-symbols/<icon>.svg`.
 
@@ -276,10 +283,12 @@ git commit -m "feat(meteogram): mapping WMO → symboles météo yr (icônes MIT
 ### Task 3: Dépendance Highcharts + note licence README
 
 **Files:**
+
 - Modify: `package.json` / `package-lock.json` (via npm)
 - Modify: `README.md`
 
 **Interfaces:**
+
 - Produces : paquet `highcharts@^12` installé ; modules importables :
   `highcharts/modules/windbarb`, `highcharts/modules/exporting`, `highcharts/modules/offline-exporting` (side-effect, s'appliquent au default export en v12).
 
@@ -317,10 +326,12 @@ git commit -m "chore(meteogram): dépendance highcharts + note licence CC BY-NC"
 ### Task 4: Builder pur `meteogram-chart.ts`
 
 **Files:**
+
 - Create: `src/lib/meteogram/meteogram-chart.ts`
 - Test: `src/lib/tests/meteogram-chart.test.ts`
 
 **Interfaces:**
+
 - Consumes : types seulement (`import type { Options } from 'highcharts'` — effacé à la compilation, le test node n'importe pas le runtime Highcharts).
 - Produces :
 
@@ -401,7 +412,9 @@ describe('buildChartOptions', () => {
 	});
 
 	it('unités injectées dans tooltips/axes', () => {
-		const o = buildChartOptions(input({ units: { temperature: '°F', precipitation: 'inch', pressure: 'hPa' } }));
+		const o = buildChartOptions(
+			input({ units: { temperature: '°F', precipitation: 'inch', pressure: 'hPa' } })
+		);
 		const json = JSON.stringify(o);
 		expect(json).toContain('°F');
 		expect(json).toContain('inch');
@@ -460,7 +473,11 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 	const windData = xs
 		.map((x, i) => ({ x, value: at(input.windSpeed, i), direction: at(input.windDirection, i), i }))
 		.filter((p) => p.i % 2 === 0 && p.value !== null && p.direction !== null)
-		.map(({ x, value, direction }) => ({ x, value: value as number, direction: direction as number }));
+		.map(({ x, value, direction }) => ({
+			x,
+			value: value as number,
+			direction: direction as number
+		}));
 
 	const onTimeClick = input.onTimeClick;
 
@@ -518,8 +535,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				type: 'datetime',
 				tickInterval: 24 * 36e5,
 				labels: {
-					format:
-						'{value:<span style="font-size: 12px; font-weight: bold">%a</span> %e %b}',
+					format: '{value:<span style="font-size: 12px; font-weight: bold">%a</span> %e %b}',
 					align: 'left',
 					x: 3,
 					y: 8,
@@ -666,12 +682,14 @@ git commit -m "feat(meteogram): builder pur d'options Highcharts (graphe unique 
 ### Task 5: `meteogram.svelte` réécrit + export PNG rebranché + suppression de l'ancien rendu
 
 **Files:**
+
 - Modify (réécriture): `src/lib/components/point-workspace/meteogram/meteogram.svelte`
 - Modify: `src/lib/components/point-workspace/point-drawer.svelte`
 - Delete: `src/lib/components/point-workspace/meteogram/panel.svelte`, `panel-types.ts`, `wind-direction.svelte`, `png-export.ts`
 - Delete: `src/lib/meteogram/paths.ts`, `src/lib/meteogram/scales.ts`, `src/lib/tests/meteogram-paths.test.ts`, `src/lib/tests/meteogram-scales.test.ts`
 
 **Interfaces:**
+
 - Consumes : `buildChartOptions`/`MeteogramChartInput` (Task 4), `symbolForWmo` (Task 2), `MeteogramKey`/`MeteogramData` (Task 1), et l'existant : `fetchMeteogram`, `resolveApiModel`, `nearestValidTime`, `goToValidTime`, `convertValue`/`getDisplayUnit`/`unitPreferences`.
 - Produces : `meteogram.svelte` exporte `exportPng(filename: string): void` (appelée par le tiroir via `bind:this`).
 
@@ -980,6 +998,7 @@ git commit -m "feat(meteogram): rendu Highcharts façon yr.no (chart unique, sym
 ### Task 6: Docs — règles path-scopées + statut spec
 
 **Files:**
+
 - Modify: `.claude/rules/components.md` (section `point-workspace/`)
 - Modify: `.claude/rules/architecture.md` (si la section meteogram décrit paths/scales)
 - Modify: `docs/superpowers/specs/2026-07-10-meteogram-highcharts-design.md` (statut)
@@ -1030,6 +1049,7 @@ git commit -m "docs: règles point-workspace + statut spec meteogram Highcharts"
 - [ ] **Step 2: Vérif headless** (adapter `.superpowers/sdd/verify-meteogram-arome.mjs`)
 
 Contrôler, tiroir ouvert sur un point France :
+
 - le chart Highcharts rend (sélecteur `.highcharts-container` présent) ;
 - windbarbs (`.highcharts-windbarb-series`) et icônes météo (`g.highcharts-weather-symbols image`, ≥ 5) présents ;
 - la requête part vers `modeles-api.cmer.fr/v1/forecast` avec `weather_code`/`is_day` et **sans** `cape` (status 200) ;

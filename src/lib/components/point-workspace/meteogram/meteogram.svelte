@@ -7,69 +7,47 @@
 	import { selectedDomain } from '$lib/stores/variables';
 
 	import { fetchMeteogram } from '$lib/meteogram/api';
+	import { buildChartOptions } from '$lib/meteogram/meteogram-chart';
 	import { resolveApiModel } from '$lib/meteogram/model-map';
-	import { timeToX } from '$lib/meteogram/scales';
 	import { nearestValidTime } from '$lib/meteogram/snap';
-	import { formatUTCDateTime } from '$lib/time-format';
+	import { symbolForWmo } from '$lib/meteogram/weather-symbols';
 	import { goToValidTime } from '$lib/time-navigation';
 
-	import { PANEL_PAD } from './panel-types';
-	import Panel from './panel.svelte';
-	import WindDirection from './wind-direction.svelte';
-
 	import type { MeteogramData, MeteogramKey } from '$lib/meteogram/types';
-	import type { PanelSeries } from './panel-types';
+	import type Highcharts from 'highcharts';
+	import type { Chart } from 'highcharts';
 
 	let { lat, lng }: { lat: number; lng: number } = $props();
 
 	let data = $state<MeteogramData | null>(null);
 	let loading = $state(false);
 	let error = $state<'rate-limit' | 'network' | 'empty' | null>(null);
-	let hoverIndex = $state<number | null>(null);
-	let containerWidth = $state(0);
+	let chartEl = $state<HTMLDivElement>();
+	let chart: Chart | undefined;
 
-	// Mémoïsation de session : une seule requête par (point, modèle), y compris
-	// en ré-épinglant plusieurs fois le même point. Perdue au rechargement (MVP).
+	// ——— chargement : identique à l'implémentation précédente ———
 	const cache = new SvelteMap<string, MeteogramData>();
 	let controller: AbortController | undefined;
-
-	// Réactif au domaine sélectionné : un changement de modèle doit déclencher
-	// un refetch même si le point reste le même (spec §1 « Point clé quotas »).
 	const model = $derived(resolveApiModel($selectedDomain.value));
 
 	async function load() {
-		// Capturée en tête de fonction, avant tout `await`, pour qu'un chargement
-		// en vol reste cohérent avec le modèle qui l'a déclenché — un changement
-		// de modèle pendant l'attente relance `load()` via l'effet et abandonne
-		// celui-ci plutôt que de le faire dériver vers la nouvelle valeur.
 		const currentModel = model;
-
-		// Annule systématiquement toute requête en vol — y compris quand cet
-		// appel se résout depuis le cache — sinon une ancienne requête encore en
-		// vol pour un autre point pourrait écraser `data` après coup.
 		controller?.abort();
 		controller = undefined;
-
 		if (!currentModel) {
-			// Le bouton déclencheur (popup) ne devrait pas apparaître sur un
-			// domaine non mappé — garde défensive si le composant est monté
-			// quand même.
 			data = null;
 			error = null;
 			loading = false;
 			return;
 		}
-
 		const key = `${lat.toFixed(3)},${lng.toFixed(3)},${currentModel}`;
 		const cached = cache.get(key);
 		if (cached) {
 			data = cached;
-			hoverIndex = null; // évite un crosshair déréférençant un index d'une série précédente plus longue
 			error = null;
 			loading = false;
 			return;
 		}
-
 		const ac = new AbortController();
 		controller = ac;
 		loading = true;
@@ -77,13 +55,12 @@
 		data = null;
 		try {
 			const d = await fetchMeteogram(lat, lng, currentModel, ac.signal);
-			if (controller !== ac) return; // supplantée entre-temps
+			if (controller !== ac) return;
 			if (d.times.length === 0) {
 				error = 'empty';
 			} else {
 				cache.set(key, d);
 				data = d;
-				hoverIndex = null; // idem : nouvelle série, ancien hoverIndex potentiellement hors bornes
 			}
 		} catch (e) {
 			if ((e as Error).name === 'AbortError') return;
@@ -94,8 +71,6 @@
 		}
 	}
 
-	// Recharge au changement de point ou de modèle — jamais sur le scrub du temps
-	// ($time n'est volontairement pas lu ici, toute la série est déjà chargée).
 	$effect(() => {
 		void lat;
 		void lng;
@@ -103,55 +78,165 @@
 		load();
 	});
 
-	// Playhead = échéance carte projetée, réactif au scrub sans le moindre refetch.
-	const playheadTime = $derived($time ? new Date($time) : null);
-
-	function seek(t: Date) {
-		const validTimes = get(metaJson)?.valid_times?.map((v) => new Date(v)) ?? [];
-		goToValidTime(nearestValidTime(t, validTimes) ?? t);
-	}
-
-	// Indexation défensive sur `times` : `parseForecast` peut renvoyer un
-	// tableau plus court (voire vide, `[]`) pour une variable absente de la
-	// réponse API — jamais `undefined` en sortie, toujours `null`.
+	// ——— séries converties dans l'unité d'affichage ———
 	function seriesValues(key: MeteogramKey): (number | null)[] {
 		const raw = data?.series[key] ?? [];
 		return (data?.times ?? []).map((_, i) => raw[i] ?? null);
 	}
-
 	function convertSeries(key: MeteogramKey, baseUnit: string): (number | null)[] {
 		return seriesValues(key).map((v) =>
 			v === null || !Number.isFinite(v) ? null : convertValue(v, baseUnit, $unitPreferences, key)
 		);
 	}
 
-	// Largeur effective des panneaux SVG, mesurée sur le conteneur ; plancher
-	// pour éviter une échelle dégénérée avant la première mesure du ResizeObserver.
-	const panelWidth = $derived(Math.max(containerWidth, 240));
-	const PANEL_HEIGHT = 110;
+	function seek(t: Date) {
+		const validTimes = get(metaJson)?.valid_times?.map((v) => new Date(v)) ?? [];
+		goToValidTime(nearestValidTime(t, validTimes) ?? t);
+	}
 
-	// Partage `PANEL_PAD` avec panel.svelte : la bande de direction du vent
-	// partage l'axe temps du panneau vent, mais panel.svelte n'expose pas son
-	// échelle x en dehors de son propre SVG.
-	const windX = $derived(timeToX(data?.times ?? [], panelWidth, PANEL_PAD.left, PANEL_PAD.right));
+	// ——— Highcharts : chargé paresseusement au premier rendu de données ———
+	// Modules v12 en side-effect : ils s'appliquent au default export du paquet.
+	// Écart brief : les typings v12.6.0 ne déclarent pas de `default` sur le
+	// namespace de `typeof import('highcharts')` (bug de packaging des .d.ts,
+	// le runtime UMD expose bien `.default`) — on nomme donc la forme réelle via
+	// un import de type par défaut (`import type Highcharts from 'highcharts'`,
+	// ligne 17) et on caste l'objet renvoyé par `import()` en conséquence.
+	let hcPromise: Promise<typeof Highcharts> | undefined;
+	function loadHighcharts() {
+		hcPromise ??= (async () => {
+			const mod = (await import('highcharts')) as unknown as { default: typeof Highcharts };
+			const hc = mod.default;
+			await import('highcharts/modules/windbarb');
+			await import('highcharts/modules/exporting');
+			await import('highcharts/modules/offline-exporting');
+			hc.setOptions({ lang: { locale: 'fr' } });
+			return hc;
+		})();
+		return hcPromise;
+	}
 
-	const tempUnit = $derived(getDisplayUnit('°C', $unitPreferences, 'temperature_2m'));
-	const windUnit = $derived(getDisplayUnit('m/s', $unitPreferences, 'wind_speed_10m'));
-	const precipUnit = $derived(getDisplayUnit('mm', $unitPreferences, 'precipitation'));
-	const pressureUnit = $derived(getDisplayUnit('hPa', $unitPreferences, 'pressure_msl'));
-	const capeUnit = $derived(getDisplayUnit('J/kg', $unitPreferences, 'cape'));
+	/** Icônes météo (~1 sur 2) au-dessus de la courbe de T°, redessinées à chaque
+	 *  render (zoom, resize, scroll) — le groupe précédent est détruit d'abord. */
+	function drawSymbols(c: Chart, d: MeteogramData) {
+		type ChartWithSymbols = Chart & { __symbolsGroup?: { destroy(): void } };
+		const cc = c as ChartWithSymbols;
+		cc.__symbolsGroup?.destroy();
+		const group = c.renderer.g('weather-symbols').attr({ zIndex: 5 }).add();
+		const codes = d.series.weather_code ?? [];
+		const days = d.series.is_day ?? [];
+		c.series[0].data.forEach((point, i) => {
+			if (i % 2 !== 0) return;
+			const code = codes[i];
+			if (code === null || code === undefined) return;
+			if (point.plotX === undefined || point.plotY === undefined) return;
+			const { icon } = symbolForWmo(code, (days[i] ?? 1) === 1);
+			c.renderer
+				.image(
+					`/weather-symbols/${icon}.svg`,
+					point.plotX + c.plotLeft - 8,
+					point.plotY + c.plotTop - 30,
+					30,
+					30
+				)
+				.add(group);
+		});
+		cc.__symbolsGroup = group;
+	}
 
-	const handleHover = (i: number | null) => (hoverIndex = i);
+	// (Re)création du chart quand les données changent.
+	$effect(() => {
+		const d = data;
+		const el = chartEl;
+		if (!d || !el) return;
+		let cancelled = false;
+		(async () => {
+			const hc = await loadHighcharts();
+			if (cancelled) return;
+			chart?.destroy();
+			const options = buildChartOptions({
+				times: d.times,
+				temperature: convertSeries('temperature_2m', '°C'),
+				dewPoint: convertSeries('dew_point_2m', '°C'),
+				precipitation: convertSeries('precipitation', 'mm'),
+				pressure: convertSeries('pressure_msl', 'hPa'),
+				windSpeed: seriesValues('wind_speed_10m'),
+				windDirection: seriesValues('wind_direction_10m'),
+				symbolLabels: (d.series.weather_code ?? []).map((code, i) =>
+					code === null || code === undefined
+						? null
+						: symbolForWmo(code, (d.series.is_day?.[i] ?? 1) === 1).label
+				),
+				units: {
+					temperature: getDisplayUnit('°C', $unitPreferences, 'temperature_2m'),
+					precipitation: getDisplayUnit('mm', $unitPreferences, 'precipitation'),
+					pressure: getDisplayUnit('hPa', $unitPreferences, 'pressure_msl')
+				},
+				onTimeClick: seek
+			});
+			options.chart = {
+				...options.chart,
+				renderTo: el,
+				events: {
+					...options.chart?.events,
+					render: function () {
+						drawSymbols(this as Chart, d);
+					}
+				}
+			};
+			chart = new hc.Chart(options);
+			syncPlayhead();
+		})();
+		return () => {
+			cancelled = true;
+		};
+	});
 
-	// Heure survolée (UTC), affichée une fois en haut du meteogram.
-	const hoverTime = $derived(
-		hoverIndex !== null && data && hoverIndex < data.times.length ? data.times[hoverIndex] : null
-	);
+	// Playhead : plotLine repositionnée au scrub, sans re-render du chart.
+	function syncPlayhead() {
+		const c = chart;
+		const t = get(time);
+		if (!c) return;
+		c.xAxis[0].removePlotLine('playhead');
+		if (t) {
+			c.xAxis[0].addPlotLine({
+				id: 'playhead',
+				value: new Date(t).getTime(),
+				color: '#38bdf8',
+				width: 2,
+				zIndex: 4
+			});
+		}
+	}
+	$effect(() => {
+		void $time;
+		syncPlayhead();
+	});
 
-	const SKELETON_ROWS = Array.from({ length: 4 });
+	$effect(() => () => {
+		chart?.destroy();
+		chart = undefined;
+	});
+
+	// Écart brief : `offline-exporting.d.ts` (v12.6.0) n'ajoute jamais
+	// `exportChartLocal` au type `Chart` (gap réel des typings, la méthode
+	// existe bien à l'exécution une fois le module chargé) — type local minimal
+	// pour l'appeler sans `any`.
+	type ChartWithLocalExport = Chart & {
+		exportChartLocal(exportingOptions?: unknown, chartOptions?: unknown): void;
+	};
+
+	/** Export PNG local (offline-exporting) — appelé par le tiroir via bind:this. */
+	export const exportPng = (filename: string) => {
+		(chart as ChartWithLocalExport | undefined)?.exportChartLocal(
+			{ type: 'image/png', filename: filename.replace(/\.png$/, '') },
+			{}
+		);
+	};
+
+	const SKELETON_ROWS = Array.from({ length: 3 });
 </script>
 
-<div bind:clientWidth={containerWidth} class="flex flex-col gap-3 py-2">
+<div class="flex flex-col py-2">
 	{#if loading}
 		<div class="flex flex-col gap-3" aria-hidden="true">
 			{#each SKELETON_ROWS as _, i (i)}
@@ -160,7 +245,7 @@
 		</div>
 	{:else if error === 'rate-limit'}
 		<p class="p-4 text-sm text-rose-300">
-			Limite de requêtes atteinte auprès d'Open-Meteo. Réessayez dans un instant.
+			Limite de requêtes atteinte. Réessayez dans un instant.
 			<button class="ml-2 underline hover:text-white" onclick={load}>Réessayer</button>
 		</p>
 	{:else if error === 'network'}
@@ -171,147 +256,6 @@
 	{:else if error === 'empty'}
 		<p class="p-4 text-sm text-white/60">Aucune donnée à ce point pour ce modèle.</p>
 	{:else if data && data.times.length}
-		{@const meteo = data}
-		<div
-			class="bg-glass/80 glass-blur sticky top-0 z-10 -mx-2 mb-1 px-3 py-1 text-[11px] tabular-nums text-white/80"
-		>
-			{#if hoverTime}
-				{formatUTCDateTime(hoverTime)}Z
-			{:else}
-				<span class="text-white/40">Survolez un panneau pour lire les valeurs</span>
-			{/if}
-		</div>
-		<Panel
-			title="Température"
-			times={meteo.times}
-			width={panelWidth}
-			height={PANEL_HEIGHT}
-			series={[
-				{
-					key: 'dew_point_2m',
-					label: 'Point de rosée',
-					values: convertSeries('dew_point_2m', '°C'),
-					color: '#38bdf8',
-					dash: '4 3'
-				},
-				{
-					key: 'temperature_2m',
-					label: 'Température',
-					values: convertSeries('temperature_2m', '°C'),
-					color: '#fbbf24'
-				}
-			] as PanelSeries[]}
-			unitLabel={tempUnit}
-			{playheadTime}
-			{hoverIndex}
-			onHover={handleHover}
-			onSeek={seek}
-		/>
-
-		<Panel
-			title="Précipitations"
-			times={meteo.times}
-			width={panelWidth}
-			height={PANEL_HEIGHT}
-			series={[
-				{
-					key: 'precipitation',
-					label: 'Précipitation',
-					values: convertSeries('precipitation', 'mm'),
-					color: '#38bdf8',
-					kind: 'bar'
-				},
-				{
-					key: 'precipitation_probability',
-					label: 'Probabilité',
-					values: seriesValues('precipitation_probability'),
-					color: '#34d399'
-				}
-			] as PanelSeries[]}
-			unitLabel={`${precipUnit} · %`}
-			floorZero
-			{playheadTime}
-			{hoverIndex}
-			onHover={handleHover}
-			onSeek={seek}
-		/>
-
-		<Panel
-			title="Vent"
-			times={meteo.times}
-			width={panelWidth}
-			height={PANEL_HEIGHT}
-			series={[
-				{
-					key: 'wind_gusts_10m',
-					label: 'Rafales',
-					values: convertSeries('wind_gusts_10m', 'm/s'),
-					color: '#fb7185',
-					dash: '4 3'
-				},
-				{
-					key: 'wind_speed_10m',
-					label: 'Vent',
-					values: convertSeries('wind_speed_10m', 'm/s'),
-					color: '#38bdf8'
-				}
-			] as PanelSeries[]}
-			unitLabel={windUnit}
-			floorZero
-			{playheadTime}
-			{hoverIndex}
-			onHover={handleHover}
-			onSeek={seek}
-		/>
-		<div class="text-white/60">
-			<WindDirection
-				times={meteo.times}
-				directions={seriesValues('wind_direction_10m')}
-				width={panelWidth}
-				x={windX}
-			/>
-		</div>
-
-		<Panel
-			title="Avancés"
-			times={meteo.times}
-			width={panelWidth}
-			height={PANEL_HEIGHT}
-			series={[
-				{
-					key: 'cloud_cover_low',
-					label: 'Nuages bas',
-					values: seriesValues('cloud_cover_low'),
-					color: 'rgba(56,189,248,0.35)'
-				},
-				{
-					key: 'cloud_cover_mid',
-					label: 'Nuages moyens',
-					values: seriesValues('cloud_cover_mid'),
-					color: 'rgba(56,189,248,0.65)',
-					dash: '2 2'
-				},
-				{
-					key: 'cloud_cover_high',
-					label: 'Nuages hauts',
-					values: seriesValues('cloud_cover_high'),
-					color: 'rgba(56,189,248,0.9)',
-					dash: '6 3'
-				},
-				{ key: 'cape', label: 'CAPE', values: convertSeries('cape', 'J/kg'), color: '#fb7185' },
-				{
-					key: 'pressure_msl',
-					label: 'Pression',
-					values: convertSeries('pressure_msl', 'hPa'),
-					color: '#fbbf24'
-				}
-			] as PanelSeries[]}
-			unitLabel={`${pressureUnit} · % · ${capeUnit}`}
-			floorZero
-			{playheadTime}
-			{hoverIndex}
-			onHover={handleHover}
-			onSeek={seek}
-		/>
+		<div bind:this={chartEl} class="min-h-[280px] w-full"></div>
 	{/if}
 </div>

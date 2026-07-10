@@ -9,7 +9,6 @@
 	import { selectedDomain } from '$lib/stores/variables';
 
 	import Meteogram from './meteogram/meteogram.svelte';
-	import { exportMeteogramPng } from './meteogram/png-export';
 
 	const DEFAULT_HEIGHT = 320;
 	const MIN_HEIGHT = 220;
@@ -17,25 +16,13 @@
 
 	let height = $state(DEFAULT_HEIGHT);
 	let maxHeight = $state(DEFAULT_HEIGHT);
-	let meteogramEl = $state<HTMLDivElement>();
-	let exporting = $state(false);
+	let meteogramComp = $state<ReturnType<typeof Meteogram>>();
 
-	async function handleExport() {
+	function handleExport() {
 		const lat = $pointWorkspace.lat;
 		const lng = $pointWorkspace.lng;
-		if (!meteogramEl || lat === null || lng === null || exporting) return;
-
-		const header = `Infoclimat · ${$selectedDomain.label} · dernier run · ${lat.toFixed(3)}, ${lng.toFixed(3)}`;
-		const filename = `meteogram_${lat.toFixed(3)}_${lng.toFixed(3)}.png`;
-
-		exporting = true;
-		try {
-			await exportMeteogramPng(meteogramEl, filename, header);
-		} catch (e) {
-			console.error('Export PNG du meteogram échoué', e);
-		} finally {
-			exporting = false;
-		}
+		if (lat === null || lng === null) return;
+		meteogramComp?.exportPng(`meteogram_${lat.toFixed(3)}_${lng.toFixed(3)}.png`);
 	}
 
 	// Marqueur dédié matérialisant le point choisi pour le meteogram, distinct du
@@ -166,12 +153,8 @@
 			</span>
 			<span class="text-xs text-sky-300">{$selectedDomain.label} · dernier run</span>
 			<div class="flex items-center gap-2">
-				<button
-					class="rounded px-2 py-1 hover:bg-white/10 disabled:opacity-50"
-					disabled={exporting}
-					onclick={handleExport}
-				>
-					{exporting ? 'Export…' : 'Exporter PNG'}
+				<button class="rounded px-2 py-1 hover:bg-white/10" onclick={handleExport}>
+					Exporter PNG
 				</button>
 				<button
 					class="rounded px-2 py-1 hover:bg-white/10"
@@ -182,8 +165,8 @@
 				</button>
 			</div>
 		</header>
-		<div class="flex-1 overflow-y-auto px-2 pb-2" bind:this={meteogramEl}>
-			<Meteogram lat={$pointWorkspace.lat} lng={$pointWorkspace.lng} />
+		<div class="flex-1 overflow-y-auto px-2 pb-2">
+			<Meteogram bind:this={meteogramComp} lat={$pointWorkspace.lat} lng={$pointWorkspace.lng} />
 		</div>
 	</section>
 {/if}

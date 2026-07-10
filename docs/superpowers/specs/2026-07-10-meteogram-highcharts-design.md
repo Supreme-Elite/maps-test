@@ -29,12 +29,12 @@ bidirectionnel avec la carte, client API forecast maison (`getForecastApiUrl()`,
 
 ## Décisions de cadrage (issues du brainstorming)
 
-| Question | Décision |
-| --- | --- |
+| Question           | Décision                                                                                                                                                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Licence Highcharts | **CC BY-NC gratuite** (Infoclimat = association à but non lucratif, produit open source non monétisé). Note README : un fork commercial devrait acquérir une licence. Intégration confinée à un module de rendu, remplaçable. |
-| Forme | **Graphe unique façon yr.no** (3 axes Y + windbarbs + symboles), pas de pile de panneaux. |
-| Symboles météo | **Oui en v1** : `weather_code` (WMO) + `is_day` de l'API maison → icônes **NRK/yr (MIT) bundlées** dans `static/weather-symbols/` (~40 SVG, pas de CDN). |
-| Chargement | `highcharts` + modules en **import dynamique** à la première ouverture du tiroir (~70 KB gzip différés, zéro impact sur le bundle carte). |
+| Forme              | **Graphe unique façon yr.no** (3 axes Y + windbarbs + symboles), pas de pile de panneaux.                                                                                                                                     |
+| Symboles météo     | **Oui en v1** : `weather_code` (WMO) + `is_day` de l'API maison → icônes **NRK/yr (MIT) bundlées** dans `static/weather-symbols/` (~40 SVG, pas de CDN).                                                                      |
+| Chargement         | `highcharts` + modules en **import dynamique** à la première ouverture du tiroir (~70 KB gzip différés, zéro impact sur le bundle carte).                                                                                     |
 
 ## Architecture
 
@@ -69,7 +69,7 @@ bidirectionnel avec la carte, client API forecast maison (`getForecastApiUrl()`,
   - tooltip partagé avec libellé du symbole météo au header ;
   - `scrollablePlotArea.minWidth` pour mobile ; zoom X (`chart.zooming.type = 'x'`) ;
   - thème sombre inline (fond transparent, gridlines `rgba(255,255,255,0.08)`, textes clairs).
-  Builder = données → objet options ; **aucun accès DOM** → testable en node.
+    Builder = données → objet options ; **aucun accès DOM** → testable en node.
 - `components/point-workspace/meteogram/meteogram.svelte` — réécrit : `import()` dynamique de
   Highcharts + modules au premier montage, création du chart, post-load
   (`drawWeatherSymbols` : une icône toutes les 2 h, `<img>` du renderer vers
