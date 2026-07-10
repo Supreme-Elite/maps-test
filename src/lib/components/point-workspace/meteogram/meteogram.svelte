@@ -106,6 +106,11 @@
 		hcPromise ??= (async () => {
 			const mod = (await import('highcharts')) as unknown as { default: typeof Highcharts };
 			const hc = mod.default;
+			// `windbarb` référence en interne `Highcharts.dataGrouping.approximations`
+			// (série héritée d'arearange) : le module `datagrouping` doit être
+			// chargé AVANT `windbarb`, sinon `G.dataGrouping` reste `undefined` et
+			// l'accès à `.approximations` explose au premier rendu du chart.
+			await import('highcharts/modules/datagrouping');
 			await import('highcharts/modules/windbarb');
 			await import('highcharts/modules/exporting');
 			await import('highcharts/modules/offline-exporting');
