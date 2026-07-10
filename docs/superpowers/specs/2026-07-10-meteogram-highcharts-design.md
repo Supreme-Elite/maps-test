@@ -1,7 +1,7 @@
 # Meteogram Highcharts — graphe unique façon yr.no dans l'espace point
 
 **Date** : 2026-07-10
-**Statut** : conçu (spec) — implémentation à planifier
+**Statut** : implémenté
 **Branche** : `feat/meteogram-point` (PR #114 ouverte — cette évolution s'y empile ou la suit)
 **Évolue** : `2026-07-03-meteogram-espace-point-design.md` — le tiroir, le couplage temporel, le
 client API et le mapping modèles sont **conservés** ; seule la **couche rendu** change.
