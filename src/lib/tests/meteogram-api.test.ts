@@ -5,7 +5,7 @@ import { buildForecastUrl, parseForecast, trimTrailingNulls } from '$lib/meteogr
 describe('buildForecastUrl', () => {
 	it('inclut lat/lng, models, timezone UTC, wind en m/s et toutes les variables', () => {
 		const url = buildForecastUrl(48.85, 2.35, 'meteofrance_arome_france_hd');
-		expect(url).toContain('https://api.open-meteo.com/v1/forecast');
+		expect(url).toContain('/v1/forecast');
 		expect(url).toContain('latitude=48.85');
 		expect(url).toContain('longitude=2.35');
 		expect(url).toContain('models=meteofrance_arome_france_hd');

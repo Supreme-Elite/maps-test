@@ -9,14 +9,19 @@ describe('resolveApiModel', () => {
 		expect(resolveApiModel('ecmwf_ifs025')).toBe('ecmwf_ifs025');
 	});
 
-	it('exclut le domaine maison bucket et les domaines non servis', () => {
-		expect(resolveApiModel('arome_france')).toBeNull();
+	it('mappe les pseudo-domaines maison AROME France (servis par l’API maison)', () => {
+		expect(resolveApiModel('arome_france')).toBe('meteofrance_arome_france');
+		expect(resolveApiModel('arome_france_convection')).toBe('meteofrance_arome_france');
+	});
+
+	it('exclut les domaines non servis', () => {
 		expect(resolveApiModel('anomaly_europe')).toBeNull();
 		expect(resolveApiModel('domaine_inconnu')).toBeNull();
 	});
 
 	it('hasMeteogram reflète la présence dans la table', () => {
 		expect(hasMeteogram('ecmwf_ifs025')).toBe(true);
-		expect(hasMeteogram('arome_france')).toBe(false);
+		expect(hasMeteogram('arome_france')).toBe(true);
+		expect(hasMeteogram('anomaly_europe')).toBe(false);
 	});
 });

@@ -1,3 +1,5 @@
+import { getForecastApiUrl } from '$lib/runtime-env';
+
 import type { MeteogramData, MeteogramKey } from './types';
 
 // `freezing_level_height` a été volontairement retiré (fetché mais jamais
@@ -19,8 +21,6 @@ export const HOURLY_VARIABLES: readonly MeteogramKey[] = [
 	'cape'
 ];
 
-const FORECAST_ENDPOINT = 'https://api.open-meteo.com/v1/forecast';
-
 export const buildForecastUrl = (lat: number, lng: number, model: string): string => {
 	const params = new URLSearchParams({
 		latitude: String(lat),
@@ -30,7 +30,7 @@ export const buildForecastUrl = (lat: number, lng: number, model: string): strin
 		wind_speed_unit: 'ms',
 		hourly: HOURLY_VARIABLES.join(',')
 	});
-	return `${FORECAST_ENDPOINT}?${params.toString()}`;
+	return `${getForecastApiUrl()}/v1/forecast?${params.toString()}`;
 };
 
 interface ForecastResponse {

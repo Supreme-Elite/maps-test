@@ -300,6 +300,11 @@ export const DOMAIN_ALLOWLIST: readonly string[] = MODEL_SELECTOR_GROUPS.flatMap
 export const DOMAIN_TO_API_MODEL: Readonly<Record<string, string>> = {
 	meteofrance_arpege_europe: 'meteofrance_arpege_europe',
 	meteofrance_arpege_world025: 'meteofrance_arpege_world',
+	// Pseudo-domaines maison (bucket R2) : absents de l'API publique Open-Meteo,
+	// mais servis par l'API forecast maison (getForecastApiUrl) sur la grille
+	// AROME France (~2,5 km @ 0,025°). Le meteogram lit les variables de surface.
+	arome_france: 'meteofrance_arome_france',
+	arome_france_convection: 'meteofrance_arome_france',
 	arome_france_hd: 'meteofrance_arome_france_hd',
 	dwd_icon: 'icon_global',
 	dwd_icon_eu: 'icon_eu',
