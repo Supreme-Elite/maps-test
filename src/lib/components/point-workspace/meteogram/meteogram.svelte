@@ -120,8 +120,10 @@
 		return hcPromise;
 	}
 
-	/** Icônes météo (~1 sur 2) au-dessus de la courbe de T°, redessinées à chaque
-	 *  render (zoom, resize, scroll) — le groupe précédent est détruit d'abord. */
+	/** Icônes météo au-dessus de la courbe de T°, redessinées à chaque render
+	 *  (zoom, resize, scroll) — le groupe précédent est détruit d'abord.
+	 *  Stride adaptatif : 1 sur 2 sur horizon court, plafonné à ~28 icônes sur
+	 *  horizon long (l'API renvoie jusqu'à 7 jours — sinon elles se chevauchent). */
 	function drawSymbols(c: Chart, d: MeteogramData) {
 		type ChartWithSymbols = Chart & { __symbolsGroup?: { destroy(): void } };
 		const cc = c as ChartWithSymbols;
@@ -129,8 +131,9 @@
 		const group = c.renderer.g('weather-symbols').attr({ zIndex: 5 }).add();
 		const codes = d.series.weather_code ?? [];
 		const days = d.series.is_day ?? [];
+		const stride = Math.max(2, Math.ceil(d.times.length / 28));
 		c.series[0].data.forEach((point, i) => {
-			if (i % 2 !== 0) return;
+			if (i % stride !== 0) return;
 			const code = codes[i];
 			if (code === null || code === undefined) return;
 			if (point.plotX === undefined || point.plotY === undefined) return;

@@ -48,6 +48,12 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 
 	const onTimeClick = input.onTimeClick;
 
+	// Densité de grille adaptative : au-delà de 72 h, une gridline toutes les
+	// 2 h sature le tracé (l'API renvoie jusqu'à 7 jours) — on passe à 6 h.
+	const longRange = input.times.length > 72;
+	const tickInterval = (longRange ? 6 : 2) * 36e5;
+	const minorTickInterval = (longRange ? 3 : 1) * 36e5;
+
 	return {
 		chart: {
 			backgroundColor: 'transparent',
@@ -83,8 +89,8 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 		xAxis: [
 			{
 				type: 'datetime',
-				tickInterval: 2 * 36e5,
-				minorTickInterval: 36e5,
+				tickInterval,
+				minorTickInterval,
 				tickLength: 0,
 				gridLineWidth: 1,
 				gridLineColor: GRID,

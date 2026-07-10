@@ -54,6 +54,30 @@ describe('buildChartOptions', () => {
 		expect(barbs.data![0]).toMatchObject({ value: 5, direction: 230 });
 	});
 
+	it('grille horaire : 2 h sur horizon court, 6 h au-delà de 72 points', () => {
+		const short = buildChartOptions(input());
+		expect((short.xAxis as { tickInterval?: number }[])[0].tickInterval).toBe(2 * 36e5);
+		expect((short.xAxis as { minorTickInterval?: number }[])[0].minorTickInterval).toBe(36e5);
+
+		const n = 96;
+		const times = Array.from({ length: n }, (_, h) => new Date(Date.UTC(2026, 6, 10) + h * 36e5));
+		const flat = (v: number) => Array.from({ length: n }, () => v);
+		const long = buildChartOptions(
+			input({
+				times,
+				temperature: flat(20),
+				dewPoint: flat(12),
+				precipitation: flat(0),
+				pressure: flat(1015),
+				windSpeed: flat(5),
+				windDirection: flat(230),
+				symbolLabels: Array.from({ length: n }, () => null)
+			})
+		);
+		expect((long.xAxis as { tickInterval?: number }[])[0].tickInterval).toBe(6 * 36e5);
+		expect((long.xAxis as { minorTickInterval?: number }[])[0].minorTickInterval).toBe(3 * 36e5);
+	});
+
 	it('unités injectées dans tooltips/axes', () => {
 		const o = buildChartOptions(
 			input({ units: { temperature: '°F', precipitation: 'inch', pressure: 'hPa' } })
