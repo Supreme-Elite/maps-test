@@ -73,4 +73,21 @@ describe('trimTrailingNulls', () => {
 	it('renvoie une série vide si tout est nul', () => {
 		expect(trimTrailingNulls(build([null, null])).times).toHaveLength(0);
 	});
+
+	it('ignore is_day/weather_code (habillage renseigné au-delà de l’horizon du modèle)', () => {
+		const data = parseForecast(
+			{
+				hourly: {
+					time: ['2026-07-03T00:00', '2026-07-03T01:00', '2026-07-03T02:00', '2026-07-03T03:00'],
+					temperature_2m: [12, 13, null, null],
+					is_day: [1, 1, 0, 1]
+				}
+			},
+			'meteofrance_arome_france_hd'
+		);
+		const trimmed = trimTrailingNulls(data);
+		expect(trimmed.times).toHaveLength(2);
+		expect(trimmed.series.temperature_2m).toEqual([12, 13]);
+		expect(trimmed.series.is_day).toEqual([1, 1]);
+	});
 });

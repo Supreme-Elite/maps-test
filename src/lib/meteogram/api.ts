@@ -58,9 +58,19 @@ export const parseForecast = (json: unknown, model: string): MeteogramData => {
  * données (courbes tassées à gauche, grille vide à droite). On borne l'axe au
  * dernier pas réellement renseigné. Si aucune valeur finie n'existe, renvoie une
  * série vide (le composant affiche alors « aucune donnée »).
+ *
+ * `is_day` (astronomique) et `weather_code` sont exclus du scan : ce sont des
+ * métadonnées d'habillage (rangée de symboles), pas des données du modèle —
+ * l'API peut les renseigner au-delà de l'horizon réel du modèle, ce qui
+ * défaisait le rognage (axe étiré de plusieurs jours de grille vide). Le
+ * rognage s'appuie sur les 7 variables météo réelles.
  */
+const TRIM_EXCLUDED: readonly MeteogramKey[] = ['is_day', 'weather_code'];
+
 export const trimTrailingNulls = (data: MeteogramData): MeteogramData => {
-	const seriesArrays = Object.values(data.series);
+	const seriesArrays = HOURLY_VARIABLES.filter((k) => !TRIM_EXCLUDED.includes(k)).map(
+		(k) => data.series[k]
+	);
 	let last = -1;
 	for (let i = data.times.length - 1; i >= 0; i--) {
 		if (seriesArrays.some((arr) => arr[i] !== null && Number.isFinite(arr[i]))) {
