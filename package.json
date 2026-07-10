@@ -47,6 +47,7 @@
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^3.17.0",
 		"globals": "^17.6.0",
+		"highcharts": "^12.6.0",
 		"maplibre-gl": "^5.24.0",
 		"mode-watcher": "^1.1.0",
 		"prettier": "^3.8.0",
@@ -69,8 +70,5 @@
 	},
 	"overrides": {
 		"@openmeteo/file-reader": "npm:@cm3r/file-reader@0.0.18"
-	},
-	"dependencies": {
-		"highcharts": "^12.6.0"
 	}
 }
