@@ -92,6 +92,29 @@ describe('buildChartOptions', () => {
 		expect((long.xAxis as { minorTickInterval?: number }[])[0].minorTickInterval).toBeUndefined();
 	});
 
+	it('tooltip 100 % français : UTC (pas TU) et Beaufort FR sur le vent', () => {
+		const o = buildChartOptions(input());
+		const header = (o.tooltip as { headerFormat?: string }).headerFormat ?? '';
+		expect(header).toContain('UTC');
+		expect(header).not.toMatch(/\bTU\b/);
+
+		const barbs = (
+			o.series as {
+				type?: string;
+				tooltip?: { pointFormatter?: (this: unknown) => string };
+			}[]
+		).find((s) => s.type === 'windbarb')!;
+		const rendered = barbs.tooltip!.pointFormatter!.call({
+			value: 4.2,
+			beaufortLevel: 3,
+			color: '#7dd3fc',
+			series: { name: 'Vent' }
+		});
+		expect(rendered).toContain('Petite brise');
+		expect(rendered).toContain('4,2 m/s');
+		expect(rendered).not.toContain('Light');
+	});
+
 	it('désactive le menu contextuel exporting (libellés anglais, redondant)', () => {
 		const o = buildChartOptions(input());
 		const exporting = (o as { exporting?: { buttons?: { contextButton?: { enabled?: boolean } } } })

@@ -18,6 +18,27 @@ export interface MeteogramChartInput {
 // Les défauts Highcharts (grille mineure #f2f2f2, axes #ccd6eb, crosshair
 // #cccccc) sont pensés pour fond clair et ressortent en barres blanches sur
 // le tiroir sombre — régression corrigée, verrouillée par test.
+/**
+ * Échelle de Beaufort en français (indices 0-12). Le tooltip par défaut du
+ * module windbarb affiche la description anglaise (« Light air »…) via
+ * `point.beaufort` — on la remplace par `BEAUFORT_FR[point.beaufortLevel]`.
+ */
+export const BEAUFORT_FR: readonly string[] = [
+	'Calme',
+	'Très légère brise',
+	'Légère brise',
+	'Petite brise',
+	'Jolie brise',
+	'Bonne brise',
+	'Vent frais',
+	'Grand frais',
+	'Coup de vent',
+	'Fort coup de vent',
+	'Tempête',
+	'Violente tempête',
+	'Ouragan'
+];
+
 const GRID = 'rgba(255, 255, 255, 0.06)';
 const GRID_DAY = 'rgba(255, 255, 255, 0.16)';
 const AXIS = 'rgba(255, 255, 255, 0.18)';
@@ -95,7 +116,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 			backgroundColor: 'rgba(12, 20, 32, 0.95)',
 			style: { color: TEXT_STRONG },
 			headerFormat:
-				'<small>{point.x:%A %e %b, %H:%M} TU</small><br><b>{point.point.symbolName}</b><br>'
+				'<small>{point.x:%A %e %b, %H:%M} UTC</small><br><b>{point.point.symbolName}</b><br>'
 		},
 		xAxis: [
 			{
@@ -251,7 +272,26 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				lineWidth: 1.5,
 				vectorLength: 18,
 				yOffset: -15,
-				tooltip: { valueSuffix: ' m/s' }
+				tooltip: {
+					// Remplace le format par défaut du windbarb, dont la description
+					// Beaufort (`point.beaufort`) est en anglais (« Light air »…).
+					pointFormatter: function () {
+						const p = this as unknown as {
+							value: number;
+							beaufortLevel?: number;
+							color?: string;
+							series: { name: string };
+						};
+						const beaufort =
+							p.beaufortLevel !== undefined ? ` (${BEAUFORT_FR[p.beaufortLevel] ?? ''})` : '';
+						// Virgule décimale : cohérent avec les autres séries (locale fr).
+						const value = p.value.toFixed(1).replace('.', ',');
+						return (
+							`<span style="color:${p.color ?? '#7dd3fc'}">●</span> ` +
+							`${p.series.name} : <b>${value} m/s</b>${beaufort}<br/>`
+						);
+					}
+				}
 			}
 		]
 	} as Options;
