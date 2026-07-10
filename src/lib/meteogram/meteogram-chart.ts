@@ -1,0 +1,232 @@
+import type { Options, XAxisOptions } from 'highcharts';
+
+export interface MeteogramChartInput {
+	times: Date[];
+	temperature: (number | null)[];
+	dewPoint: (number | null)[];
+	precipitation: (number | null)[];
+	pressure: (number | null)[];
+	/** m/s brut : les barbes suivent la convention nœuds, Highcharts convertit. */
+	windSpeed: (number | null)[];
+	windDirection: (number | null)[];
+	symbolLabels: (string | null)[];
+	units: { temperature: string; precipitation: string; pressure: string };
+	onTimeClick: (date: Date) => void;
+}
+
+const GRID = 'rgba(255, 255, 255, 0.08)';
+const TEXT = 'rgba(255, 255, 255, 0.7)';
+const TEXT_STRONG = 'rgba(255, 255, 255, 0.9)';
+
+/**
+ * Construit les options du graphe unique façon yr.no (démo officielle
+ * Highcharts « meteogram »), thème sombre accordé au tiroir. Builder pur :
+ * données → objet options, aucun accès DOM ni au runtime Highcharts.
+ */
+export function buildChartOptions(input: MeteogramChartInput): Options {
+	const xs = input.times.map((t) => t.getTime());
+	const at = <T>(arr: (T | null)[], i: number): T | null => arr[i] ?? null;
+
+	const temperatureData = xs.map((x, i) => ({
+		x,
+		y: at(input.temperature, i),
+		symbolName: at(input.symbolLabels, i)
+	}));
+	const dewPointData = xs.map((x, i) => [x, at(input.dewPoint, i)]);
+	const precipitationData = xs.map((x, i) => [x, at(input.precipitation, i)]);
+	const pressureData = xs.map((x, i) => [x, at(input.pressure, i)]);
+
+	// 1 barbe sur 2 (lisibilité, comme le démo) ; points sans vitesse/direction écartés.
+	const windData = xs
+		.map((x, i) => ({ x, value: at(input.windSpeed, i), direction: at(input.windDirection, i), i }))
+		.filter((p) => p.i % 2 === 0 && p.value !== null && p.direction !== null)
+		.map(({ x, value, direction }) => ({
+			x,
+			value: value as number,
+			direction: direction as number
+		}));
+
+	const onTimeClick = input.onTimeClick;
+
+	return {
+		chart: {
+			backgroundColor: 'transparent',
+			marginBottom: 70,
+			marginRight: 44,
+			marginTop: 44,
+			plotBorderWidth: 1,
+			plotBorderColor: 'rgba(255, 255, 255, 0.2)',
+			alignTicks: false,
+			zooming: { type: 'x' },
+			scrollablePlotArea: { minWidth: 720 },
+			events: {
+				click: function (e) {
+					// Typage large : l'événement porte xAxis[0].value (ms epoch).
+					const ev = e as unknown as { xAxis?: { value: number }[] };
+					const v = ev.xAxis?.[0]?.value;
+					if (v !== undefined) onTimeClick(new Date(v));
+				}
+			}
+		},
+		time: { timezone: 'UTC' },
+		title: { text: undefined },
+		credits: { enabled: false },
+		accessibility: { enabled: false },
+		tooltip: {
+			shared: true,
+			useHTML: false,
+			backgroundColor: 'rgba(12, 20, 32, 0.95)',
+			style: { color: TEXT_STRONG },
+			headerFormat:
+				'<small>{point.x:%A %e %b, %H:%M} TU</small><br><b>{point.point.symbolName}</b><br>'
+		},
+		xAxis: [
+			{
+				type: 'datetime',
+				tickInterval: 2 * 36e5,
+				minorTickInterval: 36e5,
+				tickLength: 0,
+				gridLineWidth: 1,
+				gridLineColor: GRID,
+				startOnTick: false,
+				endOnTick: false,
+				minPadding: 0,
+				maxPadding: 0,
+				offset: 30,
+				showLastLabel: true,
+				labels: { format: '{value:%H}', style: { color: TEXT } },
+				crosshair: true
+			},
+			{
+				linkedTo: 0,
+				type: 'datetime',
+				tickInterval: 24 * 36e5,
+				labels: {
+					format: '{value:<span style="font-size: 12px; font-weight: bold">%a</span> %e %b}',
+					align: 'left',
+					x: 3,
+					y: 8,
+					style: { color: TEXT_STRONG }
+				},
+				opposite: true,
+				tickLength: 20,
+				gridLineWidth: 1,
+				gridLineColor: GRID
+			}
+		] as XAxisOptions[],
+		yAxis: [
+			{
+				// Température (+ point de rosée)
+				title: { text: null },
+				labels: {
+					format: `{value}°`,
+					style: { fontSize: '10px', color: TEXT },
+					x: -3
+				},
+				plotLines: [{ value: 0, color: 'rgba(255,255,255,0.3)', width: 1, zIndex: 2 }],
+				maxPadding: 0.3,
+				minRange: 8,
+				tickInterval: 1,
+				gridLineColor: GRID
+			},
+			{
+				// Précipitations
+				title: { text: null },
+				labels: { enabled: false },
+				gridLineWidth: 0,
+				tickLength: 0,
+				minRange: 10,
+				min: 0
+			},
+			{
+				// Pression
+				allowDecimals: false,
+				title: {
+					text: input.units.pressure,
+					offset: 0,
+					align: 'high',
+					rotation: 0,
+					style: { fontSize: '10px', color: '#fbbf24' },
+					textAlign: 'left',
+					x: 3
+				},
+				labels: { style: { fontSize: '8px', color: '#fbbf24' }, y: 2, x: 3 },
+				gridLineWidth: 0,
+				opposite: true,
+				showLastLabel: false
+			}
+		],
+		legend: { enabled: false },
+		plotOptions: {
+			series: {
+				pointPlacement: 'between',
+				point: {
+					events: {
+						click: function () {
+							onTimeClick(new Date(this.x as number));
+						}
+					}
+				}
+			}
+		},
+		series: [
+			{
+				name: 'Température',
+				data: temperatureData,
+				type: 'spline',
+				marker: { enabled: false, states: { hover: { enabled: true } } },
+				tooltip: { valueSuffix: ` ${input.units.temperature}` },
+				zIndex: 2,
+				color: '#FF3333',
+				negativeColor: '#48AFE8'
+			},
+			{
+				name: 'Point de rosée',
+				data: dewPointData,
+				type: 'spline',
+				marker: { enabled: false },
+				dashStyle: 'ShortDash',
+				tooltip: { valueSuffix: ` ${input.units.temperature}` },
+				zIndex: 1,
+				color: '#2F9E5F'
+			},
+			{
+				name: 'Précipitations',
+				data: precipitationData,
+				type: 'column',
+				color: '#68CFE8',
+				yAxis: 1,
+				groupPadding: 0,
+				pointPadding: 0,
+				grouping: false,
+				dataLabels: {
+					enabled: true,
+					filter: { operator: '>', property: 'y', value: 0 },
+					style: { fontSize: '8px', color: TEXT, textOutline: 'none' }
+				},
+				tooltip: { valueSuffix: ` ${input.units.precipitation}` }
+			},
+			{
+				name: 'Pression',
+				data: pressureData,
+				type: 'spline',
+				marker: { enabled: false },
+				color: '#fbbf24',
+				dashStyle: 'ShortDot',
+				yAxis: 2,
+				tooltip: { valueSuffix: ` ${input.units.pressure}` }
+			},
+			{
+				name: 'Vent',
+				type: 'windbarb',
+				id: 'windbarbs',
+				data: windData,
+				color: '#7dd3fc',
+				lineWidth: 1.5,
+				vectorLength: 18,
+				yOffset: -15,
+				tooltip: { valueSuffix: ' m/s' }
+			}
+		]
+	} as Options;
+}
