@@ -2,23 +2,21 @@ import { getForecastApiUrl } from '$lib/runtime-env';
 
 import type { MeteogramData, MeteogramKey } from './types';
 
-// `freezing_level_height` a été volontairement retiré (fetché mais jamais
-// rendu par aucun panneau) : le panneau « Avancés » est déjà surchargé en
-// échelles, et un axe secondaire dédié est une refonte différée. Décision
-// réversible — réintroduire ici si un panneau avec axe secondaire arrive.
+// Variables du graphe unique façon yr.no : T° + point de rosée (axe 0), précip
+// (axe 1), pression (axe 2), windbarbs (vitesse+direction, m/s), et
+// weather_code/is_day pour la rangée de symboles météo. Nébulosité, CAPE et
+// probabilité de précip sont sortis du v1 graphe-unique (réintroduisibles en
+// panneaux secondaires — voir spec 2026-07-10).
 export const HOURLY_VARIABLES: readonly MeteogramKey[] = [
 	'temperature_2m',
 	'dew_point_2m',
 	'precipitation',
-	'precipitation_probability',
 	'wind_speed_10m',
 	'wind_gusts_10m',
 	'wind_direction_10m',
 	'pressure_msl',
-	'cloud_cover_low',
-	'cloud_cover_mid',
-	'cloud_cover_high',
-	'cape'
+	'weather_code',
+	'is_day'
 ];
 
 export const buildForecastUrl = (lat: number, lng: number, model: string): string => {
