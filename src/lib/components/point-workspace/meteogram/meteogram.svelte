@@ -143,36 +143,47 @@
 		cc.__symbolsGroup = group;
 	}
 
-	// (Re)création du chart quand les données changent.
+	// (Re)création du chart quand les données — ou les unités — changent.
 	$effect(() => {
 		const d = data;
 		const el = chartEl;
-		if (!d || !el) return;
+		if (!d || !el) {
+			// Détruit tout chart encore vivant hors DOM (ex. rechargement :
+			// `data` repasse à null et le conteneur quitte le markup).
+			chart?.destroy();
+			chart = undefined;
+			return;
+		}
+		// L'entrée du chart (séries converties + unités) est construite de façon
+		// SYNCHRONE, avant tout `await` : `$unitPreferences` (lu par
+		// convertSeries/getDisplayUnit) reste ainsi dans la fenêtre de tracking
+		// de l'effet — un changement d'unité (°C→°F…) re-crée bien le chart.
+		const input = {
+			times: d.times,
+			temperature: convertSeries('temperature_2m', '°C'),
+			dewPoint: convertSeries('dew_point_2m', '°C'),
+			precipitation: convertSeries('precipitation', 'mm'),
+			pressure: convertSeries('pressure_msl', 'hPa'),
+			windSpeed: seriesValues('wind_speed_10m'),
+			windDirection: seriesValues('wind_direction_10m'),
+			symbolLabels: (d.series.weather_code ?? []).map((code, i) =>
+				code === null || code === undefined
+					? null
+					: symbolForWmo(code, (d.series.is_day?.[i] ?? 1) === 1).label
+			),
+			units: {
+				temperature: getDisplayUnit('°C', $unitPreferences, 'temperature_2m'),
+				precipitation: getDisplayUnit('mm', $unitPreferences, 'precipitation'),
+				pressure: getDisplayUnit('hPa', $unitPreferences, 'pressure_msl')
+			},
+			onTimeClick: seek
+		};
 		let cancelled = false;
 		(async () => {
 			const hc = await loadHighcharts();
 			if (cancelled) return;
 			chart?.destroy();
-			const options = buildChartOptions({
-				times: d.times,
-				temperature: convertSeries('temperature_2m', '°C'),
-				dewPoint: convertSeries('dew_point_2m', '°C'),
-				precipitation: convertSeries('precipitation', 'mm'),
-				pressure: convertSeries('pressure_msl', 'hPa'),
-				windSpeed: seriesValues('wind_speed_10m'),
-				windDirection: seriesValues('wind_direction_10m'),
-				symbolLabels: (d.series.weather_code ?? []).map((code, i) =>
-					code === null || code === undefined
-						? null
-						: symbolForWmo(code, (d.series.is_day?.[i] ?? 1) === 1).label
-				),
-				units: {
-					temperature: getDisplayUnit('°C', $unitPreferences, 'temperature_2m'),
-					precipitation: getDisplayUnit('mm', $unitPreferences, 'precipitation'),
-					pressure: getDisplayUnit('hPa', $unitPreferences, 'pressure_msl')
-				},
-				onTimeClick: seek
-			});
+			const options = buildChartOptions(input);
 			options.chart = {
 				...options.chart,
 				renderTo: el,
