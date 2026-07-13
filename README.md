@@ -108,4 +108,13 @@ Le chrome s'organise autour d'un header fin pleine largeur (marque Infoclimat, o
   - OMfiles météo : [Open-Meteo](https://open-meteo.com) (et indirectement Météo-France, ECMWF, DWD, NOAA…).
   - Contours administratifs FR : [`gregoiredavid/france-geojson`](https://github.com/gregoiredavid/france-geojson) (licence ODbL).
 
+### Licence Highcharts
+
+Le meteogram utilise [Highcharts](https://www.highcharts.com/), gratuit pour un usage
+non commercial (licence [CC BY-NC 3.0](https://creativecommons.org/licenses/by-nc/3.0/)) —
+ce qui couvre Infoclimat (association à but non lucratif, produit non monétisé). **Tout
+déploiement commercial d'un fork de ce dépôt nécessite une licence Highcharts propre.**
+Les icônes météo (`static/weather-symbols/`) proviennent de
+[nrkno/yr-weather-symbols](https://github.com/nrkno/yr-weather-symbols) (MIT).
+
 Pour les contributions liées au layer ou au protocole `om://` lui-même, ouvrir un ticket sur [open-meteo/weather-map-layer](https://github.com/open-meteo/weather-map-layer/issues) plutôt qu'ici.

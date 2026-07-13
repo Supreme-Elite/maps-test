@@ -2,6 +2,7 @@
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 
+	import { pointWorkspace } from '$lib/stores/point-workspace';
 	import { bottomChromeHeight } from '$lib/stores/preferences';
 
 	import * as Sheet from '$lib/components/ui/sheet';
@@ -22,23 +23,27 @@
 	let activeTab: 'layers' | 'display' = $state('layers');
 </script>
 
-<!-- FAB capture, décalé à gauche des contrôles MapLibre (bas-droite), au-dessus de la poignée -->
-<div class="fixed right-16 z-60" style="bottom: calc({$bottomChromeHeight}px + 4.5rem)">
-	{@render capture?.()}
-</div>
+<!-- FAB + poignée masqués quand le tiroir météogramme est ouvert : il couvre la
+     moitié basse de l'écran, ces éléments flottants le chevaucheraient (z-60 > z-40). -->
+{#if !$pointWorkspace.open}
+	<!-- FAB capture, décalé à gauche des contrôles MapLibre (bas-droite), au-dessus de la poignée -->
+	<div class="fixed right-16 z-60" style="bottom: calc({$bottomChromeHeight}px + 4.5rem)">
+		{@render capture?.()}
+	</div>
 
-<!-- Poignée d'ouverture du bottom-sheet, au-dessus de la timeline -->
-<button
-	type="button"
-	onclick={() => (open = true)}
-	aria-expanded={open}
-	class="bg-glass/85 hover:bg-glass/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 fixed left-1/2 z-60 flex h-11 -translate-x-1/2 cursor-pointer items-center gap-2 rounded-lg border border-white/20 px-4 text-sm text-white shadow-md glass-blur"
-	style="bottom: calc({$bottomChromeHeight}px + 0.5rem)"
->
-	<LayersIcon class="size-4" aria-hidden="true" />
-	Calques &amp; affichage
-	<ChevronUpIcon class="size-4 opacity-60" aria-hidden="true" />
-</button>
+	<!-- Poignée d'ouverture du bottom-sheet, au-dessus de la timeline -->
+	<button
+		type="button"
+		onclick={() => (open = true)}
+		aria-expanded={open}
+		class="bg-glass/85 hover:bg-glass/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 fixed left-1/2 z-60 flex h-11 -translate-x-1/2 cursor-pointer items-center gap-2 rounded-lg border border-white/20 px-4 text-sm text-white shadow-md glass-blur"
+		style="bottom: calc({$bottomChromeHeight}px + 0.5rem)"
+	>
+		<LayersIcon class="size-4" aria-hidden="true" />
+		Calques &amp; affichage
+		<ChevronUpIcon class="size-4 opacity-60" aria-hidden="true" />
+	</button>
+{/if}
 
 <Sheet.Root bind:open>
 	<Sheet.Content

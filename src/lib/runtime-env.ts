@@ -14,6 +14,7 @@ declare global {
 		__OM_CONFIG?: {
 			OM_WORKER_URL?: string;
 			MODELS_BUCKET_URL?: string;
+			FORECAST_API_URL?: string;
 		};
 	}
 }
@@ -32,4 +33,24 @@ export function getModelsBucketUrl(): string {
 		if (fromWindow && fromWindow.length > 0) return fromWindow;
 	}
 	return (import.meta.env.VITE_MODELS_BUCKET_URL as string | undefined) ?? '';
+}
+
+/**
+ * Base de l'API forecast JSON (compatible Open-Meteo) alimentant le meteogram.
+ * Défaut : l'API maison Infoclimat/cmer (`modeles-api.cmer.fr`), qui sert AUSSI
+ * les pseudo-domaines France (`meteofrance_arome_france`/`_hd`) absents de
+ * l'API publique. Pas d'authentification pour l'instant (aucune clé requise).
+ * Surchargeable au runtime (`window.__OM_CONFIG`) ou au build (`VITE_*`).
+ * La barre oblique finale est retirée (l'appelant ajoute `/v1/forecast`).
+ */
+export function getForecastApiUrl(): string {
+	const fallback = 'https://modeles-api.cmer.fr';
+	let url = fallback;
+	if (typeof window !== 'undefined' && window.__OM_CONFIG?.FORECAST_API_URL) {
+		url = window.__OM_CONFIG.FORECAST_API_URL;
+	} else {
+		const fromEnv = import.meta.env.VITE_FORECAST_API_URL as string | undefined;
+		if (fromEnv && fromEnv.length > 0) url = fromEnv;
+	}
+	return url.replace(/\/$/, '');
 }

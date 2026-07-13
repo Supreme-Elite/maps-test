@@ -11,9 +11,11 @@
 		omProtocolSettings,
 		standardColorScales
 	} from '$lib/stores/om-protocol-settings';
+	import { pointWorkspace } from '$lib/stores/point-workspace';
 	import {
 		bottomChromeHeight,
 		opacity,
+		pointDrawerHeight,
 		preferences,
 		scaleCollapsed,
 		sidebarWidth
@@ -142,6 +144,10 @@
 	const labelWidth = $derived(17 + Math.max(valueLength, displayUnit.length + 1, digits + 2) * 4);
 	const desktop = new MediaQuery('min-width: 768px');
 	const isMobile = $derived(!desktop.current);
+	// Sur mobile, le tiroir météogramme occupe la moitié basse de l'écran : la
+	// légende (ancrée en bas à gauche) le chevaucherait. On la masque tant qu'il
+	// est ouvert (desktop : la légende se décale déjà via pointDrawerHeight).
+	const hiddenByDrawer = $derived(isMobile && $pointWorkspace.open);
 	const colorBlockHeight = $derived(isMobile && labeledColors.length >= 20 ? 10 : 20);
 	// Catégories affichables dans la légende (code 0 « Aucune » = transparent, masqué).
 	const visibleCategoryEntries = $derived(categoryEntries.filter((e) => e.code !== 0));
@@ -157,7 +163,7 @@
 	);
 </script>
 
-{#if $preferences.showScale}
+{#if $preferences.showScale && !hiddenByDrawer}
 	{#if $scaleCollapsed}
 		<!-- Légende repliée : bande de couleur fine + unité, clic pour déplier -->
 		<button
@@ -165,12 +171,10 @@
 			onclick={() => scaleCollapsed.set(false)}
 			aria-label="Déplier la légende"
 			title="Déplier la légende"
-			class="bg-glass/85 absolute z-60 flex cursor-pointer flex-col items-center overflow-hidden rounded-lg shadow-md backdrop-blur-md tabular-nums transition-[left] duration-200 motion-reduce:transition-none {desktop.current
-				? 'bottom-2.5'
-				: ''}"
-			style="left: calc({$sidebarWidth}px + 0.625rem);{!desktop.current
-				? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`
-				: ''}"
+			class="bg-glass/85 absolute z-60 flex cursor-pointer flex-col items-center overflow-hidden rounded-lg shadow-md backdrop-blur-md tabular-nums transition-[left] duration-200 motion-reduce:transition-none"
+			style="left: calc({$sidebarWidth}px + 0.625rem);{desktop.current
+				? ` bottom: calc(${$pointDrawerHeight}px + 0.625rem);`
+				: ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`}"
 		>
 			{#if colorScale.unit}
 				<span class="px-1 pt-0.5 text-[10px] leading-tight text-white/90">{displayUnit}</span>
@@ -199,11 +203,11 @@
 		</button>
 	{:else}
 		<div
-			class="absolute z-60 {desktop.current
-				? 'bottom-2.5'
-				: ''} select-none rounded-lg tabular-nums transition-[left] duration-200 motion-reduce:transition-none"
+			class="absolute z-60 select-none rounded-lg tabular-nums transition-[left] duration-200 motion-reduce:transition-none"
 			style="left: calc({$sidebarWidth}px + 0.625rem);max-height: {totalHeight +
-				100}px;{!desktop.current ? ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);` : ''}"
+				100}px;{desktop.current
+				? ` bottom: calc(${$pointDrawerHeight}px + 0.625rem);`
+				: ` bottom: calc(${$bottomChromeHeight}px + 4.5rem);`}"
 		>
 			<div class="flex flex-col-reverse shadow-md">
 				{#if categorical}

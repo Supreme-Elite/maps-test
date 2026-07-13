@@ -49,9 +49,7 @@
      en v1 — réserve l'emplacement des futures pages), fil contextuel au centre,
      et à droite les actions : capture/partage (desktop) puis « Avancé ». Sur
      mobile, la capture est un FAB géré par mobile-dock. -->
-<header
-	class="ic-brand-bar fixed inset-x-0 top-0 z-60 flex h-11 items-center gap-3 px-2.5"
->
+<header class="ic-brand-bar fixed inset-x-0 top-0 z-60 flex h-11 items-center gap-3 px-2.5">
 	<a
 		href={SITE_URL}
 		title="Infoclimat"

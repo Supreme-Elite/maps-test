@@ -39,6 +39,7 @@
 		startOfLocalDay,
 		withLocalTime
 	} from '$lib/time-format';
+	import { goToValidTime } from '$lib/time-navigation';
 	import { findTimeStep } from '$lib/time-utils';
 	import { updateUrl } from '$lib/url';
 
@@ -299,10 +300,8 @@
 	// onDateChange, sans recalage de run — les échéances proposées par le moteur
 	// sortent des valid_times du run courant.
 	const playbackAdvance = (date: Date) => {
-		$time = new SvelteDate(date);
 		currentDate = new SvelteDate(date);
-		updateUrl('time', formatISOWithoutTimezone($time));
-		changeOMfileURL();
+		goToValidTime(date);
 		centerDateButton(date);
 	};
 

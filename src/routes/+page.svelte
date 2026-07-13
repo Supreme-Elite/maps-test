@@ -26,6 +26,7 @@
 		exportFrameVisible,
 		loading,
 		localStorageVersion,
+		pointDrawerHeight,
 		resetStates,
 		tileSize,
 		tileSizeSet,
@@ -42,6 +43,7 @@
 	import HelpDialog from '$lib/components/help/help-dialog.svelte';
 	import KeyboardHandler from '$lib/components/keyboard/keyboard-handler.svelte';
 	import Spinner from '$lib/components/loading/spinner.svelte';
+	import PointDrawer from '$lib/components/point-workspace/point-drawer.svelte';
 	import Scale from '$lib/components/scale/scale.svelte';
 	import SoundingPanel from '$lib/components/sounding/sounding-panel.svelte';
 	import TimeSelector from '$lib/components/time/time-selector.svelte';
@@ -288,7 +290,9 @@
 	// Le `+ 8` est la marge au-dessus de la barre du temps.
 	$effect(() => {
 		const mapInstance = $map;
-		const h = $bottomChromeHeight;
+		// Le tiroir « espace point » (meteogram), quand il est ouvert, occupe le bas
+		// au-dessus de la barre du temps : on remonte les contrôles au plus haut des deux.
+		const h = Math.max($bottomChromeHeight, $pointDrawerHeight);
 		if (!mapInstance) return;
 		const el = mapInstance
 			.getContainer()
@@ -372,6 +376,7 @@
 <TimeSelector />
 <HelpDialog />
 <SoundingPanel />
+<PointDrawer />
 <KeyboardHandler />
 <Dropzone
 	ondrop={(features) => {
