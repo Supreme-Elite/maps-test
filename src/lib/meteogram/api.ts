@@ -31,6 +31,63 @@ export const buildForecastUrl = (lat: number, lng: number, model: string): strin
 	return `${getForecastApiUrl()}/v1/forecast?${params.toString()}`;
 };
 
+/**
+ * Modèles dont l'API ne diffuse pas `weather_code` (rangée de symboles météo du
+ * meteogram renvoyée 100 % `null`) → modèle « source » sur la même grille/horizon
+ * dont on emprunte les symboles. Aujourd'hui : AROME France HD (0,01°) n'a pas
+ * de `weather_code` amont, on le prend sur AROME France 2,5 km (même modèle
+ * physique, même emprise, même run horaire → axes temps identiques). Le merge se
+ * fait par timestamp (`mergeWeatherCode`), robuste à un décalage éventuel.
+ */
+export const SYMBOL_SOURCE_MODELS: Readonly<Record<string, string>> = {
+	meteofrance_arome_france_hd: 'meteofrance_arome_france'
+};
+
+/** URL forecast minimale (weather_code seul) pour emprunter les symboles météo. */
+const buildSymbolUrl = (lat: number, lng: number, model: string): string => {
+	const params = new URLSearchParams({
+		latitude: String(lat),
+		longitude: String(lng),
+		models: model,
+		timezone: 'UTC',
+		hourly: 'weather_code'
+	});
+	return `${getForecastApiUrl()}/v1/forecast?${params.toString()}`;
+};
+
+/**
+ * Remplace la série `weather_code` de `base` par celle empruntée à un modèle
+ * source, alignée **par timestamp** (pas par index) : chaque pas de `base` prend
+ * le `weather_code` source de même horodatage, `null` si absent. Les autres
+ * séries (dont `is_day`, renseigné côté HD) sont conservées telles quelles.
+ */
+export const mergeWeatherCode = (
+	base: MeteogramData,
+	source: { time: Date[]; weather_code: (number | null)[] }
+): MeteogramData => {
+	const byTime = new Map<number, number | null>();
+	source.time.forEach((t, i) => byTime.set(t.getTime(), source.weather_code[i] ?? null));
+	const weather_code = base.times.map((t) => byTime.get(t.getTime()) ?? null);
+	return { ...base, series: { ...base.series, weather_code } };
+};
+
+/** Récupère `weather_code` (+ axe temps) d'un modèle source pour les symboles. */
+const fetchSymbolSource = async (
+	lat: number,
+	lng: number,
+	model: string,
+	signal?: AbortSignal
+): Promise<{ time: Date[]; weather_code: (number | null)[] }> => {
+	const res = await fetch(buildSymbolUrl(lat, lng, model), { signal });
+	if (!res.ok) throw new Error(`HTTP ${res.status}`);
+	const hourly = ((await res.json()) as ForecastResponse).hourly;
+	if (!hourly || !Array.isArray(hourly.time)) throw new Error('source de symboles invalide');
+	return {
+		time: hourly.time.map((t) => new Date(`${t}Z`)),
+		weather_code: hourly.weather_code ?? []
+	};
+};
+
 interface ForecastResponse {
 	hourly?: { time?: string[] } & Partial<Record<MeteogramKey, (number | null)[]>>;
 }
@@ -96,5 +153,20 @@ export const fetchMeteogram = async (
 	const res = await fetch(buildForecastUrl(lat, lng, model), { signal });
 	if (res.status === 429) throw new Error('rate-limit');
 	if (!res.ok) throw new Error(`HTTP ${res.status}`);
-	return trimTrailingNulls(parseForecast(await res.json(), model));
+	let data = parseForecast(await res.json(), model);
+
+	// Modèle sans weather_code amont (AROME France HD) : on emprunte la rangée de
+	// symboles météo à un modèle source sur la même grille. Échec silencieux —
+	// on préfère un meteogram sans symboles à pas de meteogram du tout ; seul
+	// l'abort est propagé (le composant l'attend pour ignorer la réponse).
+	const symbolSource = SYMBOL_SOURCE_MODELS[model];
+	if (symbolSource) {
+		try {
+			const symbols = await fetchSymbolSource(lat, lng, symbolSource, signal);
+			data = mergeWeatherCode(data, symbols);
+		} catch (e) {
+			if ((e as Error).name === 'AbortError') throw e;
+		}
+	}
+	return trimTrailingNulls(data);
 };

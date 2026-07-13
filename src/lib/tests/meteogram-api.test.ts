@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildForecastUrl, parseForecast, trimTrailingNulls } from '$lib/meteogram/api';
+import {
+	SYMBOL_SOURCE_MODELS,
+	buildForecastUrl,
+	mergeWeatherCode,
+	parseForecast,
+	trimTrailingNulls
+} from '$lib/meteogram/api';
 
 describe('buildForecastUrl', () => {
 	it('inclut lat/lng, models, timezone UTC, wind en m/s et toutes les variables', () => {
@@ -89,5 +95,52 @@ describe('trimTrailingNulls', () => {
 		expect(trimmed.times).toHaveLength(2);
 		expect(trimmed.series.temperature_2m).toEqual([12, 13]);
 		expect(trimmed.series.is_day).toEqual([1, 1]);
+	});
+});
+
+describe('SYMBOL_SOURCE_MODELS', () => {
+	it('emprunte le weather_code d’AROME France HD au 2,5 km (HD ne le diffuse pas)', () => {
+		// L'API renvoie weather_code 100 % null pour meteofrance_arome_france_hd :
+		// on va chercher les symboles météo sur le 2,5 km, même modèle physique.
+		expect(SYMBOL_SOURCE_MODELS.meteofrance_arome_france_hd).toBe('meteofrance_arome_france');
+	});
+});
+
+describe('mergeWeatherCode', () => {
+	const base = parseForecast(
+		{
+			hourly: {
+				time: ['2026-07-03T00:00', '2026-07-03T01:00', '2026-07-03T02:00'],
+				temperature_2m: [12, 13, 14],
+				weather_code: [null, null, null],
+				is_day: [0, 1, 1]
+			}
+		},
+		'meteofrance_arome_france_hd'
+	);
+
+	it('remplit weather_code depuis la source, aligné par timestamp', () => {
+		const merged = mergeWeatherCode(base, {
+			time: [
+				new Date('2026-07-03T00:00Z'),
+				new Date('2026-07-03T01:00Z'),
+				new Date('2026-07-03T02:00Z')
+			],
+			weather_code: [3, 2, 61]
+		});
+		expect(merged.series.weather_code).toEqual([3, 2, 61]);
+		// n'altère pas les autres séries ni is_day (déjà renseigné côté HD)
+		expect(merged.series.temperature_2m).toEqual([12, 13, 14]);
+		expect(merged.series.is_day).toEqual([0, 1, 1]);
+	});
+
+	it('aligne par timestamp même si la source est décalée/incomplète', () => {
+		const merged = mergeWeatherCode(base, {
+			// source qui commence une heure plus tard et couvre partiellement
+			time: [new Date('2026-07-03T01:00Z'), new Date('2026-07-03T02:00Z')],
+			weather_code: [45, 3]
+		});
+		// pas de valeur source à 00:00 → null ; les autres alignées
+		expect(merged.series.weather_code).toEqual([null, 45, 3]);
 	});
 });
