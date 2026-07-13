@@ -111,7 +111,8 @@ describe('buildChartOptions', () => {
 			series: { name: 'Vent' }
 		});
 		expect(rendered).toContain('Petite brise');
-		expect(rendered).toContain('4,2 m/s');
+		// Valeur brute 4,2 m/s convertie à l'affichage (× 3,6) → 15,1 km/h.
+		expect(rendered).toContain('15,1 km/h');
 		expect(rendered).not.toContain('Light');
 	});
 

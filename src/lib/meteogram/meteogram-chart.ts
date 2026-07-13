@@ -284,11 +284,14 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 						};
 						const beaufort =
 							p.beaufortLevel !== undefined ? ` (${BEAUFORT_FR[p.beaufortLevel] ?? ''})` : '';
-						// Virgule décimale : cohérent avec les autres séries (locale fr).
-						const value = p.value.toFixed(1).replace('.', ',');
+						// La valeur `p.value` reste en m/s (le module windbarb dessine les
+						// plumes et calcule le Beaufort sur cette base) ; on ne convertit
+						// qu'à l'affichage. Virgule décimale : cohérent avec les autres
+						// séries (locale fr).
+						const kmh = (p.value * 3.6).toFixed(1).replace('.', ',');
 						return (
 							`<span style="color:${p.color ?? '#7dd3fc'}">●</span> ` +
-							`${p.series.name} : <b>${value} m/s</b>${beaufort}<br/>`
+							`${p.series.name} : <b>${kmh} km/h</b>${beaufort}<br/>`
 						);
 					}
 				}
