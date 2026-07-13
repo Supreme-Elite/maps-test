@@ -2,6 +2,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { get } from 'svelte/store';
 
+	import { desktop } from '$lib/stores/preferences';
 	import { metaJson, time } from '$lib/stores/time';
 	import { convertValue, getDisplayUnit, unitPreferences } from '$lib/stores/units';
 	import { selectedDomain } from '$lib/stores/variables';
@@ -192,6 +193,7 @@
 				precipitation: getDisplayUnit('mm', $unitPreferences, 'precipitation'),
 				pressure: getDisplayUnit('hPa', $unitPreferences, 'pressure_msl')
 			},
+			compact: !desktop.current,
 			onTimeClick: seek
 		};
 		let cancelled = false;
@@ -239,6 +241,18 @@
 		syncPlayhead();
 	});
 
+	// Le chart Highcharts ne se recale que sur `resize` de la fenêtre — pas quand
+	// le tiroir est redimensionné (drag de la poignée) ni au montage flex. On
+	// observe donc le conteneur et on `reflow()` pour que le graphe occupe toute
+	// la hauteur disponible et grandisse avec le tiroir.
+	$effect(() => {
+		const el = chartEl;
+		if (!el || typeof ResizeObserver === 'undefined') return;
+		const ro = new ResizeObserver(() => chart?.reflow());
+		ro.observe(el);
+		return () => ro.disconnect();
+	});
+
 	$effect(() => () => {
 		chart?.destroy();
 		chart = undefined;
@@ -263,7 +277,7 @@
 	const SKELETON_ROWS = Array.from({ length: 3 });
 </script>
 
-<div class="flex flex-col py-2">
+<div class="flex h-full flex-col py-2">
 	{#if loading}
 		<div class="flex flex-col gap-3" aria-hidden="true">
 			{#each SKELETON_ROWS as _, i (i)}
@@ -283,6 +297,6 @@
 	{:else if error === 'empty'}
 		<p class="p-4 text-sm text-white/60">Aucune donnée à ce point pour ce modèle.</p>
 	{:else if data && data.times.length}
-		<div bind:this={chartEl} class="min-h-[280px] w-full"></div>
+		<div bind:this={chartEl} class="min-h-[300px] w-full flex-1"></div>
 	{/if}
 </div>

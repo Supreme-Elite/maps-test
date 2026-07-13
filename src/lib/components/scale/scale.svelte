@@ -11,6 +11,7 @@
 		omProtocolSettings,
 		standardColorScales
 	} from '$lib/stores/om-protocol-settings';
+	import { pointWorkspace } from '$lib/stores/point-workspace';
 	import {
 		bottomChromeHeight,
 		opacity,
@@ -143,6 +144,10 @@
 	const labelWidth = $derived(17 + Math.max(valueLength, displayUnit.length + 1, digits + 2) * 4);
 	const desktop = new MediaQuery('min-width: 768px');
 	const isMobile = $derived(!desktop.current);
+	// Sur mobile, le tiroir météogramme occupe la moitié basse de l'écran : la
+	// légende (ancrée en bas à gauche) le chevaucherait. On la masque tant qu'il
+	// est ouvert (desktop : la légende se décale déjà via pointDrawerHeight).
+	const hiddenByDrawer = $derived(isMobile && $pointWorkspace.open);
 	const colorBlockHeight = $derived(isMobile && labeledColors.length >= 20 ? 10 : 20);
 	// Catégories affichables dans la légende (code 0 « Aucune » = transparent, masqué).
 	const visibleCategoryEntries = $derived(categoryEntries.filter((e) => e.code !== 0));
@@ -158,7 +163,7 @@
 	);
 </script>
 
-{#if $preferences.showScale}
+{#if $preferences.showScale && !hiddenByDrawer}
 	{#if $scaleCollapsed}
 		<!-- Légende repliée : bande de couleur fine + unité, clic pour déplier -->
 		<button

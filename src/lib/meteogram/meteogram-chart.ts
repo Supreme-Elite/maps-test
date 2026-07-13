@@ -12,6 +12,8 @@ export interface MeteogramChartInput {
 	symbolLabels: (string | null)[];
 	units: { temperature: string; precipitation: string; pressure: string };
 	onTimeClick: (date: Date) => void;
+	/** Mobile : marges resserrées pour rendre la zone de tracé au graphe. */
+	compact?: boolean;
 }
 
 // Thème sombre : TOUT élément d'axe/grille doit être stylé explicitement.
@@ -85,9 +87,13 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 		chart: {
 			backgroundColor: 'transparent',
 			style: { fontFamily: 'inherit' },
-			marginBottom: 70,
-			marginRight: 44,
-			marginTop: 44,
+			// Marges resserrées sur mobile (haut/droite) pour gagner de la zone de
+			// tracé. marginBottom NON réduit : l'axe des heures (offset 30 + labels)
+			// a besoin de ~70px, en-deçà (essai à 56) les chiffres se font rogner par
+			// le bord du SVG sur le rendu Safari iOS. On garde donc 72px en bas.
+			marginBottom: input.compact ? 72 : 70,
+			marginRight: input.compact ? 40 : 44,
+			marginTop: input.compact ? 36 : 44,
 			plotBorderWidth: 1,
 			plotBorderColor: 'rgba(255, 255, 255, 0.14)',
 			alignTicks: false,

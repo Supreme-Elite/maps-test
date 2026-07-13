@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 
+	import DownloadIcon from '@lucide/svelte/icons/download';
+	import XIcon from '@lucide/svelte/icons/x';
 	import * as maplibregl from 'maplibre-gl';
 
 	import { map } from '$lib/stores/map';
 	import { pointWorkspace } from '$lib/stores/point-workspace';
-	import { pointDrawerHeight, sidebarWidth } from '$lib/stores/preferences';
+	import { desktop, pointDrawerHeight, sidebarWidth } from '$lib/stores/preferences';
 	import { selectedDomain } from '$lib/stores/variables';
 
 	import Meteogram from './meteogram/meteogram.svelte';
@@ -17,6 +19,15 @@
 	let height = $state(DEFAULT_HEIGHT);
 	let maxHeight = $state(DEFAULT_HEIGHT);
 	let meteogramComp = $state<ReturnType<typeof Meteogram>>();
+
+	// Réserve basse dégageant l'axe des heures de la barre d'adresse Safari iOS
+	// (~50pt) : sur iPhone, cette barre recouvre le bas du viewport web et n'est
+	// exposée par AUCUNE API (ni `env(safe-area-inset-bottom)`, qui vaut 0 quand la
+	// barre est visible, ni `visualViewport`, qui rapporte le même viewport —
+	// mesuré sur l'appareil : innerH=clientH=vvH). Seule une réserve fixe fonctionne.
+	// 0,5rem sur desktop (pas de barre), 3,5rem sur mobile. Le chart étant en
+	// flex-1, ce padding remonte d'autant la zone de tracé.
+	const bottomPad = $derived(desktop.current ? '0.5rem' : '3.5rem');
 
 	function handleExport() {
 		const lat = $pointWorkspace.lat;
@@ -83,7 +94,15 @@
 		if (typeof window === 'undefined') return;
 		const initialMaxHeight = computeMaxHeight();
 		maxHeight = initialMaxHeight;
-		height = Math.max(MIN_HEIGHT, Math.min(initialMaxHeight, Math.round(window.innerHeight * 0.4)));
+		// Mobile (< md) : le tiroir occupe une bonne moitié basse de l'écran pour
+		// que le graphe respire (à 40 % la zone de tracé tombait à ~166 px). Sur
+		// desktop, ~42 % suffit (écran large). Lecture NON réactive de innerWidth :
+		// garde l'effet à un seul run (cf. avertissement sur le reset de `height`).
+		const fraction = window.innerWidth < 768 ? 0.64 : 0.42;
+		height = Math.max(
+			MIN_HEIGHT,
+			Math.min(initialMaxHeight, Math.round(window.innerHeight * fraction))
+		);
 
 		function onResize() {
 			maxHeight = computeMaxHeight();
@@ -147,25 +166,35 @@
 			onpointerdown={startResize}
 			onkeydown={handleResizeKeydown}
 		></div>
-		<header class="flex shrink-0 items-center justify-between gap-2 px-3 py-1 text-sm">
-			<span class="tabular-nums">
-				Météogramme — {$pointWorkspace.lat.toFixed(3)}, {$pointWorkspace.lng.toFixed(3)}
+		<!-- En-tête compact : tout sur une ligne (le label du modèle tronque au
+		     besoin), boutons en icônes sur mobile. Évite le retour à la ligne sur
+		     3 lignes qui grignotait la hauteur utile du graphe. -->
+		<header class="flex shrink-0 items-center gap-2 px-3 py-1.5 text-sm">
+			<span class="shrink-0 tabular-nums">
+				<span class="hidden sm:inline">Météogramme —&nbsp;</span>{$pointWorkspace.lat.toFixed(3)},
+				{$pointWorkspace.lng.toFixed(3)}
 			</span>
-			<span class="text-xs text-sky-300">{$selectedDomain.label} · dernier run</span>
-			<div class="flex items-center gap-2">
-				<button class="rounded px-2 py-1 hover:bg-white/10" onclick={handleExport}>
-					Exporter PNG
-				</button>
-				<button
-					class="rounded px-2 py-1 hover:bg-white/10"
-					aria-label="Fermer"
-					onclick={() => pointWorkspace.close()}
-				>
-					✕
-				</button>
-			</div>
+			<span class="min-w-0 flex-1 truncate text-xs text-sky-300">
+				{$selectedDomain.label} · dernier run
+			</span>
+			<button
+				class="flex shrink-0 items-center gap-1 rounded px-2 py-1 hover:bg-white/10"
+				onclick={handleExport}
+				aria-label="Exporter en PNG"
+				title="Exporter en PNG"
+			>
+				<DownloadIcon class="size-4" aria-hidden="true" />
+				<span class="hidden sm:inline">Exporter PNG</span>
+			</button>
+			<button
+				class="shrink-0 rounded p-1 hover:bg-white/10"
+				aria-label="Fermer"
+				onclick={() => pointWorkspace.close()}
+			>
+				<XIcon class="size-4" aria-hidden="true" />
+			</button>
 		</header>
-		<div class="flex-1 overflow-y-auto px-2 pb-2">
+		<div class="flex-1 overflow-y-auto px-2" style="padding-bottom: {bottomPad}">
 			<Meteogram bind:this={meteogramComp} lat={$pointWorkspace.lat} lng={$pointWorkspace.lng} />
 		</div>
 	</section>
