@@ -314,7 +314,7 @@ export const DOMAIN_TO_API_MODEL: Readonly<Record<string, string>> = {
 	ecmwf_ifs025: 'ecmwf_ifs025',
 	ecmwf_ifs: 'ecmwf_ifs',
 	ecmwf_aifs025_single: 'ecmwf_aifs025_single',
-	ncep_gfs025: 'ncep_gfs_seamless'
+	ncep_gfs025: 'gfs_global'
 };
 
 // Descriptions courtes par modèle, affichées sous le nom dans le sélecteur de modèle

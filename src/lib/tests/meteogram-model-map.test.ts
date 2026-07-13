@@ -7,6 +7,10 @@ describe('resolveApiModel', () => {
 		expect(resolveApiModel('meteofrance_arpege_europe')).toBe('meteofrance_arpege_europe');
 		expect(resolveApiModel('arome_france_hd')).toBe('meteofrance_arome_france_hd');
 		expect(resolveApiModel('ecmwf_ifs025')).toBe('ecmwf_ifs025');
+		// Le préfixe `ncep_` est la convention du bucket S3, PAS un identifiant
+		// `models=` de l'API forecast : `ncep_gfs_seamless` est rejeté par l'enum
+		// MultiDomains ("Data corrupted…"). GFS Global 0,25° → `gfs_global`.
+		expect(resolveApiModel('ncep_gfs025')).toBe('gfs_global');
 	});
 
 	it('mappe les pseudo-domaines maison AROME France (servis par l’API maison)', () => {
