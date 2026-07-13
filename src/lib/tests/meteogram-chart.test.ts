@@ -123,6 +123,28 @@ describe('buildChartOptions', () => {
 		expect(exporting?.buttons?.contextButton?.enabled).toBe(false);
 	});
 
+	it('pression entièrement nulle : axe et série pression masqués', () => {
+		const o = buildChartOptions(input({ pressure: [null, null, null, null] }));
+		// Cas AROME France HD : l'API ne diffuse pas pressure_msl. Sans donnée,
+		// l'axe de droite resterait un titre « hPa » orphelin sans graduations.
+		const yAxes = o.yAxis as { visible?: boolean }[];
+		expect(yAxes[2].visible).toBe(false);
+		const pressureSeries = (o.series as { name?: string; visible?: boolean }[]).find(
+			(s) => s.name === 'Pression'
+		)!;
+		expect(pressureSeries.visible).toBe(false);
+	});
+
+	it('pression présente : axe pression visible', () => {
+		const o = buildChartOptions(input());
+		const yAxes = o.yAxis as { visible?: boolean }[];
+		expect(yAxes[2].visible).not.toBe(false);
+		const pressureSeries = (o.series as { name?: string; visible?: boolean }[]).find(
+			(s) => s.name === 'Pression'
+		)!;
+		expect(pressureSeries.visible).not.toBe(false);
+	});
+
 	it('unités injectées dans tooltips/axes', () => {
 		const o = buildChartOptions(
 			input({ units: { temperature: '°F', precipitation: 'inch', pressure: 'hPa' } })

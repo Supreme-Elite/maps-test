@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-	SYMBOL_SOURCE_MODELS,
+	BORROWED_VARIABLES,
+	BORROW_SOURCE_MODELS,
 	buildForecastUrl,
-	mergeWeatherCode,
+	mergeBorrowedSeries,
 	parseForecast,
 	trimTrailingNulls
 } from '$lib/meteogram/api';
@@ -98,49 +99,82 @@ describe('trimTrailingNulls', () => {
 	});
 });
 
-describe('SYMBOL_SOURCE_MODELS', () => {
-	it('emprunte le weather_code d’AROME France HD au 2,5 km (HD ne le diffuse pas)', () => {
-		// L'API renvoie weather_code 100 % null pour meteofrance_arome_france_hd :
-		// on va chercher les symboles météo sur le 2,5 km, même modèle physique.
-		expect(SYMBOL_SOURCE_MODELS.meteofrance_arome_france_hd).toBe('meteofrance_arome_france');
+describe('BORROW_SOURCE_MODELS', () => {
+	it('AROME France HD emprunte ses variables manquantes au 2,5 km (HD ne les diffuse pas)', () => {
+		// L'API renvoie weather_code ET pressure_msl 100 % null pour
+		// meteofrance_arome_france_hd : on va les chercher sur le 2,5 km, même
+		// modèle physique / même emprise / même run horaire.
+		expect(BORROW_SOURCE_MODELS.meteofrance_arome_france_hd).toBe('meteofrance_arome_france');
+	});
+
+	it('emprunte weather_code et pressure_msl', () => {
+		expect(BORROWED_VARIABLES).toContain('weather_code');
+		expect(BORROWED_VARIABLES).toContain('pressure_msl');
 	});
 });
 
-describe('mergeWeatherCode', () => {
+describe('mergeBorrowedSeries', () => {
 	const base = parseForecast(
 		{
 			hourly: {
 				time: ['2026-07-03T00:00', '2026-07-03T01:00', '2026-07-03T02:00'],
 				temperature_2m: [12, 13, 14],
 				weather_code: [null, null, null],
+				pressure_msl: [null, null, null],
 				is_day: [0, 1, 1]
 			}
 		},
 		'meteofrance_arome_france_hd'
 	);
 
-	it('remplit weather_code depuis la source, aligné par timestamp', () => {
-		const merged = mergeWeatherCode(base, {
-			time: [
-				new Date('2026-07-03T00:00Z'),
-				new Date('2026-07-03T01:00Z'),
-				new Date('2026-07-03T02:00Z')
-			],
-			weather_code: [3, 2, 61]
-		});
+	const source = {
+		time: [
+			new Date('2026-07-03T00:00Z'),
+			new Date('2026-07-03T01:00Z'),
+			new Date('2026-07-03T02:00Z')
+		],
+		weather_code: [3, 2, 61],
+		pressure_msl: [1015, 1014.5, 1013]
+	};
+
+	it('remplit weather_code ET pressure_msl depuis la source, alignés par timestamp', () => {
+		const merged = mergeBorrowedSeries(base, source);
 		expect(merged.series.weather_code).toEqual([3, 2, 61]);
+		expect(merged.series.pressure_msl).toEqual([1015, 1014.5, 1013]);
 		// n'altère pas les autres séries ni is_day (déjà renseigné côté HD)
 		expect(merged.series.temperature_2m).toEqual([12, 13, 14]);
 		expect(merged.series.is_day).toEqual([0, 1, 1]);
 	});
 
 	it('aligne par timestamp même si la source est décalée/incomplète', () => {
-		const merged = mergeWeatherCode(base, {
+		const merged = mergeBorrowedSeries(base, {
 			// source qui commence une heure plus tard et couvre partiellement
 			time: [new Date('2026-07-03T01:00Z'), new Date('2026-07-03T02:00Z')],
-			weather_code: [45, 3]
+			weather_code: [45, 3],
+			pressure_msl: [1012, 1011]
 		});
 		// pas de valeur source à 00:00 → null ; les autres alignées
 		expect(merged.series.weather_code).toEqual([null, 45, 3]);
+		expect(merged.series.pressure_msl).toEqual([null, 1012, 1011]);
+	});
+
+	it('ne réécrit pas une valeur déjà présente côté base (base prioritaire)', () => {
+		const partial = parseForecast(
+			{
+				hourly: {
+					time: ['2026-07-03T00:00', '2026-07-03T01:00'],
+					weather_code: [null, null],
+					pressure_msl: [1000, null]
+				}
+			},
+			'meteofrance_arome_france_hd'
+		);
+		const merged = mergeBorrowedSeries(partial, {
+			time: [new Date('2026-07-03T00:00Z'), new Date('2026-07-03T01:00Z')],
+			weather_code: [3, 2],
+			pressure_msl: [1015, 1014]
+		});
+		// 1000 (base) conservé, 2ᵉ pas emprunté à la source
+		expect(merged.series.pressure_msl).toEqual([1000, 1014]);
 	});
 });

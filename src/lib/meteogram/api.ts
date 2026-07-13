@@ -32,60 +32,70 @@ export const buildForecastUrl = (lat: number, lng: number, model: string): strin
 };
 
 /**
- * Modèles dont l'API ne diffuse pas `weather_code` (rangée de symboles météo du
- * meteogram renvoyée 100 % `null`) → modèle « source » sur la même grille/horizon
- * dont on emprunte les symboles. Aujourd'hui : AROME France HD (0,01°) n'a pas
- * de `weather_code` amont, on le prend sur AROME France 2,5 km (même modèle
- * physique, même emprise, même run horaire → axes temps identiques). Le merge se
- * fait par timestamp (`mergeWeatherCode`), robuste à un décalage éventuel.
+ * Modèles dont l'API ne diffuse pas certaines variables (renvoyées 100 % `null`)
+ * → modèle « source » sur la même grille/horizon dont on les emprunte.
+ * Aujourd'hui : AROME France HD (0,01°) n'a ni `weather_code` (rangée de symboles
+ * météo) ni `pressure_msl` (axe de pression) amont — on les prend sur AROME
+ * France 2,5 km (même modèle physique, même emprise, même run horaire → axes
+ * temps identiques). Le merge se fait par timestamp (`mergeBorrowedSeries`),
+ * robuste à un décalage éventuel.
  */
-export const SYMBOL_SOURCE_MODELS: Readonly<Record<string, string>> = {
+export const BORROW_SOURCE_MODELS: Readonly<Record<string, string>> = {
 	meteofrance_arome_france_hd: 'meteofrance_arome_france'
 };
 
-/** URL forecast minimale (weather_code seul) pour emprunter les symboles météo. */
-const buildSymbolUrl = (lat: number, lng: number, model: string): string => {
+/** Variables empruntées au modèle source quand le modèle affiché ne les diffuse pas. */
+export const BORROWED_VARIABLES: readonly MeteogramKey[] = ['weather_code', 'pressure_msl'];
+
+/** URL forecast minimale (variables empruntées seules) pour le modèle source. */
+const buildBorrowUrl = (lat: number, lng: number, model: string): string => {
 	const params = new URLSearchParams({
 		latitude: String(lat),
 		longitude: String(lng),
 		models: model,
 		timezone: 'UTC',
-		hourly: 'weather_code'
+		hourly: BORROWED_VARIABLES.join(',')
 	});
 	return `${getForecastApiUrl()}/v1/forecast?${params.toString()}`;
 };
 
+/** Source d'emprunt : axe temps + séries des variables empruntées. */
+export type BorrowSource = { time: Date[] } & Partial<Record<MeteogramKey, (number | null)[]>>;
+
 /**
- * Remplace la série `weather_code` de `base` par celle empruntée à un modèle
- * source, alignée **par timestamp** (pas par index) : chaque pas de `base` prend
- * le `weather_code` source de même horodatage, `null` si absent. Les autres
- * séries (dont `is_day`, renseigné côté HD) sont conservées telles quelles.
+ * Complète les `BORROWED_VARIABLES` de `base` avec celles du modèle `source`,
+ * alignées **par timestamp** (pas par index) : pour chaque pas de `base`, une
+ * valeur déjà présente côté base est **conservée** (base prioritaire), sinon on
+ * prend celle de la source au même horodatage (`null` si absente). Les séries
+ * hors `BORROWED_VARIABLES` (dont `is_day`, renseigné côté HD) sont intactes.
  */
-export const mergeWeatherCode = (
-	base: MeteogramData,
-	source: { time: Date[]; weather_code: (number | null)[] }
-): MeteogramData => {
-	const byTime = new Map<number, number | null>();
-	source.time.forEach((t, i) => byTime.set(t.getTime(), source.weather_code[i] ?? null));
-	const weather_code = base.times.map((t) => byTime.get(t.getTime()) ?? null);
-	return { ...base, series: { ...base.series, weather_code } };
+export const mergeBorrowedSeries = (base: MeteogramData, source: BorrowSource): MeteogramData => {
+	const series = { ...base.series };
+	for (const key of BORROWED_VARIABLES) {
+		const sourceValues = source[key];
+		if (!sourceValues) continue;
+		const byTime = new Map<number, number | null>();
+		source.time.forEach((t, i) => byTime.set(t.getTime(), sourceValues[i] ?? null));
+		const baseValues = base.series[key] ?? [];
+		series[key] = base.times.map((t, i) => baseValues[i] ?? byTime.get(t.getTime()) ?? null);
+	}
+	return { ...base, series };
 };
 
-/** Récupère `weather_code` (+ axe temps) d'un modèle source pour les symboles. */
-const fetchSymbolSource = async (
+/** Récupère les variables empruntées (+ axe temps) d'un modèle source. */
+const fetchBorrowSource = async (
 	lat: number,
 	lng: number,
 	model: string,
 	signal?: AbortSignal
-): Promise<{ time: Date[]; weather_code: (number | null)[] }> => {
-	const res = await fetch(buildSymbolUrl(lat, lng, model), { signal });
+): Promise<BorrowSource> => {
+	const res = await fetch(buildBorrowUrl(lat, lng, model), { signal });
 	if (!res.ok) throw new Error(`HTTP ${res.status}`);
 	const hourly = ((await res.json()) as ForecastResponse).hourly;
-	if (!hourly || !Array.isArray(hourly.time)) throw new Error('source de symboles invalide');
-	return {
-		time: hourly.time.map((t) => new Date(`${t}Z`)),
-		weather_code: hourly.weather_code ?? []
-	};
+	if (!hourly || !Array.isArray(hourly.time)) throw new Error("source d'emprunt invalide");
+	const out: BorrowSource = { time: hourly.time.map((t) => new Date(`${t}Z`)) };
+	for (const key of BORROWED_VARIABLES) out[key] = hourly[key] ?? [];
+	return out;
 };
 
 interface ForecastResponse {
@@ -155,15 +165,15 @@ export const fetchMeteogram = async (
 	if (!res.ok) throw new Error(`HTTP ${res.status}`);
 	let data = parseForecast(await res.json(), model);
 
-	// Modèle sans weather_code amont (AROME France HD) : on emprunte la rangée de
-	// symboles météo à un modèle source sur la même grille. Échec silencieux —
-	// on préfère un meteogram sans symboles à pas de meteogram du tout ; seul
-	// l'abort est propagé (le composant l'attend pour ignorer la réponse).
-	const symbolSource = SYMBOL_SOURCE_MODELS[model];
-	if (symbolSource) {
+	// Modèle sans certaines variables amont (AROME France HD : ni weather_code ni
+	// pressure_msl) : on les emprunte à un modèle source sur la même grille. Échec
+	// silencieux — on préfère un meteogram incomplet à pas de meteogram du tout ;
+	// seul l'abort est propagé (le composant l'attend pour ignorer la réponse).
+	const borrowSource = BORROW_SOURCE_MODELS[model];
+	if (borrowSource) {
 		try {
-			const symbols = await fetchSymbolSource(lat, lng, symbolSource, signal);
-			data = mergeWeatherCode(data, symbols);
+			const borrowed = await fetchBorrowSource(lat, lng, borrowSource, signal);
+			data = mergeBorrowedSeries(data, borrowed);
 		} catch (e) {
 			if ((e as Error).name === 'AbortError') throw e;
 		}

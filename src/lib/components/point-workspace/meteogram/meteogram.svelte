@@ -8,6 +8,8 @@
 	import { selectedDomain } from '$lib/stores/variables';
 
 	import { fetchMeteogram } from '$lib/meteogram/api';
+	import { type ExportableChart, renderMeteogramExport } from '$lib/meteogram/export-image';
+	import { INFOCLIMAT_LOGO_DATA_URI } from '$lib/meteogram/infoclimat-logo';
 	import { buildChartOptions } from '$lib/meteogram/meteogram-chart';
 	import { resolveApiModel } from '$lib/meteogram/model-map';
 	import { nearestValidTime } from '$lib/meteogram/snap';
@@ -258,20 +260,19 @@
 		chart = undefined;
 	});
 
-	// Écart brief : `offline-exporting.d.ts` (v12.6.0) n'ajoute jamais
-	// `exportChartLocal` au type `Chart` (gap réel des typings, la méthode
-	// existe bien à l'exécution une fois le module chargé) — type local minimal
-	// pour l'appeler sans `any`.
-	type ChartWithLocalExport = Chart & {
-		exportChartLocal(exportingOptions?: unknown, chartOptions?: unknown): void;
-	};
-
-	/** Export PNG local (offline-exporting) — appelé par le tiroir via bind:this. */
-	export const exportPng = (filename: string) => {
-		(chart as ChartWithLocalExport | undefined)?.exportChartLocal(
-			{ type: 'image/png', filename: filename.replace(/\.png$/, '') },
-			{}
-		);
+	/** Export PNG « carte de visite » — appelé par le tiroir via bind:this.
+	 *  Composition canvas (graphe + pied logo/contexte) dans `export-image.ts`. */
+	export const exportPng = async (filename: string) => {
+		if (!chart) return;
+		await renderMeteogramExport({
+			chart: chart as unknown as ExportableChart,
+			model: get(selectedDomain).label ?? get(selectedDomain).value,
+			lat,
+			lng,
+			date: new Date(),
+			logoDataUri: INFOCLIMAT_LOGO_DATA_URI,
+			filename
+		});
 	};
 
 	const SKELETON_ROWS = Array.from({ length: 3 });

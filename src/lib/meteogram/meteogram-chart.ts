@@ -64,6 +64,10 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 	const dewPointData = xs.map((x, i) => [x, at(input.dewPoint, i)]);
 	const precipitationData = xs.map((x, i) => [x, at(input.precipitation, i)]);
 	const pressureData = xs.map((x, i) => [x, at(input.pressure, i)]);
+	// Certains modèles ne diffusent pas la pression (AROME France HD : pressure_msl
+	// 100 % null même après tentative d'emprunt) → axe/série masqués pour ne pas
+	// laisser un titre « hPa » orphelin sans graduations sur le bord droit.
+	const hasPressure = input.pressure.some((v) => v !== null && Number.isFinite(v));
 
 	// 1 barbe sur 2 (lisibilité, comme le démo) ; points sans vitesse/direction écartés.
 	const windData = xs
@@ -188,6 +192,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 			},
 			{
 				// Pression
+				visible: hasPressure,
 				allowDecimals: false,
 				title: {
 					text: input.units.pressure,
@@ -260,6 +265,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				// Discrète (repère de tendance) : fine et translucide pour ne pas
 				// concurrencer la température — l'axe ambre à droite porte la lecture.
 				name: 'Pression',
+				visible: hasPressure,
 				data: pressureData,
 				type: 'spline',
 				marker: { enabled: false },
