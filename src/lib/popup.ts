@@ -101,15 +101,23 @@ const initPopupDiv = (): void => {
 const updatePopupContent = async (coordinates: maplibregl.LngLat): Promise<void> => {
 	lastCoords = coordinates;
 
+	// Les boutons d'action ne sont utiles qu'une fois la bulle épinglée (mode
+	// « drag ») : en mode « follow » elle suit le curseur et est traversante
+	// (pointer-events: none, cf. renderPopup), donc ses boutons ne sont de toute
+	// façon pas cliquables. On les masque au survol pour restaurer la bulle-viseur
+	// compacte d'origine (valeur/unité/vent/altitude, sans bouton).
+	const pinned = get(popupMode) === 'drag';
+
 	// Le bouton « Sondage vertical » n'apparaît que sur les modèles à niveaux de
 	// pression (AROME 0,025°) et si l'option est activée dans les réglages.
 	if (soundingBtn) {
-		const enabled = isSoundingDomain(get(selectedDomain).value) && get(soundingButtonEnabled);
+		const enabled =
+			pinned && isSoundingDomain(get(selectedDomain).value) && get(soundingButtonEnabled);
 		soundingBtn.style.display = enabled ? '' : 'none';
 	}
 
 	if (meteogramBtn) {
-		meteogramBtn.style.display = hasMeteogram(get(selectedDomain).value) ? '' : 'none';
+		meteogramBtn.style.display = pinned && hasMeteogram(get(selectedDomain).value) ? '' : 'none';
 	}
 
 	if (!el || !contentDiv || !valueSpan || !unitSpan || !windSpan || !elevationSpan) return;
