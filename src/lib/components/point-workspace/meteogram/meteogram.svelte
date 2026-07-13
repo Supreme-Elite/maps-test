@@ -195,6 +195,7 @@
 				precipitation: getDisplayUnit('mm', $unitPreferences, 'precipitation'),
 				pressure: getDisplayUnit('hPa', $unitPreferences, 'pressure_msl')
 			},
+			timezone: d.timezone,
 			compact: !desktop.current,
 			onTimeClick: seek
 		};

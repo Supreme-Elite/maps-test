@@ -11,6 +11,8 @@ export interface MeteogramChartInput {
 	windDirection: (number | null)[];
 	symbolLabels: (string | null)[];
 	units: { temperature: string; precipitation: string; pressure: string };
+	/** Fuseau IANA du point (ex. « Europe/Paris ») pour l'affichage heure locale. */
+	timezone: string;
 	onTimeClick: (date: Date) => void;
 	/** Mobile : marges resserrées pour rendre la zone de tracé au graphe. */
 	compact?: boolean;
@@ -112,7 +114,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				}
 			}
 		},
-		time: { timezone: 'UTC' },
+		time: { timezone: input.timezone },
 		title: { text: undefined },
 		credits: { enabled: false },
 		accessibility: { enabled: false },
@@ -125,8 +127,9 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 			useHTML: false,
 			backgroundColor: 'rgba(12, 20, 32, 0.95)',
 			style: { color: TEXT_STRONG },
+			// Heure locale du point (Highcharts formate {point.x} selon `time.timezone`).
 			headerFormat:
-				'<small>{point.x:%A %e %b, %H:%M} UTC</small><br><b>{point.point.symbolName}</b><br>'
+				'<small>{point.x:%A %e %b, %H:%M}</small><br><b>{point.point.symbolName}</b><br>'
 		},
 		xAxis: [
 			{
