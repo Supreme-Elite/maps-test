@@ -15,6 +15,7 @@ function input(overrides: Partial<MeteogramChartInput> = {}): MeteogramChartInpu
 		windDirection: four(230),
 		symbolLabels: ['Ciel clair', 'Ciel clair', 'Pluie faible', null],
 		units: { temperature: '°C', precipitation: 'mm', pressure: 'hPa' },
+		timezone: 'Europe/Paris',
 		onTimeClick: () => {},
 		...overrides
 	};
@@ -92,10 +93,20 @@ describe('buildChartOptions', () => {
 		expect((long.xAxis as { minorTickInterval?: number }[])[0].minorTickInterval).toBeUndefined();
 	});
 
-	it('tooltip 100 % français : UTC (pas TU) et Beaufort FR sur le vent', () => {
+	it('affiche le chart dans le fuseau du point (heure locale)', () => {
+		expect((buildChartOptions(input()).time as { timezone?: string }).timezone).toBe(
+			'Europe/Paris'
+		);
+		expect(
+			(buildChartOptions(input({ timezone: 'Indian/Reunion' })).time as { timezone?: string })
+				.timezone
+		).toBe('Indian/Reunion');
+	});
+
+	it('tooltip 100 % français : heure locale (sans UTC/TU) et Beaufort FR sur le vent', () => {
 		const o = buildChartOptions(input());
 		const header = (o.tooltip as { headerFormat?: string }).headerFormat ?? '';
-		expect(header).toContain('UTC');
+		expect(header).not.toContain('UTC');
 		expect(header).not.toMatch(/\bTU\b/);
 
 		const barbs = (

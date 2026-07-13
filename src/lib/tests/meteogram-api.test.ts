@@ -10,13 +10,13 @@ import {
 } from '$lib/meteogram/api';
 
 describe('buildForecastUrl', () => {
-	it('inclut lat/lng, models, timezone UTC, wind en m/s et toutes les variables', () => {
+	it('inclut lat/lng, models, timezone auto (heure locale du point), wind en m/s et toutes les variables', () => {
 		const url = buildForecastUrl(48.85, 2.35, 'meteofrance_arome_france_hd');
 		expect(url).toContain('/v1/forecast');
 		expect(url).toContain('latitude=48.85');
 		expect(url).toContain('longitude=2.35');
 		expect(url).toContain('models=meteofrance_arome_france_hd');
-		expect(url).toContain('timezone=UTC');
+		expect(url).toContain('timezone=auto');
 		expect(url).toContain('wind_speed_unit=ms');
 		expect(url).toContain('temperature_2m');
 		expect(url).toContain('weather_code');
@@ -28,22 +28,42 @@ describe('buildForecastUrl', () => {
 });
 
 describe('parseForecast', () => {
-	it('transpose la réponse en times[] + series, préserve les null', () => {
+	it('reconstruit des instants absolus depuis l’heure locale + utc_offset_seconds, expose le fuseau', () => {
+		// timezone=auto : les timestamps sont en heure LOCALE du point (minuit local),
+		// on les repositionne en instants UTC absolus via l'offset (couplage carte).
 		const json = {
+			timezone: 'Europe/Paris',
+			utc_offset_seconds: 7200,
 			hourly: {
-				time: ['2026-07-03T00:00', '2026-07-03T01:00'],
+				time: ['2026-07-14T00:00', '2026-07-14T01:00'],
 				temperature_2m: [12.3, null],
 				precipitation: [0, 1.2]
 			}
 		};
 		const data = parseForecast(json, 'ecmwf_ifs025');
 		expect(data.model).toBe('ecmwf_ifs025');
+		expect(data.timezone).toBe('Europe/Paris');
+		expect(data.utcOffsetSeconds).toBe(7200);
+		// minuit local Paris (+02:00) = 22:00 UTC la veille
+		expect(data.times.map((d) => d.toISOString())).toEqual([
+			'2026-07-13T22:00:00.000Z',
+			'2026-07-13T23:00:00.000Z'
+		]);
+		expect(data.series.temperature_2m).toEqual([12.3, null]);
+		expect(data.series.precipitation).toEqual([0, 1.2]);
+	});
+
+	it('sans offset ni fuseau (réponse legacy) : parse en UTC, fuseau UTC', () => {
+		const data = parseForecast(
+			{ hourly: { time: ['2026-07-03T00:00', '2026-07-03T01:00'], temperature_2m: [1, 2] } },
+			'm'
+		);
+		expect(data.timezone).toBe('UTC');
+		expect(data.utcOffsetSeconds).toBe(0);
 		expect(data.times.map((d) => d.toISOString())).toEqual([
 			'2026-07-03T00:00:00.000Z',
 			'2026-07-03T01:00:00.000Z'
 		]);
-		expect(data.series.temperature_2m).toEqual([12.3, null]);
-		expect(data.series.precipitation).toEqual([0, 1.2]);
 	});
 
 	it('lève sur réponse sans hourly.time', () => {

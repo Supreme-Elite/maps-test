@@ -24,7 +24,7 @@ export const buildForecastUrl = (lat: number, lng: number, model: string): strin
 		latitude: String(lat),
 		longitude: String(lng),
 		models: model,
-		timezone: 'UTC',
+		timezone: 'auto',
 		wind_speed_unit: 'ms',
 		hourly: HOURLY_VARIABLES.join(',')
 	});
@@ -53,7 +53,7 @@ const buildBorrowUrl = (lat: number, lng: number, model: string): string => {
 		latitude: String(lat),
 		longitude: String(lng),
 		models: model,
-		timezone: 'UTC',
+		timezone: 'auto',
 		hourly: BORROWED_VARIABLES.join(',')
 	});
 	return `${getForecastApiUrl()}/v1/forecast?${params.toString()}`;
@@ -91,31 +91,57 @@ const fetchBorrowSource = async (
 ): Promise<BorrowSource> => {
 	const res = await fetch(buildBorrowUrl(lat, lng, model), { signal });
 	if (!res.ok) throw new Error(`HTTP ${res.status}`);
-	const hourly = ((await res.json()) as ForecastResponse).hourly;
+	const json = (await res.json()) as ForecastResponse;
+	const hourly = json.hourly;
 	if (!hourly || !Array.isArray(hourly.time)) throw new Error("source d'emprunt invalide");
-	const out: BorrowSource = { time: hourly.time.map((t) => new Date(`${t}Z`)) };
+	// Même point → même offset que l'appel principal ; on repositionne en instants
+	// absolus pour que `mergeBorrowedSeries` aligne par timestamp (getTime).
+	const times = parseLocalTimes(hourly.time, json.utc_offset_seconds ?? 0);
+	const out: BorrowSource = { time: times };
 	for (const key of BORROWED_VARIABLES) out[key] = hourly[key] ?? [];
 	return out;
 };
 
 interface ForecastResponse {
+	timezone?: string;
+	utc_offset_seconds?: number;
 	hourly?: { time?: string[] } & Partial<Record<MeteogramKey, (number | null)[]>>;
 }
 
+/** Décalage `utc_offset_seconds` → suffixe ISO « ±HH:MM ». */
+const offsetIso = (seconds: number): string => {
+	const sign = seconds < 0 ? '-' : '+';
+	const abs = Math.abs(seconds);
+	const hh = String(Math.floor(abs / 3600)).padStart(2, '0');
+	const mm = String(Math.floor((abs % 3600) / 60)).padStart(2, '0');
+	return `${sign}${hh}:${mm}`;
+};
+
+/**
+ * Convertit les timestamps « heure locale du point » (timezone=auto) en instants
+ * UTC absolus, via l'offset renvoyé par l'API. Les Date restent donc des instants
+ * absolus — indispensable au couplage avec la carte (`valid_times` en UTC) — tandis
+ * que l'affichage local est géré par le fuseau IANA passé à Highcharts.
+ */
+const parseLocalTimes = (times: string[], utcOffsetSeconds: number): Date[] => {
+	const off = offsetIso(utcOffsetSeconds);
+	return times.map((t) => new Date(`${t}${off}`));
+};
+
 export const parseForecast = (json: unknown, model: string): MeteogramData => {
-	const hourly = (json as ForecastResponse).hourly;
+	const res = json as ForecastResponse;
+	const hourly = res.hourly;
 	if (!hourly || !Array.isArray(hourly.time)) {
 		throw new Error('Réponse Open-Meteo invalide (hourly.time manquant)');
 	}
-	// L'API renvoie les timestamps en heure locale du timezone demandé ; avec
-	// timezone=UTC, la chaîne 'YYYY-MM-DDTHH:MM' est déjà en UTC — on ajoute
-	// simplement le suffixe Z pour un parse Date déterministe.
-	const times = hourly.time.map((t) => new Date(`${t}Z`));
+	const utcOffsetSeconds = res.utc_offset_seconds ?? 0;
+	const timezone = res.timezone ?? 'UTC';
+	const times = parseLocalTimes(hourly.time, utcOffsetSeconds);
 	const series = {} as Record<MeteogramKey, (number | null)[]>;
 	for (const key of HOURLY_VARIABLES) {
 		series[key] = hourly[key] ?? [];
 	}
-	return { times, series, model };
+	return { times, series, model, timezone, utcOffsetSeconds };
 };
 
 /**
