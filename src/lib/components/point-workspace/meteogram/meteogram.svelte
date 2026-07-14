@@ -104,6 +104,96 @@
 		);
 	}
 
+	// ——— Encart de valeurs du pas sélectionné (playhead) ———
+	// Remplace le tooltip de survol Highcharts, inutilisable au tactile : sur
+	// mobile/tablette il ne s'affichait pas de façon fiable (piloté par le hover,
+	// tué par le touchend/reflow). Ici on lit nous-mêmes les valeurs au pas le plus
+	// proche du temps courant et on les rend dans un encart TOUJOURS visible,
+	// déterministe sur tous les appareils. Le tooltip de survol reste dispo desktop.
+	type ReadoutRow = { label: string; value: string; color: string };
+	// Stores lus au top level (les runes interdisent `$store` dans un callback imbriqué).
+	const currentTime = $derived($time);
+	const currentUnits = $derived($unitPreferences);
+	const readout = $derived.by(
+		(): { time: string; weather: string | null; rows: ReadoutRow[] } | null => {
+			const d = data;
+			if (!d || !d.times.length) return null;
+			const tx = currentTime ? new Date(currentTime).getTime() : d.times[0].getTime();
+			let idx = 0;
+			let best = Infinity;
+			for (let i = 0; i < d.times.length; i++) {
+				const diff = Math.abs(d.times[i].getTime() - tx);
+				if (diff < best) {
+					best = diff;
+					idx = i;
+				}
+			}
+			const u = currentUnits;
+			const at = (arr: (number | null)[]): number | null => arr[idx] ?? null;
+			const fmt = (v: number | null, digits: number, unit: string): string | null =>
+				v === null || !Number.isFinite(v) ? null : `${v.toFixed(digits).replace('.', ',')} ${unit}`;
+			const windRaw = at(seriesValues('wind_speed_10m'));
+			const windDisp = windRaw === null ? null : windRaw * convertValue(1, 'm/s', u);
+			const code = d.series.weather_code?.[idx];
+			const isDay = (d.series.is_day?.[idx] ?? 1) === 1;
+			const candidates: { label: string; value: string | null; color: string }[] = [
+				{
+					label: 'Température',
+					value: fmt(
+						at(convertSeries('temperature_2m', '°C')),
+						1,
+						getDisplayUnit('°C', u, 'temperature_2m')
+					),
+					color: '#ff4d4d'
+				},
+				{
+					label: 'Point de rosée',
+					value: fmt(
+						at(convertSeries('dew_point_2m', '°C')),
+						1,
+						getDisplayUnit('°C', u, 'dew_point_2m')
+					),
+					color: '#34d399'
+				},
+				{
+					label: 'Humidité',
+					value: fmt(at(seriesValues('relative_humidity_2m')), 0, '%'),
+					color: '#c084fc'
+				},
+				{
+					label: 'Précipitations',
+					value: fmt(
+						at(convertSeries('precipitation', 'mm')),
+						1,
+						getDisplayUnit('mm', u, 'precipitation')
+					),
+					color: '#68cfe8'
+				},
+				{
+					label: 'Pression',
+					value: fmt(
+						at(convertSeries('pressure_msl', 'hPa')),
+						1,
+						getDisplayUnit('hPa', u, 'pressure_msl')
+					),
+					color: '#fbbf24'
+				},
+				{ label: 'Vent', value: fmt(windDisp, 0, getDisplayUnit('m/s', u)), color: '#7dd3fc' }
+			];
+			const rows = candidates.filter((r): r is ReadoutRow => r.value !== null);
+			const time = new Intl.DateTimeFormat('fr-FR', {
+				timeZone: d.timezone,
+				weekday: 'short',
+				day: 'numeric',
+				month: 'short',
+				hour: '2-digit',
+				minute: '2-digit'
+			}).format(new Date(d.times[idx]));
+			const weather = code === null || code === undefined ? null : symbolForWmo(code, isDay).label;
+			return { time, weather, rows };
+		}
+	);
+
 	function seek(t: Date) {
 		const validTimes = get(metaJson)?.valid_times?.map((v) => new Date(v)) ?? [];
 		goToValidTime(nearestValidTime(t, validTimes) ?? t);
@@ -248,41 +338,15 @@
 		const t = get(time);
 		if (!c) return;
 		c.xAxis[0].removePlotLine('playhead');
-		if (!t) return;
-		const tx = new Date(t).getTime();
-		c.xAxis[0].addPlotLine({
-			id: 'playhead',
-			value: tx,
-			color: '#38bdf8',
-			width: 2,
-			zIndex: 4
-		});
-		showValuesTooltip(c, tx);
-	}
-
-	// Affiche le tooltip de valeurs sur le pas SÉLECTIONNÉ (playhead), sans
-	// dépendre du survol Highcharts. Indispensable au tactile (mobile/tablette) :
-	// sans hover, un tap sélectionne le pas mais le tooltip ne suivait pas de façon
-	// fiable (vieilles valeurs puis disparition). La série 0 (température) porte
-	// tous les x de l'API ; on prend l'index du point le plus proche du playhead,
-	// puis un point par série visible non-windbarb pour le tooltip partagé.
-	function showValuesTooltip(c: Chart, tx: number) {
-		const base = c.series[0]?.points;
-		if (!base?.length) return;
-		let idx = 0;
-		let bestD = Infinity;
-		for (let i = 0; i < base.length; i++) {
-			const d = Math.abs((base[i].x as number) - tx);
-			if (d < bestD) {
-				bestD = d;
-				idx = i;
-			}
+		if (t) {
+			c.xAxis[0].addPlotLine({
+				id: 'playhead',
+				value: new Date(t).getTime(),
+				color: '#38bdf8',
+				width: 2,
+				zIndex: 4
+			});
 		}
-		const pts = c.series
-			.filter((s) => s.visible && s.type !== 'windbarb')
-			.map((s) => s.points?.[idx])
-			.filter((p): p is NonNullable<typeof p> => !!p);
-		if (pts.length) c.tooltip.refresh(pts);
 	}
 	$effect(() => {
 		void $time;
@@ -344,6 +408,28 @@
 	{:else if error === 'empty'}
 		<p class="p-4 text-sm text-white/60">Aucune donnée à ce point pour ce modèle.</p>
 	{:else if data && data.times.length}
-		<div bind:this={chartEl} class="min-h-[300px] w-full flex-1"></div>
+		<div class="relative min-h-[300px] w-full flex-1">
+			<div bind:this={chartEl} class="h-full w-full"></div>
+			{#if readout}
+				<!-- Encart de valeurs du pas sélectionné : toujours visible, fiable au
+				     tactile (remplace le tooltip de survol). `pointer-events-none` pour
+				     laisser passer les taps vers le graphe. -->
+				<div
+					class="pointer-events-none absolute top-1 left-1 z-10 rounded-md bg-[rgba(12,20,32,0.9)] px-2 py-1 text-[11px] leading-tight text-white/90 shadow ring-1 ring-white/10"
+				>
+					<div class="font-medium">{readout.time}</div>
+					{#if readout.weather}
+						<div class="text-white/70">{readout.weather}</div>
+					{/if}
+					{#each readout.rows as r (r.label)}
+						<div class="flex items-center gap-1 tabular-nums">
+							<span class="inline-block size-1.5 rounded-full" style="background:{r.color}"></span>
+							<span class="text-white/70">{r.label} :</span>
+							<span class="font-semibold">{r.value}</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>

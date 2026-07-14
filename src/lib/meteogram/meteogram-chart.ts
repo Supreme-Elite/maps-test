@@ -164,11 +164,6 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 			useHTML: false,
 			backgroundColor: 'rgba(12, 20, 32, 0.95)',
 			style: { color: TEXT_STRONG },
-			// Tactile : après un tap, Highcharts programme un masquage (`touchend`).
-			// On l'allonge pour que les valeurs du pas sélectionné restent lisibles
-			// (le tooltip est réaffiché sur le playhead à chaque changement de temps,
-			// cf. `showValuesTooltip` dans meteogram.svelte) — indispensable mobile.
-			hideDelay: 3000,
 			// Heure locale du point (Highcharts formate {point.x} selon `time.timezone`).
 			headerFormat:
 				'<small>{point.x:%A %e %b, %H:%M}</small><br><b>{point.point.symbolName}</b><br>'
