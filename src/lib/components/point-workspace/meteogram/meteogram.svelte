@@ -183,6 +183,7 @@
 			dewPoint: convertSeries('dew_point_2m', '°C'),
 			precipitation: convertSeries('precipitation', 'mm'),
 			pressure: convertSeries('pressure_msl', 'hPa'),
+			humidity: seriesValues('relative_humidity_2m'),
 			windSpeed: seriesValues('wind_speed_10m'),
 			windDirection: seriesValues('wind_direction_10m'),
 			symbolLabels: (d.series.weather_code ?? []).map((code, i) =>
@@ -194,6 +195,12 @@
 				temperature: getDisplayUnit('°C', $unitPreferences, 'temperature_2m'),
 				precipitation: getDisplayUnit('mm', $unitPreferences, 'precipitation'),
 				pressure: getDisplayUnit('hPa', $unitPreferences, 'pressure_msl')
+			},
+			windDisplay: {
+				// Conversions vitesse purement multiplicatives (m/s→km/h ×3,6, →mph, →kn) :
+				// le facteur = conversion de 1 m/s dans l'unité choisie.
+				factor: convertValue(1, 'm/s', $unitPreferences),
+				unit: getDisplayUnit('m/s', $unitPreferences)
 			},
 			timezone: d.timezone,
 			compact: !desktop.current,
