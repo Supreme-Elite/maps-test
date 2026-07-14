@@ -32,10 +32,14 @@
 	$effect(() => {
 		if (typeof window === 'undefined') return;
 		function onClick(e: MouseEvent) {
-			const el = e.target instanceof Element ? e.target : null;
-			if (!el || !sectionEl) return;
-			if (sectionEl.contains(el)) return; // clic dans le tiroir
-			if (el.closest('.popup')) return; // clic dans la bulle-viseur (bouton Météogramme, etc.)
+			if (!sectionEl) return;
+			// `composedPath()` = chemin de propagation figé au dispatch → robuste si la
+			// cible est détachée pendant le handler (ex. le ✕ de l'encart qui se retire
+			// du DOM en se masquant : `contains(e.target)` renverrait alors faux à tort
+			// et fermerait tout le tiroir). On teste l'appartenance sur ce chemin.
+			const path = e.composedPath();
+			if (path.includes(sectionEl)) return; // clic dans le tiroir
+			if (path.some((n) => n instanceof Element && n.classList.contains('popup'))) return; // bulle-viseur
 			pointWorkspace.close();
 		}
 		window.addEventListener('click', onClick);

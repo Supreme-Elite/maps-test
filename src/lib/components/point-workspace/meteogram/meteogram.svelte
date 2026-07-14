@@ -481,7 +481,10 @@
 						class="pointer-events-auto absolute top-0.5 right-0.5 rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
 						aria-label="Masquer les valeurs"
 						title="Masquer"
-						onclick={() => (dismissed = true)}
+						onclick={(e) => {
+							e.stopPropagation();
+							dismissed = true;
+						}}
 					>
 						<XIcon class="size-3.5" aria-hidden="true" />
 					</button>
