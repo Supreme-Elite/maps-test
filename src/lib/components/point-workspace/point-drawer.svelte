@@ -41,6 +41,19 @@
 		return () => window.removeEventListener('click', onClick);
 	});
 
+	// Fermeture au tap sur la CARTE : on écoute l'événement `click` de MapLibre
+	// (fiable au tactile, contrairement au `click` DOM que MapLibre supprime souvent
+	// au tap — d'où un clic hors cadre qui ne fermait pas sur mobile/tablette).
+	// L'ouverture se fait via le bouton du popup (pas un clic carte) → pas d'auto-
+	// fermeture à l'ouverture.
+	$effect(() => {
+		const currentMap = $map;
+		if (!currentMap) return;
+		const close = () => pointWorkspace.close();
+		currentMap.on('click', close);
+		return () => currentMap.off('click', close);
+	});
+
 	// Réserve basse dégageant l'axe des heures de la barre d'adresse Safari iOS
 	// (~50pt) : sur iPhone, cette barre recouvre le bas du viewport web et n'est
 	// exposée par AUCUNE API (ni `env(safe-area-inset-bottom)`, qui vaut 0 quand la
