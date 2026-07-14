@@ -321,6 +321,7 @@
 					...options.chart?.events,
 					render: function () {
 						drawSymbols(this as Chart, d);
+						positionEncart();
 					}
 				}
 			};
@@ -331,6 +332,34 @@
 			cancelled = true;
 		};
 	});
+
+	// Position horizontale (px, relative au conteneur) de l'encart : suit le
+	// playhead. Recalculée au scrub, au render et au resize (le mapping pixel du
+	// chart change à chaque fois). `null` quand pas d'échéance → coin par défaut.
+	let playheadX = $state<number | null>(null);
+	let encartW = $state(0);
+	let containerW = $state(0);
+	const encartLeft = $derived.by(() => {
+		if (playheadX === null) return 4;
+		const w = encartW || 150;
+		const cw = containerW || 320;
+		// Centré sur le playhead, borné dans le conteneur (pas de débordement).
+		return Math.round(Math.max(4, Math.min(playheadX - w / 2, cw - w - 4)));
+	});
+
+	function positionEncart() {
+		const c = chart;
+		const t = get(time);
+		if (!c || !c.xAxis?.[0] || !t) {
+			playheadX = null;
+			return;
+		}
+		try {
+			playheadX = c.xAxis[0].toPixels(new Date(t).getTime(), false);
+		} catch {
+			playheadX = null;
+		}
+	}
 
 	// Playhead : plotLine repositionnée au scrub, sans re-render du chart.
 	function syncPlayhead() {
@@ -347,6 +376,7 @@
 				zIndex: 4
 			});
 		}
+		positionEncart();
 	}
 	$effect(() => {
 		void $time;
@@ -360,7 +390,10 @@
 	$effect(() => {
 		const el = chartEl;
 		if (!el || typeof ResizeObserver === 'undefined') return;
-		const ro = new ResizeObserver(() => chart?.reflow());
+		const ro = new ResizeObserver(() => {
+			chart?.reflow();
+			positionEncart();
+		});
 		ro.observe(el);
 		return () => ro.disconnect();
 	});
@@ -408,14 +441,17 @@
 	{:else if error === 'empty'}
 		<p class="p-4 text-sm text-white/60">Aucune donnée à ce point pour ce modèle.</p>
 	{:else if data && data.times.length}
-		<div class="relative min-h-[300px] w-full flex-1">
+		<div class="relative min-h-[300px] w-full flex-1" bind:clientWidth={containerW}>
 			<div bind:this={chartEl} class="h-full w-full"></div>
 			{#if readout}
 				<!-- Encart de valeurs du pas sélectionné : toujours visible, fiable au
-				     tactile (remplace le tooltip de survol). `pointer-events-none` pour
-				     laisser passer les taps vers le graphe. -->
+				     tactile (remplace le tooltip de survol). Suit horizontalement le
+				     playhead (`left`), borné dans le conteneur. `pointer-events-none`
+				     pour laisser passer les taps vers le graphe. -->
 				<div
-					class="pointer-events-none absolute top-1 left-1 z-10 rounded-md bg-[rgba(12,20,32,0.9)] px-2 py-1 text-[11px] leading-tight text-white/90 shadow ring-1 ring-white/10"
+					bind:clientWidth={encartW}
+					style="left: {encartLeft}px"
+					class="pointer-events-none absolute top-1 z-10 rounded-md bg-[rgba(12,20,32,0.9)] px-2 py-1 text-[11px] leading-tight text-white/90 shadow ring-1 ring-white/10"
 				>
 					<div class="font-medium">{readout.time}</div>
 					{#if readout.weather}
