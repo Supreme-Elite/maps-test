@@ -19,6 +19,8 @@ export interface MeteogramChartInput {
 	/** Unité d'affichage du vent (préférence utilisateur). Défaut km/h.
 	 *  La valeur du windbarb reste en m/s (tracé des plumes / Beaufort). */
 	windDisplay?: { factor: number; unit: string };
+	/** Humidité relative (%) — optionnel, visible si présent. */
+	humidity?: (number | null)[];
 }
 
 // Thème sombre : TOUT élément d'axe/grille doit être stylé explicitement.
@@ -73,6 +75,10 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 	// 100 % null même après tentative d'emprunt) → axe/série masqués pour ne pas
 	// laisser un titre « hPa » orphelin sans graduations sur le bord droit.
 	const hasPressure = input.pressure.some((v) => v !== null && Number.isFinite(v));
+
+	const humidity = input.humidity ?? [];
+	const humidityData = xs.map((x, i) => [x, at(humidity, i)]);
+	const hasHumidity = humidity.some((v) => v !== null && Number.isFinite(v));
 
 	// 1 barbe sur 2 (lisibilité, comme le démo) ; points sans vitesse/direction écartés.
 	const windData = xs
@@ -213,6 +219,26 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				gridLineWidth: 0,
 				opposite: true,
 				showLastLabel: false
+			},
+			{
+				// Humidité relative (0-100 %)
+				visible: hasHumidity,
+				min: 0,
+				max: 100,
+				tickInterval: 50, // 0 / 50 / 100 seulement (limiter l'encombrement à droite)
+				title: {
+					text: hasHumidity ? '%' : undefined,
+					offset: 0,
+					align: 'high',
+					rotation: 0,
+					style: { fontSize: '10px', color: '#c084fc' },
+					textAlign: 'right',
+					x: -3
+				},
+				labels: { style: { fontSize: '8px', color: '#c084fc' }, x: -3 },
+				gridLineWidth: 0,
+				opposite: true,
+				showLastLabel: false
 			}
 		],
 		legend: {
@@ -291,6 +317,18 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				dashStyle: 'ShortDot',
 				yAxis: 2,
 				tooltip: { valueSuffix: ` ${input.units.pressure}` }
+			},
+			{
+				name: 'Humidité',
+				visible: hasHumidity,
+				showInLegend: hasHumidity,
+				data: humidityData,
+				type: 'spline',
+				marker: { enabled: false },
+				lineWidth: 1,
+				color: '#c084fc',
+				yAxis: 3,
+				tooltip: { valueSuffix: ' %' }
 			},
 			{
 				name: 'Vent',

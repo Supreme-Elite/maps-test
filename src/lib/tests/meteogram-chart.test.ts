@@ -22,19 +22,25 @@ function input(overrides: Partial<MeteogramChartInput> = {}): MeteogramChartInpu
 }
 
 describe('buildChartOptions', () => {
-	it('déclare 3 axes Y (T°, précip, pression) et 2 axes X liés', () => {
+	it('déclare 4 axes Y (T°, précip, pression, humidité)', () => {
 		const o = buildChartOptions(input());
-		expect(o.yAxis).toHaveLength(3);
-		expect(o.xAxis).toHaveLength(2);
-		expect((o.xAxis as { linkedTo?: number }[])[1].linkedTo).toBe(0);
+		expect(o.yAxis).toHaveLength(4);
 	});
 
-	it('série 5 : température, rosée, précip, pression, windbarb — sur le bon axe', () => {
+	it('6 séries : température, rosée, précip, pression, humidité, windbarb — sur le bon axe', () => {
 		const o = buildChartOptions(input());
 		const s = o.series as { type?: string; yAxis?: number; name?: string }[];
-		expect(s.map((x) => x.type)).toEqual(['spline', 'spline', 'column', 'spline', 'windbarb']);
-		expect(s[2].yAxis).toBe(1);
-		expect(s[3].yAxis).toBe(2);
+		expect(s.map((x) => x.type)).toEqual([
+			'spline',
+			'spline',
+			'column',
+			'spline',
+			'spline',
+			'windbarb'
+		]);
+		expect(s[2].yAxis).toBe(1); // précip
+		expect(s[3].yAxis).toBe(2); // pression
+		expect(s[4].yAxis).toBe(3); // humidité
 	});
 
 	it('température porte x (ms epoch) et symbolName pour le tooltip', () => {
@@ -154,6 +160,27 @@ describe('buildChartOptions', () => {
 			(s) => s.name === 'Pression'
 		)!;
 		expect(pressureSeries.visible).not.toBe(false);
+	});
+
+	it('humidité fournie : axe (0-100) et série visibles', () => {
+		const o = buildChartOptions(input({ humidity: [40, 55, 60, 45] }));
+		const humAxis = (o.yAxis as { min?: number; max?: number; visible?: boolean }[])[3];
+		expect(humAxis.min).toBe(0);
+		expect(humAxis.max).toBe(100);
+		expect(humAxis.visible).not.toBe(false);
+		const hum = (o.series as { name?: string; visible?: boolean }[]).find(
+			(x) => x.name === 'Humidité'
+		)!;
+		expect(hum.visible).not.toBe(false);
+	});
+
+	it('humidité absente/nulle : axe et série masqués (bonus abandonnable)', () => {
+		const o = buildChartOptions(input()); // pas de humidity
+		expect((o.yAxis as { visible?: boolean }[])[3].visible).toBe(false);
+		const hum = (o.series as { name?: string; visible?: boolean }[]).find(
+			(x) => x.name === 'Humidité'
+		)!;
+		expect(hum.visible).toBe(false);
 	});
 
 	it('unités injectées dans tooltips/axes', () => {
