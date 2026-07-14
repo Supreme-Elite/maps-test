@@ -428,35 +428,6 @@
 	margin-right: 3px;
 }
 
-.popup--pinned {
-	height: auto;
-}
-
-.popup-point-info {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 1px;
-	padding: 3px 6px 0;
-	font-size: 0.72rem;
-	font-weight: 600;
-	color: black;
-	text-align: center;
-}
-
-.dark .popup-point-info {
-	color: white;
-}
-
-.popup-coords {
-	font-variant-numeric: tabular-nums;
-	opacity: 0.85;
-}
-
-.popup-alt {
-	opacity: 0.95;
-}
-
 .popup-sounding-btn,
 .popup-meteogram-btn {
 	margin-top: 4px;

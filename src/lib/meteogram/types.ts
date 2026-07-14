@@ -18,4 +18,6 @@ export interface MeteogramData {
 	timezone: string;
 	/** Décalage UTC du point en secondes (ex. 7200), au moment de la requête. */
 	utcOffsetSeconds: number;
+	/** Altitude du point selon le modèle (m), depuis `elevation` de l'API. `null` si absente. */
+	elevation: number | null;
 }

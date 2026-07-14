@@ -35,9 +35,6 @@ let valueSpan: HTMLSpanElement | undefined;
 let unitSpan: HTMLSpanElement | undefined;
 let elevationSpan: HTMLSpanElement | undefined;
 let windSpan: HTMLSpanElement | undefined;
-let pointInfoDiv: HTMLDivElement | undefined;
-let coordsSpan: HTMLSpanElement | undefined;
-let altSpan: HTMLSpanElement | undefined;
 let soundingBtn: HTMLButtonElement | undefined;
 let meteogramBtn: HTMLButtonElement | undefined;
 let lastCoords: maplibregl.LngLat | undefined;
@@ -81,16 +78,6 @@ const initPopupDiv = (): void => {
 
 	wrapperDiv.append(contentDiv);
 
-	pointInfoDiv = document.createElement('div');
-	pointInfoDiv.classList.add('popup-point-info');
-	coordsSpan = document.createElement('span');
-	coordsSpan.classList.add('popup-coords');
-	altSpan = document.createElement('span');
-	altSpan.classList.add('popup-alt');
-	pointInfoDiv.append(coordsSpan);
-	pointInfoDiv.append(altSpan);
-	wrapperDiv.append(pointInfoDiv);
-
 	soundingBtn = document.createElement('button');
 	soundingBtn.className = 'popup-sounding-btn';
 	soundingBtn.innerText = 'Sondage vertical';
@@ -121,15 +108,6 @@ const updatePopupContent = async (coordinates: maplibregl.LngLat): Promise<void>
 	// compacte d'origine (valeur/unité/vent/altitude, sans bouton).
 	const pinned = get(popupMode) === 'drag';
 
-	el?.classList.toggle('popup--pinned', pinned);
-	if (pointInfoDiv) pointInfoDiv.style.display = pinned ? '' : 'none';
-	// En suivi, l'altitude compacte reste dans la ligne viseur ; épinglée, elle
-	// passe dans le bloc infos (plus lisible) → on masque la version compacte.
-	if (elevationSpan) elevationSpan.style.display = pinned ? 'none' : '';
-	if (coordsSpan) {
-		coordsSpan.innerText = `${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`;
-	}
-
 	// Le bouton « Sondage vertical » n'apparaît que sur les modèles à niveaux de
 	// pression (AROME 0,025°) et si l'option est activée dans les réglages.
 	if (soundingBtn) {
@@ -153,7 +131,6 @@ const updatePopupContent = async (coordinates: maplibregl.LngLat): Promise<void>
 		map?.getTerrain()?.exaggeration
 	);
 	const hasElevation = typeof elevation === 'number' && isFinite(elevation);
-	if (altSpan) altSpan.innerText = hasElevation ? `Alt. ${Math.round(elevation)} m` : 'Alt. —';
 
 	const activeUrl = rasterManager?.getActiveSourceUrl();
 	if (!activeUrl) return;
@@ -330,8 +307,8 @@ export const addPopup = (): void => {
 		await renderPopup(e.lngLat);
 	});
 
-	// Clic droit : épingle directement la bulle enrichie (altitude/coords lisibles
-	// + bouton Météogramme visible) en 1 geste, au lieu des 3 clics gauche
+	// Clic droit : épingle directement la bulle (mode « drag ») en 1 geste → le
+	// bouton Météogramme est cliquable tout de suite, au lieu des 3 clics gauche
 	// (follow → pin → bouton). Desktop uniquement (pas d'event contextmenu tactile).
 	map.on('contextmenu', async (e: maplibregl.MapLayerMouseEvent) => {
 		if (!map || get(terraDrawActive)) return;

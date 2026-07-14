@@ -106,6 +106,8 @@ const fetchBorrowSource = async (
 interface ForecastResponse {
 	timezone?: string;
 	utc_offset_seconds?: number;
+	/** Altitude du point selon le modèle (m) — renvoyée par l'API forecast. */
+	elevation?: number;
 	hourly?: { time?: string[] } & Partial<Record<MeteogramKey, (number | null)[]>>;
 }
 
@@ -142,7 +144,9 @@ export const parseForecast = (json: unknown, model: string): MeteogramData => {
 	for (const key of HOURLY_VARIABLES) {
 		series[key] = hourly[key] ?? [];
 	}
-	return { times, series, model, timezone, utcOffsetSeconds };
+	const elevation =
+		typeof res.elevation === 'number' && isFinite(res.elevation) ? res.elevation : null;
+	return { times, series, model, timezone, utcOffsetSeconds, elevation };
 };
 
 /**

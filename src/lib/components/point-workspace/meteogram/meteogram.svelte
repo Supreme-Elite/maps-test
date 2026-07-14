@@ -20,7 +20,14 @@
 	import type Highcharts from 'highcharts';
 	import type { Chart } from 'highcharts';
 
-	let { lat, lng }: { lat: number; lng: number } = $props();
+	// `elevation` (bindable) : altitude du point selon le modèle, publiée vers le
+	// tiroir (affichée dans l'en-tête). L'API terrain de la carte n'étant pas
+	// fiable sans DEM chargé, on prend l'altitude fournie par l'API forecast.
+	let {
+		lat,
+		lng,
+		elevation = $bindable(null)
+	}: { lat: number; lng: number; elevation?: number | null } = $props();
 
 	let data = $state<MeteogramData | null>(null);
 	let loading = $state(false);
@@ -79,6 +86,11 @@
 		void lng;
 		void model;
 		load();
+	});
+
+	// Publie l'altitude (modèle) vers le tiroir dès que les données arrivent.
+	$effect(() => {
+		elevation = data?.elevation ?? null;
 	});
 
 	// ——— séries converties dans l'unité d'affichage ———

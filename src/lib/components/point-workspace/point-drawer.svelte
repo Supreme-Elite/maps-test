@@ -19,6 +19,8 @@
 	let height = $state(DEFAULT_HEIGHT);
 	let maxHeight = $state(DEFAULT_HEIGHT);
 	let meteogramComp = $state<ReturnType<typeof Meteogram>>();
+	// Altitude du point (modèle), publiée par le meteogram et affichée dans l'en-tête.
+	let elevation = $state<number | null>(null);
 
 	// Réserve basse dégageant l'axe des heures de la barre d'adresse Safari iOS
 	// (~50pt) : sur iPhone, cette barre recouvre le bas du viewport web et n'est
@@ -174,8 +176,13 @@
 				<span class="hidden sm:inline">Météogramme —&nbsp;</span>{$pointWorkspace.lat.toFixed(3)},
 				{$pointWorkspace.lng.toFixed(3)}
 			</span>
-			<span class="min-w-0 flex-1 truncate text-xs text-sky-300">
-				{$selectedDomain.label} · dernier run
+			<span
+				class="min-w-0 flex-1 truncate text-xs text-sky-300"
+				title={elevation !== null ? 'Altitude du point (modèle)' : undefined}
+			>
+				{$selectedDomain.label} · dernier run{elevation !== null
+					? ` · ${Math.round(elevation)} m`
+					: ''}
 			</span>
 			<button
 				class="flex shrink-0 items-center gap-1 rounded px-2 py-1 hover:bg-white/10"
@@ -195,7 +202,12 @@
 			</button>
 		</header>
 		<div class="flex-1 overflow-y-auto px-2" style="padding-bottom: {bottomPad}">
-			<Meteogram bind:this={meteogramComp} lat={$pointWorkspace.lat} lng={$pointWorkspace.lng} />
+			<Meteogram
+				bind:this={meteogramComp}
+				bind:elevation
+				lat={$pointWorkspace.lat}
+				lng={$pointWorkspace.lng}
+			/>
 		</div>
 	</section>
 {/if}
