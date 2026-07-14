@@ -55,6 +55,33 @@ const TEXT = 'rgba(255, 255, 255, 0.7)';
 const TEXT_STRONG = 'rgba(255, 255, 255, 0.9)';
 
 /**
+ * Séparateurs de jour : un trait vertical à chaque **minuit local**. On repère
+ * les pas dont l'heure locale (fuseau du point) vaut « 00 » — le premier point
+ * est exclu (pas de trait au bord gauche). Offsets entiers (France/Europe) : le
+ * pas horaire tombe pile sur minuit local. Edge case fuseaux non-entiers (Inde
+ * +5:30) : léger désalignement, accepté (cohérent avec la limite DST connue).
+ */
+export function dayBoundaryPlotLines(
+	times: Date[],
+	timezone: string
+): { value: number; color: string; width: number; zIndex: number }[] {
+	const fmt = new Intl.DateTimeFormat('en-GB', {
+		timeZone: timezone,
+		hour: '2-digit',
+		hour12: false
+	});
+	const lines: { value: number; color: string; width: number; zIndex: number }[] = [];
+	times.forEach((t, i) => {
+		if (i === 0) return;
+		const hh = fmt.format(t); // '00'..'23' (certaines impl : '24' à minuit)
+		if (hh === '00' || hh === '24') {
+			lines.push({ value: t.getTime(), color: GRID_DAY, width: 1, zIndex: 1 });
+		}
+	});
+	return lines;
+}
+
+/**
  * Construit les options du graphe unique façon yr.no (démo officielle
  * Highcharts « meteogram »), thème sombre accordé au tiroir. Builder pur :
  * données → objet options, aucun accès DOM ni au runtime Highcharts.
@@ -157,26 +184,24 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				maxPadding: 0,
 				offset: 30,
 				showLastLabel: true,
-				labels: { format: '{value:%H}', style: { color: TEXT } },
-				crosshair: { width: 1, color: 'rgba(255, 255, 255, 0.25)' }
-			},
-			{
-				linkedTo: 0,
-				type: 'datetime',
-				tickInterval: 24 * 36e5,
+				crosshair: { width: 1, color: 'rgba(255, 255, 255, 0.25)' },
+				// Séparateurs de jour (l'ancien 2ᵉ axe « opposite » est supprimé).
+				plotLines: dayBoundaryPlotLines(input.times, input.timezone),
 				labels: {
-					format: '{value:<span style="font-size: 12px; font-weight: bold">%a</span> %e %b}',
-					align: 'left',
-					x: 3,
-					y: 8,
-					style: { color: TEXT_STRONG }
-				},
-				opposite: true,
-				tickLength: 20,
-				lineColor: AXIS,
-				tickColor: AXIS,
-				gridLineWidth: 1,
-				gridLineColor: GRID_DAY
+					style: { color: TEXT },
+					// Heure (%H) par défaut ; à minuit local, la date en gras (cadre allégé).
+					formatter: function () {
+						const ctx = this as unknown as {
+							value: number;
+							axis: { chart: { time: { dateFormat(f: string, t: number): string } } };
+						};
+						const time = ctx.axis.chart.time;
+						const hh = time.dateFormat('%H', ctx.value);
+						return hh === '00'
+							? time.dateFormat('<span style="font-weight: bold">%a %e %b</span>', ctx.value)
+							: hh;
+					}
+				}
 			}
 		] as XAxisOptions[],
 		yAxis: [

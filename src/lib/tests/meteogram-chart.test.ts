@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { type MeteogramChartInput, buildChartOptions } from '$lib/meteogram/meteogram-chart';
+import {
+	type MeteogramChartInput,
+	buildChartOptions,
+	dayBoundaryPlotLines
+} from '$lib/meteogram/meteogram-chart';
 
 function input(overrides: Partial<MeteogramChartInput> = {}): MeteogramChartInput {
 	const times = [0, 1, 2, 3].map((h) => new Date(Date.UTC(2026, 6, 10, h)));
@@ -243,5 +247,19 @@ describe('buildChartOptions', () => {
 		const tempAxis = (o.yAxis as { tickInterval?: number; minRange?: number }[])[0];
 		expect(tempAxis.tickInterval).toBeUndefined();
 		expect(tempAxis.minRange).toBe(8);
+	});
+
+	it('un seul axe X, avec séparateurs de jour (plotLines)', () => {
+		const o = buildChartOptions(input());
+		expect(o.xAxis).toHaveLength(1);
+		const axis = (o.xAxis as { plotLines?: unknown[] }[])[0];
+		expect(Array.isArray(axis.plotLines)).toBe(true);
+	});
+
+	it('dayBoundaryPlotLines : un trait à chaque minuit local (premier point exclu)', () => {
+		// 50 h horaires depuis minuit UTC, fuseau UTC → minuits à h=24 et h=48.
+		const times = Array.from({ length: 50 }, (_, h) => new Date(Date.UTC(2026, 6, 10) + h * 36e5));
+		const lines = dayBoundaryPlotLines(times, 'UTC');
+		expect(lines.map((l) => l.value)).toEqual([Date.UTC(2026, 6, 11), Date.UTC(2026, 6, 12)]);
 	});
 });
