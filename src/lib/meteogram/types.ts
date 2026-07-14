@@ -1,6 +1,7 @@
 export type MeteogramKey =
 	| 'temperature_2m'
 	| 'dew_point_2m'
+	| 'relative_humidity_2m'
 	| 'precipitation'
 	| 'wind_speed_10m'
 	| 'wind_gusts_10m'

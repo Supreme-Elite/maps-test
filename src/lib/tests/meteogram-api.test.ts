@@ -21,6 +21,7 @@ describe('buildForecastUrl', () => {
 		expect(url).toContain('temperature_2m');
 		expect(url).toContain('weather_code');
 		expect(url).toContain('is_day');
+		expect(url).toContain('relative_humidity_2m');
 		expect(url).not.toContain('cloud_cover_low');
 		expect(url).not.toContain('cape');
 		expect(url).not.toContain('precipitation_probability');
