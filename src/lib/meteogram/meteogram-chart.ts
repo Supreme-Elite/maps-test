@@ -248,6 +248,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 			{
 				// Humidité relative (0-100 %)
 				visible: hasHumidity,
+				showEmpty: false, // axe caché tant que la série humidité (masquée par défaut) n'est pas activée
 				min: 0,
 				max: 100,
 				tickInterval: 50, // 0 / 50 / 100 seulement (limiter l'encombrement à droite)
@@ -345,7 +346,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 			},
 			{
 				name: 'Humidité',
-				visible: hasHumidity,
+				visible: false, // masquée par défaut : activable via la légende (bonus discret)
 				showInLegend: hasHumidity,
 				data: humidityData,
 				type: 'spline',
@@ -364,17 +365,6 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				lineWidth: 1.5,
 				vectorLength: 18,
 				yOffset: -15,
-				dataLabels: {
-					enabled: true,
-					allowOverlap: false,
-					// point.value en m/s → converti à l'affichage, entier.
-					formatter: function () {
-						const p = this as unknown as { point: { value: number } };
-						return String(Math.round(p.point.value * windDisplay.factor));
-					},
-					style: { fontSize: '9px', color: '#7dd3fc', textOutline: 'none', fontWeight: 'normal' },
-					y: 16
-				},
 				tooltip: {
 					pointFormatter: function () {
 						const p = this as unknown as {

@@ -166,25 +166,27 @@ describe('buildChartOptions', () => {
 		expect(pressureSeries.visible).not.toBe(false);
 	});
 
-	it('humidité fournie : axe (0-100) et série visibles', () => {
+	it('humidité fournie : série masquée par défaut mais présente en légende', () => {
 		const o = buildChartOptions(input({ humidity: [40, 55, 60, 45] }));
-		const humAxis = (o.yAxis as { min?: number; max?: number; visible?: boolean }[])[3];
+		const humAxis = (o.yAxis as { min?: number; max?: number; showEmpty?: boolean }[])[3];
 		expect(humAxis.min).toBe(0);
 		expect(humAxis.max).toBe(100);
-		expect(humAxis.visible).not.toBe(false);
-		const hum = (o.series as { name?: string; visible?: boolean }[]).find(
-			(x) => x.name === 'Humidité'
-		)!;
-		expect(hum.visible).not.toBe(false);
-	});
-
-	it('humidité absente/nulle : axe et série masqués (bonus abandonnable)', () => {
-		const o = buildChartOptions(input()); // pas de humidity
-		expect((o.yAxis as { visible?: boolean }[])[3].visible).toBe(false);
-		const hum = (o.series as { name?: string; visible?: boolean }[]).find(
+		expect(humAxis.showEmpty).toBe(false);
+		const hum = (o.series as { name?: string; visible?: boolean; showInLegend?: boolean }[]).find(
 			(x) => x.name === 'Humidité'
 		)!;
 		expect(hum.visible).toBe(false);
+		expect(hum.showInLegend).toBe(true);
+	});
+
+	it('humidité absente/nulle : série hors légende, axe masqué', () => {
+		const o = buildChartOptions(input());
+		expect((o.yAxis as { visible?: boolean }[])[3].visible).toBe(false);
+		const hum = (o.series as { name?: string; visible?: boolean; showInLegend?: boolean }[]).find(
+			(x) => x.name === 'Humidité'
+		)!;
+		expect(hum.visible).toBe(false);
+		expect(hum.showInLegend).toBe(false);
 	});
 
 	it('unités injectées dans tooltips/axes', () => {
@@ -196,30 +198,19 @@ describe('buildChartOptions', () => {
 		expect(json).toContain('inch');
 	});
 
-	it('vent : dataLabels activés, vitesse entière convertie (défaut km/h)', () => {
+	it('vent : pas de nombres sur les barbules (dataLabels non activés)', () => {
 		const o = buildChartOptions(input());
-		const barbs = (
-			o.series as {
-				type?: string;
-				dataLabels?: { enabled?: boolean; formatter?: (this: unknown) => string };
-			}[]
-		).find((s) => s.type === 'windbarb')!;
-		expect(barbs.dataLabels?.enabled).toBe(true);
-		// point.value en m/s (brut) → 5 × 3,6 = 18
-		const label = barbs.dataLabels!.formatter!.call({ point: { value: 5 } });
-		expect(label).toBe('18');
+		const barbs = (o.series as { type?: string; dataLabels?: { enabled?: boolean } }[]).find(
+			(s) => s.type === 'windbarb'
+		)!;
+		expect(barbs.dataLabels?.enabled).not.toBe(true);
 	});
 
-	it('vent : windDisplay change unité et facteur (tooltip + dataLabel)', () => {
+	it('vent : tooltip à l’unité de préférence (windDisplay)', () => {
 		const o = buildChartOptions(input({ windDisplay: { factor: 1, unit: 'm/s' } }));
 		const barbs = (
-			o.series as {
-				type?: string;
-				dataLabels?: { formatter?: (this: unknown) => string };
-				tooltip?: { pointFormatter?: (this: unknown) => string };
-			}[]
+			o.series as { type?: string; tooltip?: { pointFormatter?: (this: unknown) => string } }[]
 		).find((s) => s.type === 'windbarb')!;
-		expect(barbs.dataLabels!.formatter!.call({ point: { value: 5 } })).toBe('5');
 		const rendered = barbs.tooltip!.pointFormatter!.call({
 			value: 4.2,
 			beaufortLevel: 3,
