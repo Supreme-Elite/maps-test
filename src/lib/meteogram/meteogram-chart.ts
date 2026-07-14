@@ -16,6 +16,9 @@ export interface MeteogramChartInput {
 	onTimeClick: (date: Date) => void;
 	/** Mobile : marges resserrées pour rendre la zone de tracé au graphe. */
 	compact?: boolean;
+	/** Unité d'affichage du vent (préférence utilisateur). Défaut km/h.
+	 *  La valeur du windbarb reste en m/s (tracé des plumes / Beaufort). */
+	windDisplay?: { factor: number; unit: string };
 }
 
 // Thème sombre : TOUT élément d'axe/grille doit être stylé explicitement.
@@ -82,6 +85,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 		}));
 
 	const onTimeClick = input.onTimeClick;
+	const windDisplay = input.windDisplay ?? { factor: 3.6, unit: 'km/h' };
 
 	// Densité de grille adaptative : au-delà de 72 h, une gridline toutes les
 	// 2 h sature le tracé (l'API renvoie jusqu'à 7 jours) — on passe à 6 h.
@@ -287,9 +291,18 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				lineWidth: 1.5,
 				vectorLength: 18,
 				yOffset: -15,
+				dataLabels: {
+					enabled: true,
+					allowOverlap: false,
+					// point.value en m/s → converti à l'affichage, entier.
+					formatter: function () {
+						const p = this as unknown as { point: { value: number } };
+						return String(Math.round(p.point.value * windDisplay.factor));
+					},
+					style: { fontSize: '9px', color: '#7dd3fc', textOutline: 'none', fontWeight: 'normal' },
+					y: 16
+				},
 				tooltip: {
-					// Remplace le format par défaut du windbarb, dont la description
-					// Beaufort (`point.beaufort`) est en anglais (« Light air »…).
 					pointFormatter: function () {
 						const p = this as unknown as {
 							value: number;
@@ -299,14 +312,11 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 						};
 						const beaufort =
 							p.beaufortLevel !== undefined ? ` (${BEAUFORT_FR[p.beaufortLevel] ?? ''})` : '';
-						// La valeur `p.value` reste en m/s (le module windbarb dessine les
-						// plumes et calcule le Beaufort sur cette base) ; on ne convertit
-						// qu'à l'affichage. Virgule décimale : cohérent avec les autres
-						// séries (locale fr).
-						const kmh = (p.value * 3.6).toFixed(1).replace('.', ',');
+						// p.value reste en m/s ; conversion à l'affichage via windDisplay.
+						const speed = (p.value * windDisplay.factor).toFixed(1).replace('.', ',');
 						return (
 							`<span style="color:${p.color ?? '#7dd3fc'}">●</span> ` +
-							`${p.series.name} : <b>${kmh} km/h</b>${beaufort}<br/>`
+							`${p.series.name} : <b>${speed} ${windDisplay.unit}</b>${beaufort}<br/>`
 						);
 					}
 				}

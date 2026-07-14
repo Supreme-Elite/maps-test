@@ -164,4 +164,37 @@ describe('buildChartOptions', () => {
 		expect(json).toContain('°F');
 		expect(json).toContain('inch');
 	});
+
+	it('vent : dataLabels activés, vitesse entière convertie (défaut km/h)', () => {
+		const o = buildChartOptions(input());
+		const barbs = (
+			o.series as {
+				type?: string;
+				dataLabels?: { enabled?: boolean; formatter?: (this: unknown) => string };
+			}[]
+		).find((s) => s.type === 'windbarb')!;
+		expect(barbs.dataLabels?.enabled).toBe(true);
+		// point.value en m/s (brut) → 5 × 3,6 = 18
+		const label = barbs.dataLabels!.formatter!.call({ point: { value: 5 } });
+		expect(label).toBe('18');
+	});
+
+	it('vent : windDisplay change unité et facteur (tooltip + dataLabel)', () => {
+		const o = buildChartOptions(input({ windDisplay: { factor: 1, unit: 'm/s' } }));
+		const barbs = (
+			o.series as {
+				type?: string;
+				dataLabels?: { formatter?: (this: unknown) => string };
+				tooltip?: { pointFormatter?: (this: unknown) => string };
+			}[]
+		).find((s) => s.type === 'windbarb')!;
+		expect(barbs.dataLabels!.formatter!.call({ point: { value: 5 } })).toBe('5');
+		const rendered = barbs.tooltip!.pointFormatter!.call({
+			value: 4.2,
+			beaufortLevel: 3,
+			color: '#7dd3fc',
+			series: { name: 'Vent' }
+		});
+		expect(rendered).toContain('4,2 m/s');
+	});
 });
