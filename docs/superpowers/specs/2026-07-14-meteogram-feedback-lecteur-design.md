@@ -110,6 +110,11 @@ hauteur mobile (110px → auto) ne casse pas le positionnement du stem/dot.
 - **Tension assumée** : on atteint 4 axes Y (T° gauche, précip masqué gauche, pression
   droite, humidité droite) sur un graphe déjà dense. Mitigations : ligne fine, libellés
   d'axe minimaux, toggle légende.
+- **Bonus abandonnable (décision utilisateur)** : l'humidité est un « nice to have ». Si le
+  4ᵉ axe complique le rendu ou **dégrade la lisibilité globale** du graphe (encombrement,
+  chevauchement des axes droite, casse du rendu mobile), on la **retire** — pas de prise de
+  risque sur la lisibilité, qui est l'objectif premier du retour lecteur. La légende + les
+  autres blocs restent l'apport principal. À évaluer à l'étape vérification headless.
 - **Réserve** : si un modèle ne diffuse pas `relative_humidity_2m` (AROME HD ?), la courbe
   aura des trous — **pas d'emprunt prévu** (contrairement à `weather_code`/`pressure_msl`).
   Acceptable pour cette itération.
@@ -182,6 +187,8 @@ Suivre le TDD du repo (test rouge → vert) :
   cadre temps fusionné — desktop **et** viewport mobile (légende ne doit pas écraser la
   zone de tracé).
 
-## Réserve à valider (tranchée à l'oral)
+## Réserves tranchées (à l'oral)
 
-Humidité **visible par défaut, désactivable via la légende** — validé.
+- Humidité **visible par défaut, désactivable via la légende** — validé.
+- Humidité **abandonnable sans risque** si elle dégrade la lisibilité globale (cf. bloc 2b)
+  — validé. Priorité : ne pas dégrader le graphe.
