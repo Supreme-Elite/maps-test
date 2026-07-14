@@ -197,4 +197,24 @@ describe('buildChartOptions', () => {
 		});
 		expect(rendered).toContain('4,2 m/s');
 	});
+
+	it('légende activée (identifie les courbes)', () => {
+		const o = buildChartOptions(input());
+		expect((o.legend as { enabled?: boolean }).enabled).toBe(true);
+	});
+
+	it('étiquettes de précipitations à 10px (lisibilité)', () => {
+		const o = buildChartOptions(input());
+		const precip = (
+			o.series as { name?: string; dataLabels?: { style?: { fontSize?: string } } }[]
+		).find((s) => s.name === 'Précipitations')!;
+		expect(precip.dataLabels?.style?.fontSize).toBe('10px');
+	});
+
+	it('axe T° auto-adaptable : pas de tickInterval forcé, minRange conservé', () => {
+		const o = buildChartOptions(input());
+		const tempAxis = (o.yAxis as { tickInterval?: number; minRange?: number }[])[0];
+		expect(tempAxis.tickInterval).toBeUndefined();
+		expect(tempAxis.minRange).toBe(8);
+	});
 });

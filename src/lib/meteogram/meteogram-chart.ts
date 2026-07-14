@@ -103,7 +103,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 			// le bord du SVG sur le rendu Safari iOS. On garde donc 72px en bas.
 			marginBottom: input.compact ? 72 : 70,
 			marginRight: input.compact ? 40 : 44,
-			marginTop: input.compact ? 36 : 44,
+			marginTop: input.compact ? 52 : 60,
 			plotBorderWidth: 1,
 			plotBorderColor: 'rgba(255, 255, 255, 0.14)',
 			alignTicks: false,
@@ -185,7 +185,6 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				plotLines: [{ value: 0, color: 'rgba(255,255,255,0.3)', width: 1, zIndex: 2 }],
 				maxPadding: 0.3,
 				minRange: 8,
-				tickInterval: 1,
 				gridLineColor: GRID
 			},
 			{
@@ -216,7 +215,18 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				showLastLabel: false
 			}
 		],
-		legend: { enabled: false },
+		legend: {
+			enabled: true,
+			align: 'center',
+			verticalAlign: 'top',
+			padding: 4,
+			itemMarginTop: 0,
+			itemMarginBottom: 0,
+			symbolHeight: 8,
+			itemStyle: { color: TEXT_STRONG, fontSize: '11px', fontWeight: 'normal' },
+			itemHoverStyle: { color: '#ffffff' },
+			itemHiddenStyle: { color: 'rgba(255, 255, 255, 0.3)' }
+		},
 		plotOptions: {
 			series: {
 				pointPlacement: 'between',
@@ -264,7 +274,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				dataLabels: {
 					enabled: true,
 					filter: { operator: '>', property: 'y', value: 0 },
-					style: { fontSize: '8px', color: TEXT, textOutline: 'none' }
+					style: { fontSize: '10px', color: TEXT, textOutline: 'none' }
 				},
 				tooltip: { valueSuffix: ` ${input.units.precipitation}` }
 			},
