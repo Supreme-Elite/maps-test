@@ -2,6 +2,8 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { get } from 'svelte/store';
 
+	import XIcon from '@lucide/svelte/icons/x';
+
 	import { desktop } from '$lib/stores/preferences';
 	import { metaJson, time } from '$lib/stores/time';
 	import { convertValue, getDisplayUnit, unitPreferences } from '$lib/stores/units';
@@ -10,7 +12,7 @@
 	import { fetchMeteogram } from '$lib/meteogram/api';
 	import { type ExportableChart, renderMeteogramExport } from '$lib/meteogram/export-image';
 	import { INFOCLIMAT_LOGO_DATA_URI } from '$lib/meteogram/infoclimat-logo';
-	import { buildChartOptions } from '$lib/meteogram/meteogram-chart';
+	import { BEAUFORT_FR, buildChartOptions } from '$lib/meteogram/meteogram-chart';
 	import { resolveApiModel } from '$lib/meteogram/model-map';
 	import { nearestValidTime } from '$lib/meteogram/snap';
 	import { symbolForWmo } from '$lib/meteogram/weather-symbols';
@@ -114,6 +116,23 @@
 	// Stores lus au top level (les runes interdisent `$store` dans un callback imbriqué).
 	const currentTime = $derived($time);
 	const currentUnits = $derived($unitPreferences);
+
+	// Échelle de Beaufort : vitesse m/s → indice 0-12 (pour la description FR du vent).
+	function beaufortFromMs(ms: number): number {
+		const thresholds = [0.5, 1.6, 3.4, 5.5, 8, 10.8, 13.9, 17.2, 20.8, 24.5, 28.5, 32.7];
+		let lvl = 0;
+		for (let i = 0; i < thresholds.length; i++) if (ms >= thresholds[i]) lvl = i + 1;
+		return lvl;
+	}
+
+	// Encart masquable : le ✕ le cache (utile au tactile où il n'y a pas de « fin de
+	// survol ») ; il réapparaît dès qu'on sélectionne un nouveau pas (changement de
+	// temps → reset). Le ✕ lui-même ne change pas le temps, donc le masquage tient.
+	let dismissed = $state(false);
+	$effect(() => {
+		void $time;
+		dismissed = false;
+	});
 	const readout = $derived.by(
 		(): { time: string; weather: string | null; rows: ReadoutRow[] } | null => {
 			const d = data;
@@ -134,6 +153,11 @@
 				v === null || !Number.isFinite(v) ? null : `${v.toFixed(digits).replace('.', ',')} ${unit}`;
 			const windRaw = at(seriesValues('wind_speed_10m'));
 			const windDisp = windRaw === null ? null : windRaw * convertValue(1, 'm/s', u);
+			// Vent : valeur convertie + description Beaufort FR (comme l'ancien tooltip).
+			const windValue =
+				windDisp === null
+					? null
+					: `${Math.round(windDisp)} ${getDisplayUnit('m/s', u)} (${BEAUFORT_FR[beaufortFromMs(windRaw as number)]})`;
 			const code = d.series.weather_code?.[idx];
 			const isDay = (d.series.is_day?.[idx] ?? 1) === 1;
 			const candidates: { label: string; value: string | null; color: string }[] = [
@@ -178,7 +202,7 @@
 					),
 					color: '#fbbf24'
 				},
-				{ label: 'Vent', value: fmt(windDisp, 0, getDisplayUnit('m/s', u)), color: '#7dd3fc' }
+				{ label: 'Vent', value: windValue, color: '#7dd3fc' }
 			];
 			const rows = candidates.filter((r): r is ReadoutRow => r.value !== null);
 			const time = new Intl.DateTimeFormat('fr-FR', {
@@ -443,16 +467,24 @@
 	{:else if data && data.times.length}
 		<div class="relative min-h-[300px] w-full flex-1" bind:clientWidth={containerW}>
 			<div bind:this={chartEl} class="h-full w-full"></div>
-			{#if readout}
-				<!-- Encart de valeurs du pas sélectionné : toujours visible, fiable au
-				     tactile (remplace le tooltip de survol). Suit horizontalement le
-				     playhead (`left`), borné dans le conteneur. `pointer-events-none`
-				     pour laisser passer les taps vers le graphe. -->
+			{#if readout && !dismissed}
+				<!-- Encart de valeurs du pas sélectionné : boîte unique (le tooltip de
+				     survol Highcharts est désactivé). Suit horizontalement le playhead
+				     (`left`), borné dans le conteneur. `pointer-events-none` pour laisser
+				     passer les taps vers le graphe ; seul le ✕ est cliquable. -->
 				<div
 					bind:clientWidth={encartW}
 					style="left: {encartLeft}px"
-					class="pointer-events-none absolute top-1 z-10 rounded-md bg-[rgba(12,20,32,0.9)] px-2 py-1 text-[11px] leading-tight text-white/90 shadow ring-1 ring-white/10"
+					class="pointer-events-none absolute top-1 z-10 rounded-md bg-[rgba(12,20,32,0.9)] py-1 pr-6 pl-2 text-[11px] leading-tight text-white/90 shadow ring-1 ring-white/10"
 				>
+					<button
+						class="pointer-events-auto absolute top-0.5 right-0.5 rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
+						aria-label="Masquer les valeurs"
+						title="Masquer"
+						onclick={() => (dismissed = true)}
+					>
+						<XIcon class="size-3.5" aria-hidden="true" />
+					</button>
 					<div class="font-medium">{readout.time}</div>
 					{#if readout.weather}
 						<div class="text-white/70">{readout.weather}</div>

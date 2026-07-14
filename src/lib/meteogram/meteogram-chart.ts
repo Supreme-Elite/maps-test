@@ -160,6 +160,12 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 		// pour `exportChartLocal`.
 		exporting: { buttons: { contextButton: { enabled: false } } },
 		tooltip: {
+			// Tooltip de survol DÉSACTIVÉ : les valeurs du pas sélectionné sont
+			// affichées par l'encart maison (meteogram.svelte), boîte unique et
+			// cohérente mobile/desktop. Le tooltip de survol créait une 2ᵉ boîte au
+			// comportement incohérent (persistant au tactile, volatil au survol).
+			// Config conservée (headerFormat/pointFormatter, testés) mais inerte.
+			enabled: false,
 			shared: true,
 			useHTML: false,
 			backgroundColor: 'rgba(12, 20, 32, 0.95)',
