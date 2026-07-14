@@ -49,7 +49,15 @@
 	$effect(() => {
 		const currentMap = $map;
 		if (!currentMap) return;
-		const close = () => pointWorkspace.close();
+		const close = (e: maplibregl.MapMouseEvent) => {
+			// Le bouton « Météogramme » vit dans le marker MapLibre (conteneur canvas) :
+			// le tap qui OUVRE le tiroir déclenche aussi ce `click`. On ignore donc les
+			// clics dont la cible est dans la bulle `.popup` — sinon le tiroir se
+			// refermerait aussitôt ouvert.
+			const t = e.originalEvent?.target;
+			if (t instanceof Element && t.closest('.popup')) return;
+			pointWorkspace.close();
+		};
 		currentMap.on('click', close);
 		return () => currentMap.off('click', close);
 	});
