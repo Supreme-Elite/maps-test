@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import DownloadIcon from '@lucide/svelte/icons/download';
 	import XIcon from '@lucide/svelte/icons/x';
 	import * as maplibregl from 'maplibre-gl';
@@ -186,6 +187,17 @@
 		style={`height:${height}px;left:${$sidebarWidth}px`}
 		aria-label="Espace point — météogramme"
 	>
+		<!-- Onglet de fermeture (au-dessus du bord du tiroir) : moyen SÛR de fermer sur
+		     tout appareil — le tap hors cadre est capricieux au tactile (MapLibre traite
+		     beaucoup de touchers comme des gestes carte). Grande cible tactile, centrée. -->
+		<button
+			class="bg-glass glass-blur absolute -top-6 left-1/2 z-10 flex h-6 w-16 -translate-x-1/2 items-center justify-center rounded-t-lg border border-b-0 border-sky-500/30 text-white/80 hover:text-white"
+			aria-label="Fermer le météogramme"
+			title="Fermer le météogramme"
+			onclick={() => pointWorkspace.close()}
+		>
+			<ChevronDownIcon class="size-5" aria-hidden="true" />
+		</button>
 		<!--
 			Poignée de redimensionnement : un « separator » focusable qui pilote une
 			valeur (hauteur du tiroir) implémente en réalité le pattern clavier d'un
