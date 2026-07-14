@@ -21,6 +21,25 @@
 	let meteogramComp = $state<ReturnType<typeof Meteogram>>();
 	// Altitude du point (modèle), publiée par le meteogram et affichée dans l'en-tête.
 	let elevation = $state<number | null>(null);
+	let sectionEl = $state<HTMLElement>();
+
+	// Fermeture au clic hors du tiroir (« dismiss »). On écoute `click` (pas
+	// `pointerdown`) pour ne PAS fermer pendant un panoramique de la carte (un pan
+	// ne produit pas de `click`). L'effet ne tourne que tant que le tiroir est monté
+	// (composant sous `{#if open}`) → le clic d'ouverture (bouton du popup) a déjà
+	// fini de se propager quand l'écouteur est ajouté, il ne se referme pas seul.
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		function onClick(e: MouseEvent) {
+			const el = e.target instanceof Element ? e.target : null;
+			if (!el || !sectionEl) return;
+			if (sectionEl.contains(el)) return; // clic dans le tiroir
+			if (el.closest('.popup')) return; // clic dans la bulle-viseur (bouton Météogramme, etc.)
+			pointWorkspace.close();
+		}
+		window.addEventListener('click', onClick);
+		return () => window.removeEventListener('click', onClick);
+	});
 
 	// Réserve basse dégageant l'axe des heures de la barre d'adresse Safari iOS
 	// (~50pt) : sur iPhone, cette barre recouvre le bas du viewport web et n'est
@@ -141,6 +160,7 @@
 
 {#if $pointWorkspace.open && $pointWorkspace.lat !== null && $pointWorkspace.lng !== null}
 	<section
+		bind:this={sectionEl}
 		class="bg-glass glass-blur fixed right-0 bottom-0 z-40 flex flex-col border-t border-sky-500/30 text-white"
 		style={`height:${height}px;left:${$sidebarWidth}px`}
 		aria-label="Espace point — météogramme"
