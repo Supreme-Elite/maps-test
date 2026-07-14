@@ -16,7 +16,7 @@
 - **Interface FR** : libellés et virgule décimale (locale fr).
 - **Prettier** : tabs, single quotes, pas de trailing comma, 100 col. `npm run format` avant commit — ne pas ordonner les imports à la main.
 - **Vérif lint avant push** : `rtk proxy npm run lint` (rtk masque parfois l'échec — cf. mémoire `rtk-caches-lint-output`).
-- **Tests collectés depuis `src/lib/tests/**` uniquement**, env node.
+- **Tests collectés depuis `src/lib/tests/**` uniquement\*\*, env node.
 - **Humidité = bonus abandonnable** : si le 4ᵉ axe dégrade la lisibilité globale (encombrement axes droite, casse mobile), la retirer — priorité à la lisibilité (décision utilisateur, cf. spec bloc 2b).
 
 ---
@@ -57,11 +57,13 @@ export interface MeteogramChartInput {
 ## Task 1 : Humidité dans l'API (types + client)
 
 **Files:**
+
 - Modify: `src/lib/meteogram/types.ts` (union `MeteogramKey`)
 - Modify: `src/lib/meteogram/api.ts` (`HOURLY_VARIABLES`)
 - Test: `src/lib/tests/meteogram-api.test.ts`
 
 **Interfaces:**
+
 - Produces: `'relative_humidity_2m'` devient une `MeteogramKey` valide ; `buildForecastUrl()` demande cette variable ; `parseForecast()` renvoie `series.relative_humidity_2m`.
 
 - [ ] **Step 1 : Test rouge — l'URL demande l'humidité**
@@ -69,7 +71,7 @@ export interface MeteogramChartInput {
 Dans `src/lib/tests/meteogram-api.test.ts`, dans le `describe('buildForecastUrl')`, ajouter au test existant (après la ligne `expect(url).toContain('is_day');`) :
 
 ```ts
-		expect(url).toContain('relative_humidity_2m');
+expect(url).toContain('relative_humidity_2m');
 ```
 
 - [ ] **Step 2 : Lancer le test, vérifier l'échec**
@@ -132,10 +134,12 @@ git commit -m "feat(meteogram): demande relative_humidity_2m à l'API forecast"
 ## Task 2 : Vent en chiffres + unité respectée (`windDisplay`)
 
 **Files:**
+
 - Modify: `src/lib/meteogram/meteogram-chart.ts` (interface `MeteogramChartInput`, série windbarb : `tooltip.pointFormatter` + `dataLabels`)
 - Test: `src/lib/tests/meteogram-chart.test.ts`
 
 **Interfaces:**
+
 - Consumes: rien de nouveau.
 - Produces: `MeteogramChartInput.windDisplay?: { factor: number; unit: string }` (défaut `{ factor: 3.6, unit: 'km/h' }`). La série windbarb affiche des `dataLabels` (vitesse entière convertie) et son tooltip utilise `windDisplay`.
 
@@ -144,38 +148,38 @@ git commit -m "feat(meteogram): demande relative_humidity_2m à l'API forecast"
 Dans `src/lib/tests/meteogram-chart.test.ts`, ajouter deux tests dans le `describe('buildChartOptions')` :
 
 ```ts
-	it('vent : dataLabels activés, vitesse entière convertie (défaut km/h)', () => {
-		const o = buildChartOptions(input());
-		const barbs = (
-			o.series as {
-				type?: string;
-				dataLabels?: { enabled?: boolean; formatter?: (this: unknown) => string };
-			}[]
-		).find((s) => s.type === 'windbarb')!;
-		expect(barbs.dataLabels?.enabled).toBe(true);
-		// point.value en m/s (brut) → 5 × 3,6 = 18
-		const label = barbs.dataLabels!.formatter!.call({ point: { value: 5 } });
-		expect(label).toBe('18');
-	});
+it('vent : dataLabels activés, vitesse entière convertie (défaut km/h)', () => {
+	const o = buildChartOptions(input());
+	const barbs = (
+		o.series as {
+			type?: string;
+			dataLabels?: { enabled?: boolean; formatter?: (this: unknown) => string };
+		}[]
+	).find((s) => s.type === 'windbarb')!;
+	expect(barbs.dataLabels?.enabled).toBe(true);
+	// point.value en m/s (brut) → 5 × 3,6 = 18
+	const label = barbs.dataLabels!.formatter!.call({ point: { value: 5 } });
+	expect(label).toBe('18');
+});
 
-	it('vent : windDisplay change unité et facteur (tooltip + dataLabel)', () => {
-		const o = buildChartOptions(input({ windDisplay: { factor: 1, unit: 'm/s' } }));
-		const barbs = (
-			o.series as {
-				type?: string;
-				dataLabels?: { formatter?: (this: unknown) => string };
-				tooltip?: { pointFormatter?: (this: unknown) => string };
-			}[]
-		).find((s) => s.type === 'windbarb')!;
-		expect(barbs.dataLabels!.formatter!.call({ point: { value: 5 } })).toBe('5');
-		const rendered = barbs.tooltip!.pointFormatter!.call({
-			value: 4.2,
-			beaufortLevel: 3,
-			color: '#7dd3fc',
-			series: { name: 'Vent' }
-		});
-		expect(rendered).toContain('4,2 m/s');
+it('vent : windDisplay change unité et facteur (tooltip + dataLabel)', () => {
+	const o = buildChartOptions(input({ windDisplay: { factor: 1, unit: 'm/s' } }));
+	const barbs = (
+		o.series as {
+			type?: string;
+			dataLabels?: { formatter?: (this: unknown) => string };
+			tooltip?: { pointFormatter?: (this: unknown) => string };
+		}[]
+	).find((s) => s.type === 'windbarb')!;
+	expect(barbs.dataLabels!.formatter!.call({ point: { value: 5 } })).toBe('5');
+	const rendered = barbs.tooltip!.pointFormatter!.call({
+		value: 4.2,
+		beaufortLevel: 3,
+		color: '#7dd3fc',
+		series: { name: 'Vent' }
 	});
+	expect(rendered).toContain('4,2 m/s');
+});
 ```
 
 - [ ] **Step 2 : Lancer, vérifier l'échec**
@@ -198,7 +202,7 @@ Dans `src/lib/meteogram/meteogram-chart.ts`, interface `MeteogramChartInput`, aj
 Dans `buildChartOptions`, juste après `const onTimeClick = input.onTimeClick;` :
 
 ```ts
-	const windDisplay = input.windDisplay ?? { factor: 3.6, unit: 'km/h' };
+const windDisplay = input.windDisplay ?? { factor: 3.6, unit: 'km/h' };
 ```
 
 - [ ] **Step 5 : dataLabels sur la série windbarb + tooltip via `windDisplay`**
@@ -255,10 +259,12 @@ git commit -m "feat(meteogram): vitesse du vent en chiffres près des barbules +
 ## Task 3 : Légende + police précip + échelle T° auto
 
 **Files:**
+
 - Modify: `src/lib/meteogram/meteogram-chart.ts` (`legend`, `marginTop`, série précip `dataLabels.style`, `yAxis[0]`)
 - Test: `src/lib/tests/meteogram-chart.test.ts`
 
 **Interfaces:**
+
 - Produces: `options.legend.enabled === true` ; étiquettes précip en `10px` ; `yAxis[0].tickInterval` non défini (auto).
 
 - [ ] **Step 1 : Tests rouges**
@@ -266,25 +272,25 @@ git commit -m "feat(meteogram): vitesse du vent en chiffres près des barbules +
 Ajouter dans `describe('buildChartOptions')` :
 
 ```ts
-	it('légende activée (identifie les courbes)', () => {
-		const o = buildChartOptions(input());
-		expect((o.legend as { enabled?: boolean }).enabled).toBe(true);
-	});
+it('légende activée (identifie les courbes)', () => {
+	const o = buildChartOptions(input());
+	expect((o.legend as { enabled?: boolean }).enabled).toBe(true);
+});
 
-	it('étiquettes de précipitations à 10px (lisibilité)', () => {
-		const o = buildChartOptions(input());
-		const precip = (
-			o.series as { name?: string; dataLabels?: { style?: { fontSize?: string } } }[]
-		).find((s) => s.name === 'Précipitations')!;
-		expect(precip.dataLabels?.style?.fontSize).toBe('10px');
-	});
+it('étiquettes de précipitations à 10px (lisibilité)', () => {
+	const o = buildChartOptions(input());
+	const precip = (
+		o.series as { name?: string; dataLabels?: { style?: { fontSize?: string } } }[]
+	).find((s) => s.name === 'Précipitations')!;
+	expect(precip.dataLabels?.style?.fontSize).toBe('10px');
+});
 
-	it('axe T° auto-adaptable : pas de tickInterval forcé, minRange conservé', () => {
-		const o = buildChartOptions(input());
-		const tempAxis = (o.yAxis as { tickInterval?: number; minRange?: number }[])[0];
-		expect(tempAxis.tickInterval).toBeUndefined();
-		expect(tempAxis.minRange).toBe(8);
-	});
+it('axe T° auto-adaptable : pas de tickInterval forcé, minRange conservé', () => {
+	const o = buildChartOptions(input());
+	const tempAxis = (o.yAxis as { tickInterval?: number; minRange?: number }[])[0];
+	expect(tempAxis.tickInterval).toBeUndefined();
+	expect(tempAxis.minRange).toBe(8);
+});
 ```
 
 - [ ] **Step 2 : Lancer, vérifier l'échec**
@@ -351,10 +357,12 @@ git commit -m "feat(meteogram): légende explicite, police des précip à 10px, 
 ## Task 4 : Axe + série d'humidité (Hr)
 
 **Files:**
+
 - Modify: `src/lib/meteogram/meteogram-chart.ts` (interface, `yAxis` → 4 axes, série « Humidité »)
 - Test: `src/lib/tests/meteogram-chart.test.ts`
 
 **Interfaces:**
+
 - Consumes: `MeteogramChartInput.humidity?: (number | null)[]`.
 - Produces: 4ᵉ `yAxis` (index 3, 0-100 %, `opposite`, `visible: hasHumidity`) ; série spline « Humidité » (`yAxis: 3`, couleur `#c084fc`, `visible`/`showInLegend` selon `hasHumidity`). Ordre des séries : `[Température, Point de rosée, Précipitations, Pression, Humidité, Vent]`.
 
@@ -365,55 +373,55 @@ Dans `src/lib/tests/meteogram-chart.test.ts` :
 Remplacer le test `it('déclare 3 axes Y (T°, précip, pression) et 2 axes X liés', …)` par :
 
 ```ts
-	it('déclare 4 axes Y (T°, précip, pression, humidité)', () => {
-		const o = buildChartOptions(input());
-		expect(o.yAxis).toHaveLength(4);
-	});
+it('déclare 4 axes Y (T°, précip, pression, humidité)', () => {
+	const o = buildChartOptions(input());
+	expect(o.yAxis).toHaveLength(4);
+});
 ```
 
 Remplacer le test `it('série 5 : température, rosée, précip, pression, windbarb — sur le bon axe', …)` par :
 
 ```ts
-	it('6 séries : température, rosée, précip, pression, humidité, windbarb — sur le bon axe', () => {
-		const o = buildChartOptions(input());
-		const s = o.series as { type?: string; yAxis?: number; name?: string }[];
-		expect(s.map((x) => x.type)).toEqual([
-			'spline',
-			'spline',
-			'column',
-			'spline',
-			'spline',
-			'windbarb'
-		]);
-		expect(s[2].yAxis).toBe(1); // précip
-		expect(s[3].yAxis).toBe(2); // pression
-		expect(s[4].yAxis).toBe(3); // humidité
-	});
+it('6 séries : température, rosée, précip, pression, humidité, windbarb — sur le bon axe', () => {
+	const o = buildChartOptions(input());
+	const s = o.series as { type?: string; yAxis?: number; name?: string }[];
+	expect(s.map((x) => x.type)).toEqual([
+		'spline',
+		'spline',
+		'column',
+		'spline',
+		'spline',
+		'windbarb'
+	]);
+	expect(s[2].yAxis).toBe(1); // précip
+	expect(s[3].yAxis).toBe(2); // pression
+	expect(s[4].yAxis).toBe(3); // humidité
+});
 ```
 
 Ajouter les tests humidité :
 
 ```ts
-	it('humidité fournie : axe (0-100) et série visibles', () => {
-		const o = buildChartOptions(input({ humidity: [40, 55, 60, 45] }));
-		const humAxis = (o.yAxis as { min?: number; max?: number; visible?: boolean }[])[3];
-		expect(humAxis.min).toBe(0);
-		expect(humAxis.max).toBe(100);
-		expect(humAxis.visible).not.toBe(false);
-		const hum = (o.series as { name?: string; visible?: boolean }[]).find(
-			(x) => x.name === 'Humidité'
-		)!;
-		expect(hum.visible).not.toBe(false);
-	});
+it('humidité fournie : axe (0-100) et série visibles', () => {
+	const o = buildChartOptions(input({ humidity: [40, 55, 60, 45] }));
+	const humAxis = (o.yAxis as { min?: number; max?: number; visible?: boolean }[])[3];
+	expect(humAxis.min).toBe(0);
+	expect(humAxis.max).toBe(100);
+	expect(humAxis.visible).not.toBe(false);
+	const hum = (o.series as { name?: string; visible?: boolean }[]).find(
+		(x) => x.name === 'Humidité'
+	)!;
+	expect(hum.visible).not.toBe(false);
+});
 
-	it('humidité absente/nulle : axe et série masqués (bonus abandonnable)', () => {
-		const o = buildChartOptions(input()); // pas de humidity
-		expect((o.yAxis as { visible?: boolean }[])[3].visible).toBe(false);
-		const hum = (o.series as { name?: string; visible?: boolean }[]).find(
-			(x) => x.name === 'Humidité'
-		)!;
-		expect(hum.visible).toBe(false);
-	});
+it('humidité absente/nulle : axe et série masqués (bonus abandonnable)', () => {
+	const o = buildChartOptions(input()); // pas de humidity
+	expect((o.yAxis as { visible?: boolean }[])[3].visible).toBe(false);
+	const hum = (o.series as { name?: string; visible?: boolean }[]).find(
+		(x) => x.name === 'Humidité'
+	)!;
+	expect(hum.visible).toBe(false);
+});
 ```
 
 - [ ] **Step 2 : Lancer, vérifier l'échec**
@@ -426,9 +434,9 @@ Expected: FAIL (série/axe humidité inexistants ; longueurs 3/5).
 Après `const hasPressure = …`, ajouter :
 
 ```ts
-	const humidity = input.humidity ?? [];
-	const humidityData = xs.map((x, i) => [x, at(humidity, i)]);
-	const hasHumidity = humidity.some((v) => v !== null && Number.isFinite(v));
+const humidity = input.humidity ?? [];
+const humidityData = xs.map((x, i) => [x, at(humidity, i)]);
+const hasHumidity = humidity.some((v) => v !== null && Number.isFinite(v));
 ```
 
 - [ ] **Step 4 : Ajouter le 4ᵉ axe Y (humidité)**
@@ -495,10 +503,12 @@ git commit -m "feat(meteogram): courbe d'humidité relative sur un 4e axe (visib
 ## Task 5 : Axe temps fusionné (heures + dates)
 
 **Files:**
+
 - Modify: `src/lib/meteogram/meteogram-chart.ts` (export helper `dayBoundaryPlotLines`, `xAxis` unique)
 - Test: `src/lib/tests/meteogram-chart.test.ts`
 
 **Interfaces:**
+
 - Produces: `dayBoundaryPlotLines(times: Date[], timezone: string)` — export nommé ; `options.xAxis` a **1 seul** axe portant `plotLines` (séparateurs de jour aux minuits locaux) et un `labels.formatter` (date en gras à minuit, heure sinon).
 
 - [ ] **Step 1 : Tests rouges — 1 axe X + helper de séparateurs**
@@ -516,19 +526,19 @@ import {
 Remplacer le test existant `it('grille horaire : 2 h sur horizon court…')` **uniquement sur sa 1ʳᵉ assertion d'axe** n'est pas nécessaire — il lit `xAxis[0]`, toujours valide. Ajouter les nouveaux tests :
 
 ```ts
-	it('un seul axe X, avec séparateurs de jour (plotLines)', () => {
-		const o = buildChartOptions(input());
-		expect(o.xAxis).toHaveLength(1);
-		const axis = (o.xAxis as { plotLines?: unknown[] }[])[0];
-		expect(Array.isArray(axis.plotLines)).toBe(true);
-	});
+it('un seul axe X, avec séparateurs de jour (plotLines)', () => {
+	const o = buildChartOptions(input());
+	expect(o.xAxis).toHaveLength(1);
+	const axis = (o.xAxis as { plotLines?: unknown[] }[])[0];
+	expect(Array.isArray(axis.plotLines)).toBe(true);
+});
 
-	it('dayBoundaryPlotLines : un trait à chaque minuit local (premier point exclu)', () => {
-		// 50 h horaires depuis minuit UTC, fuseau UTC → minuits à h=24 et h=48.
-		const times = Array.from({ length: 50 }, (_, h) => new Date(Date.UTC(2026, 6, 10) + h * 36e5));
-		const lines = dayBoundaryPlotLines(times, 'UTC');
-		expect(lines.map((l) => l.value)).toEqual([Date.UTC(2026, 6, 11), Date.UTC(2026, 6, 12)]);
-	});
+it('dayBoundaryPlotLines : un trait à chaque minuit local (premier point exclu)', () => {
+	// 50 h horaires depuis minuit UTC, fuseau UTC → minuits à h=24 et h=48.
+	const times = Array.from({ length: 50 }, (_, h) => new Date(Date.UTC(2026, 6, 10) + h * 36e5));
+	const lines = dayBoundaryPlotLines(times, 'UTC');
+	expect(lines.map((l) => l.value)).toEqual([Date.UTC(2026, 6, 11), Date.UTC(2026, 6, 12)]);
+});
 ```
 
 - [ ] **Step 2 : Lancer, vérifier l'échec**
@@ -630,9 +640,11 @@ git commit -m "feat(meteogram): axe temps fusionné — heures + date à minuit,
 ## Task 6 : Câblage Svelte (humidité + windDisplay dans l'input)
 
 **Files:**
+
 - Modify: `src/lib/components/point-workspace/meteogram/meteogram.svelte` (objet `input` de l'`$effect` de création du chart)
 
 **Interfaces:**
+
 - Consumes: `MeteogramChartInput.humidity` et `.windDisplay` (Tasks 2 & 4). `convertValue`/`getDisplayUnit` déjà importés (`$lib/stores/units`).
 
 Pas de test Vitest (composant Svelte, env node sans DOM) — vérification par typecheck + build, puis headless en Task 8.
@@ -677,10 +689,12 @@ git commit -m "feat(meteogram): alimente la courbe d'humidité et l'unité de ve
 ## Task 7 : Clic droit → bulle enrichie (popup + CSS)
 
 **Files:**
+
 - Modify: `src/lib/popup.ts` (`initPopupDiv` : spans coords/altitude ; `updatePopupContent` : classe `.popup--pinned` + contenu enrichi ; `addPopup` : handler `contextmenu`)
 - Modify: `src/styles.css` (styles enrichis)
 
 **Interfaces:**
+
 - Consumes: stores `popupMode`, `p`, `terraDrawActive`, fonctions `renderPopup`, `updatePopup` (existantes).
 
 Pas de test Vitest (DOM/MapLibre) — vérification typecheck + build, puis headless en Task 8.
@@ -698,15 +712,15 @@ let altSpan: HTMLSpanElement | undefined;
 Dans `initPopupDiv()`, après l'ajout de `contentDiv` au `wrapperDiv` (ligne `wrapperDiv.append(contentDiv);`) et **avant** la création de `soundingBtn`, insérer le bloc d'infos point :
 
 ```ts
-	pointInfoDiv = document.createElement('div');
-	pointInfoDiv.classList.add('popup-point-info');
-	coordsSpan = document.createElement('span');
-	coordsSpan.classList.add('popup-coords');
-	altSpan = document.createElement('span');
-	altSpan.classList.add('popup-alt');
-	pointInfoDiv.append(coordsSpan);
-	pointInfoDiv.append(altSpan);
-	wrapperDiv.append(pointInfoDiv);
+pointInfoDiv = document.createElement('div');
+pointInfoDiv.classList.add('popup-point-info');
+coordsSpan = document.createElement('span');
+coordsSpan.classList.add('popup-coords');
+altSpan = document.createElement('span');
+altSpan.classList.add('popup-alt');
+pointInfoDiv.append(coordsSpan);
+pointInfoDiv.append(altSpan);
+wrapperDiv.append(pointInfoDiv);
 ```
 
 - [ ] **Step 2 : Enrichir la bulle à l'état épinglé**
@@ -714,20 +728,20 @@ Dans `initPopupDiv()`, après l'ajout de `contentDiv` au `wrapperDiv` (ligne `wr
 Dans `updatePopupContent`, juste après le calcul de `const pinned = get(popupMode) === 'drag';`, piloter la classe et le bloc infos :
 
 ```ts
-	el?.classList.toggle('popup--pinned', pinned);
-	if (pointInfoDiv) pointInfoDiv.style.display = pinned ? '' : 'none';
-	// En suivi, l'altitude compacte reste dans la ligne viseur ; épinglée, elle
-	// passe dans le bloc infos (plus lisible) → on masque la version compacte.
-	if (elevationSpan) elevationSpan.style.display = pinned ? 'none' : '';
-	if (coordsSpan) {
-		coordsSpan.innerText = `${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`;
-	}
+el?.classList.toggle('popup--pinned', pinned);
+if (pointInfoDiv) pointInfoDiv.style.display = pinned ? '' : 'none';
+// En suivi, l'altitude compacte reste dans la ligne viseur ; épinglée, elle
+// passe dans le bloc infos (plus lisible) → on masque la version compacte.
+if (elevationSpan) elevationSpan.style.display = pinned ? 'none' : '';
+if (coordsSpan) {
+	coordsSpan.innerText = `${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`;
+}
 ```
 
 Puis, là où l'altitude est calculée (après `const hasElevation = …`), renseigner `altSpan` (le `elevationSpan` compact reste géré comme aujourd'hui) — ajouter immédiatement après la ligne `const hasElevation = …;` :
 
 ```ts
-	if (altSpan) altSpan.innerText = hasElevation ? `Alt. ${Math.round(elevation)} m` : 'Alt. —';
+if (altSpan) altSpan.innerText = hasElevation ? `Alt. ${Math.round(elevation)} m` : 'Alt. —';
 ```
 
 - [ ] **Step 3 : Handler clic droit dans `addPopup`**
@@ -735,21 +749,21 @@ Puis, là où l'altitude est calculée (après `const hasElevation = …`), rens
 Dans `addPopup()`, après le `map.on('click', …)` existant, ajouter :
 
 ```ts
-	// Clic droit : épingle directement la bulle enrichie (altitude/coords lisibles
-	// + bouton Météogramme visible) en 1 geste, au lieu des 3 clics gauche
-	// (follow → pin → bouton). Desktop uniquement (pas d'event contextmenu tactile).
-	map.on('contextmenu', async (e: maplibregl.MapLayerMouseEvent) => {
-		if (!map || get(terraDrawActive)) return;
-		e.preventDefault();
-		map.off('mousemove', updatePopup); // épinglé : la bulle ne suit pas le curseur
-		const existing = get(p);
-		if (existing) {
-			existing.remove(); // marker frais → recréé draggable en mode 'drag'
-			p.set(undefined);
-		}
-		popupMode.set('drag');
-		await renderPopup(e.lngLat);
-	});
+// Clic droit : épingle directement la bulle enrichie (altitude/coords lisibles
+// + bouton Météogramme visible) en 1 geste, au lieu des 3 clics gauche
+// (follow → pin → bouton). Desktop uniquement (pas d'event contextmenu tactile).
+map.on('contextmenu', async (e: maplibregl.MapLayerMouseEvent) => {
+	if (!map || get(terraDrawActive)) return;
+	e.preventDefault();
+	map.off('mousemove', updatePopup); // épinglé : la bulle ne suit pas le curseur
+	const existing = get(p);
+	if (existing) {
+		existing.remove(); // marker frais → recréé draggable en mode 'drag'
+		p.set(undefined);
+	}
+	popupMode.set('drag');
+	await renderPopup(e.lngLat);
+});
 ```
 
 - [ ] **Step 4 : Styles de la bulle enrichie**
@@ -846,6 +860,7 @@ Invoquer le skill `superpowers:finishing-a-development-branch` (merge / PR / cle
 ## Self-Review (auteur)
 
 **Couverture spec :**
+
 - Bloc 1 (clic droit + bulle enrichie) → Task 7. ✓
 - Bloc 2a (légende) → Task 3 ; 2b (humidité) → Tasks 1+4+6 ; 2c (vent chiffré + unité) → Tasks 2+6. ✓
 - Bloc 3 (axe temps fusionné) → Task 5. ✓
