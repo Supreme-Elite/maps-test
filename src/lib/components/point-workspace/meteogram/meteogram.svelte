@@ -248,15 +248,41 @@
 		const t = get(time);
 		if (!c) return;
 		c.xAxis[0].removePlotLine('playhead');
-		if (t) {
-			c.xAxis[0].addPlotLine({
-				id: 'playhead',
-				value: new Date(t).getTime(),
-				color: '#38bdf8',
-				width: 2,
-				zIndex: 4
-			});
+		if (!t) return;
+		const tx = new Date(t).getTime();
+		c.xAxis[0].addPlotLine({
+			id: 'playhead',
+			value: tx,
+			color: '#38bdf8',
+			width: 2,
+			zIndex: 4
+		});
+		showValuesTooltip(c, tx);
+	}
+
+	// Affiche le tooltip de valeurs sur le pas SÉLECTIONNÉ (playhead), sans
+	// dépendre du survol Highcharts. Indispensable au tactile (mobile/tablette) :
+	// sans hover, un tap sélectionne le pas mais le tooltip ne suivait pas de façon
+	// fiable (vieilles valeurs puis disparition). La série 0 (température) porte
+	// tous les x de l'API ; on prend l'index du point le plus proche du playhead,
+	// puis un point par série visible non-windbarb pour le tooltip partagé.
+	function showValuesTooltip(c: Chart, tx: number) {
+		const base = c.series[0]?.points;
+		if (!base?.length) return;
+		let idx = 0;
+		let bestD = Infinity;
+		for (let i = 0; i < base.length; i++) {
+			const d = Math.abs((base[i].x as number) - tx);
+			if (d < bestD) {
+				bestD = d;
+				idx = i;
+			}
 		}
+		const pts = c.series
+			.filter((s) => s.visible && s.type !== 'windbarb')
+			.map((s) => s.points?.[idx])
+			.filter((p): p is NonNullable<typeof p> => !!p);
+		if (pts.length) c.tooltip.refresh(pts);
 	}
 	$effect(() => {
 		void $time;
