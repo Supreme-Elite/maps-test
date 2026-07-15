@@ -117,6 +117,33 @@
 	const currentTime = $derived($time);
 	const currentUnits = $derived($unitPreferences);
 
+	// Survol d'un pas (desktop) : timestamp ms du point sous la souris, `null` hors
+	// survol. Sur mobile/tactile il n'y a pas de survol → reste `null`.
+	let hoveredX = $state<number | null>(null);
+
+	function nearestIdx(times: Date[], tx: number): number {
+		let idx = 0;
+		let best = Infinity;
+		for (let i = 0; i < times.length; i++) {
+			const diff = Math.abs(times[i].getTime() - tx);
+			if (diff < best) {
+				best = diff;
+				idx = i;
+			}
+		}
+		return idx;
+	}
+
+	// Pas « actif » de l'encart : celui SOUS LA SOURIS si on survole (desktop → la
+	// boîte suit le curseur comme un tooltip), sinon le pas sélectionné (playhead /
+	// tactile). C'est ce qui restaure le comportement de prod sur desktop.
+	const activeIdx = $derived.by(() => {
+		const d = data;
+		if (!d || !d.times.length) return 0;
+		const tx = hoveredX ?? (currentTime ? new Date(currentTime).getTime() : d.times[0].getTime());
+		return nearestIdx(d.times, tx);
+	});
+
 	// Échelle de Beaufort : vitesse m/s → indice 0-12 (pour la description FR du vent).
 	function beaufortFromMs(ms: number): number {
 		const thresholds = [0.5, 1.6, 3.4, 5.5, 8, 10.8, 13.9, 17.2, 20.8, 24.5, 28.5, 32.7];
@@ -133,20 +160,15 @@
 		void $time;
 		dismissed = false;
 	});
+	// Survoler ramène l'encart s'il avait été masqué (intention de lire les valeurs).
+	$effect(() => {
+		if (hoveredX !== null) dismissed = false;
+	});
 	const readout = $derived.by(
 		(): { time: string; weather: string | null; rows: ReadoutRow[] } | null => {
 			const d = data;
 			if (!d || !d.times.length) return null;
-			const tx = currentTime ? new Date(currentTime).getTime() : d.times[0].getTime();
-			let idx = 0;
-			let best = Infinity;
-			for (let i = 0; i < d.times.length; i++) {
-				const diff = Math.abs(d.times[i].getTime() - tx);
-				if (diff < best) {
-					best = diff;
-					idx = i;
-				}
-			}
+			const idx = activeIdx;
 			const u = currentUnits;
 			const at = (arr: (number | null)[]): number | null => arr[idx] ?? null;
 			const fmt = (v: number | null, digits: number, unit: string): string | null =>
@@ -330,7 +352,8 @@
 			},
 			timezone: d.timezone,
 			compact: !desktop.current,
-			onTimeClick: seek
+			onTimeClick: seek,
+			onHover: (x: number | null) => (hoveredX = x)
 		};
 		let cancelled = false;
 		(async () => {
@@ -357,33 +380,39 @@
 		};
 	});
 
-	// Position horizontale (px, relative au conteneur) de l'encart : suit le
-	// playhead. Recalculée au scrub, au render et au resize (le mapping pixel du
-	// chart change à chaque fois). `null` quand pas d'échéance → coin par défaut.
-	let playheadX = $state<number | null>(null);
+	// Position horizontale (px, relative au conteneur) de l'encart : suit le pas
+	// ACTIF (survolé sur desktop, sinon sélectionné). Recalculée au survol, au scrub,
+	// au render et au resize (le mapping pixel du chart change à chaque fois).
+	let encartX = $state<number | null>(null);
 	let encartW = $state(0);
 	let containerW = $state(0);
 	const encartLeft = $derived.by(() => {
-		if (playheadX === null) return 4;
+		if (encartX === null) return 4;
 		const w = encartW || 150;
 		const cw = containerW || 320;
-		// Centré sur le playhead, borné dans le conteneur (pas de débordement).
-		return Math.round(Math.max(4, Math.min(playheadX - w / 2, cw - w - 4)));
+		// Centré sur le pas actif, borné dans le conteneur (pas de débordement).
+		return Math.round(Math.max(4, Math.min(encartX - w / 2, cw - w - 4)));
 	});
 
 	function positionEncart() {
 		const c = chart;
-		const t = get(time);
-		if (!c || !c.xAxis?.[0] || !t) {
-			playheadX = null;
+		const d = data;
+		if (!c || !c.xAxis?.[0] || !d?.times.length) {
+			encartX = null;
 			return;
 		}
 		try {
-			playheadX = c.xAxis[0].toPixels(new Date(t).getTime(), false);
+			encartX = c.xAxis[0].toPixels(d.times[activeIdx].getTime(), false);
 		} catch {
-			playheadX = null;
+			encartX = null;
 		}
 	}
+
+	// Repositionne l'encart quand le pas actif change (survol souris inclus).
+	$effect(() => {
+		void activeIdx;
+		positionEncart();
+	});
 
 	// Playhead : plotLine repositionnée au scrub, sans re-render du chart.
 	function syncPlayhead() {

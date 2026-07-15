@@ -14,6 +14,9 @@ export interface MeteogramChartInput {
 	/** Fuseau IANA du point (ex. « Europe/Paris ») pour l'affichage heure locale. */
 	timezone: string;
 	onTimeClick: (date: Date) => void;
+	/** Survol d'un pas (desktop) : `x` = timestamp ms du point survolé, `null` à la
+	 *  sortie. Permet à l'encart de valeurs de suivre la souris comme un tooltip. */
+	onHover?: (x: number | null) => void;
 	/** Mobile : marges resserrées pour rendre la zone de tracé au graphe. */
 	compact?: boolean;
 	/** Unité d'affichage du vent (préférence utilisateur). Défaut km/h.
@@ -118,6 +121,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 		}));
 
 	const onTimeClick = input.onTimeClick;
+	const onHover = input.onHover;
 	const windDisplay = input.windDisplay ?? { factor: 3.6, unit: 'km/h' };
 
 	// Densité de grille adaptative : au-delà de 72 h, une gridline toutes les
@@ -288,10 +292,20 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 		plotOptions: {
 			series: {
 				pointPlacement: 'between',
+				// Sortie de série → l'encart revient au pas sélectionné (fin de survol).
+				events: {
+					mouseOut: function () {
+						onHover?.(null);
+					}
+				},
 				point: {
 					events: {
 						click: function () {
 							onTimeClick(new Date(this.x as number));
+						},
+						// Survol d'un point (desktop) → l'encart suit la souris.
+						mouseOver: function () {
+							onHover?.(this.x as number);
 						}
 					}
 				}
