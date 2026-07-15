@@ -35,10 +35,12 @@ export const selectedDomain = derived(domain, ($domain) => {
 	const object = domainOptions.find(({ value }) => value === $domain);
 	if (object) return object;
 	// Domaine inconnu (ex. URL partagée d'un domaine non enregistré comme
-	// anomaly_europe sans bucket configuré) : fallback au domaine par défaut
-	// plutôt que de crasher l'app.
+	// anomaly_europe sans bucket configuré) : fallback au domaine par défaut,
+	// puis au premier domaine disponible plutôt que de crasher l'app.
 	const fallback = domainOptions.find(({ value }) => value === DEFAULT_DOMAIN);
 	if (fallback) return fallback;
+	const first = domainOptions[0];
+	if (first) return first;
 	throw new Error('Domain not found');
 });
 

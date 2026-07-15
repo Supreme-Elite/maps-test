@@ -49,7 +49,7 @@
 	import TimeSelector from '$lib/components/time/time-selector.svelte';
 
 	import { computeCaptureRect } from '$lib/capture-geometry';
-	import { DOMAIN_DEFAULT_VIEWS } from '$lib/constants';
+	import { DEFAULT_DOMAIN, DOMAIN_DEFAULT_VIEWS } from '$lib/constants';
 	import { refreshDepartments } from '$lib/departments-layer';
 	import { checkHighDefinition } from '$lib/helpers';
 	import { initHillshadeFromPrefs } from '$lib/hillshade';
@@ -119,7 +119,10 @@
 
 		const style = await getStyle();
 
-		const domainObject = domainOptions.find(({ value }: Domain) => value === $domain);
+		const domainObject =
+			domainOptions.find(({ value }: Domain) => value === $domain) ??
+			domainOptions.find(({ value }: Domain) => value === DEFAULT_DOMAIN) ??
+			domainOptions[0];
 		if (!domainObject) {
 			throw new Error('Domain not found');
 		}
