@@ -306,6 +306,22 @@ export const addPopup = (): void => {
 
 		await renderPopup(e.lngLat);
 	});
+
+	// Clic droit : épingle directement la bulle (mode « drag ») en 1 geste → le
+	// bouton Météogramme est cliquable tout de suite, au lieu des 3 clics gauche
+	// (follow → pin → bouton). Desktop uniquement (pas d'event contextmenu tactile).
+	map.on('contextmenu', async (e: maplibregl.MapLayerMouseEvent) => {
+		if (!map || get(terraDrawActive)) return;
+		e.preventDefault();
+		map.off('mousemove', updatePopup); // épinglé : la bulle ne suit pas le curseur
+		const existing = get(p);
+		if (existing) {
+			existing.remove(); // marker frais → recréé draggable en mode 'drag'
+			p.set(undefined);
+		}
+		popupMode.set('drag');
+		await renderPopup(e.lngLat);
+	});
 };
 
 export const removePopup = (): void => {

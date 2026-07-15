@@ -1,6 +1,7 @@
 export type MeteogramKey =
 	| 'temperature_2m'
 	| 'dew_point_2m'
+	| 'relative_humidity_2m'
 	| 'precipitation'
 	| 'wind_speed_10m'
 	| 'wind_gusts_10m'
@@ -17,4 +18,6 @@ export interface MeteogramData {
 	timezone: string;
 	/** Décalage UTC du point en secondes (ex. 7200), au moment de la requête. */
 	utcOffsetSeconds: number;
+	/** Altitude du point selon le modèle (m), depuis `elevation` de l'API. `null` si absente. */
+	elevation: number | null;
 }

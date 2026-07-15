@@ -14,8 +14,16 @@ export interface MeteogramChartInput {
 	/** Fuseau IANA du point (ex. « Europe/Paris ») pour l'affichage heure locale. */
 	timezone: string;
 	onTimeClick: (date: Date) => void;
+	/** Survol d'un pas (desktop) : `x` = timestamp ms du point survolé, `null` à la
+	 *  sortie. Permet à l'encart de valeurs de suivre la souris comme un tooltip. */
+	onHover?: (x: number | null) => void;
 	/** Mobile : marges resserrées pour rendre la zone de tracé au graphe. */
 	compact?: boolean;
+	/** Unité d'affichage du vent (préférence utilisateur). Défaut km/h.
+	 *  La valeur du windbarb reste en m/s (tracé des plumes / Beaufort). */
+	windDisplay?: { factor: number; unit: string };
+	/** Humidité relative (%) — optionnel, visible si présent. */
+	humidity?: (number | null)[];
 }
 
 // Thème sombre : TOUT élément d'axe/grille doit être stylé explicitement.
@@ -50,6 +58,33 @@ const TEXT = 'rgba(255, 255, 255, 0.7)';
 const TEXT_STRONG = 'rgba(255, 255, 255, 0.9)';
 
 /**
+ * Séparateurs de jour : un trait vertical à chaque **minuit local**. On repère
+ * les pas dont l'heure locale (fuseau du point) vaut « 00 » — le premier point
+ * est exclu (pas de trait au bord gauche). Offsets entiers (France/Europe) : le
+ * pas horaire tombe pile sur minuit local. Edge case fuseaux non-entiers (Inde
+ * +5:30) : léger désalignement, accepté (cohérent avec la limite DST connue).
+ */
+export function dayBoundaryPlotLines(
+	times: Date[],
+	timezone: string
+): { value: number; color: string; width: number; zIndex: number }[] {
+	const fmt = new Intl.DateTimeFormat('en-GB', {
+		timeZone: timezone,
+		hour: '2-digit',
+		hour12: false
+	});
+	const lines: { value: number; color: string; width: number; zIndex: number }[] = [];
+	times.forEach((t, i) => {
+		if (i === 0) return;
+		const hh = fmt.format(t); // '00'..'23' (certaines impl : '24' à minuit)
+		if (hh === '00' || hh === '24') {
+			lines.push({ value: t.getTime(), color: GRID_DAY, width: 1, zIndex: 1 });
+		}
+	});
+	return lines;
+}
+
+/**
  * Construit les options du graphe unique façon yr.no (démo officielle
  * Highcharts « meteogram »), thème sombre accordé au tiroir. Builder pur :
  * données → objet options, aucun accès DOM ni au runtime Highcharts.
@@ -71,6 +106,10 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 	// laisser un titre « hPa » orphelin sans graduations sur le bord droit.
 	const hasPressure = input.pressure.some((v) => v !== null && Number.isFinite(v));
 
+	const humidity = input.humidity ?? [];
+	const humidityData = xs.map((x, i) => [x, at(humidity, i)]);
+	const hasHumidity = humidity.some((v) => v !== null && Number.isFinite(v));
+
 	// 1 barbe sur 2 (lisibilité, comme le démo) ; points sans vitesse/direction écartés.
 	const windData = xs
 		.map((x, i) => ({ x, value: at(input.windSpeed, i), direction: at(input.windDirection, i), i }))
@@ -82,6 +121,8 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 		}));
 
 	const onTimeClick = input.onTimeClick;
+	const onHover = input.onHover;
+	const windDisplay = input.windDisplay ?? { factor: 3.6, unit: 'km/h' };
 
 	// Densité de grille adaptative : au-delà de 72 h, une gridline toutes les
 	// 2 h sature le tracé (l'API renvoie jusqu'à 7 jours) — on passe à 6 h.
@@ -99,7 +140,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 			// le bord du SVG sur le rendu Safari iOS. On garde donc 72px en bas.
 			marginBottom: input.compact ? 72 : 70,
 			marginRight: input.compact ? 40 : 44,
-			marginTop: input.compact ? 36 : 44,
+			marginTop: input.compact ? 52 : 60,
 			plotBorderWidth: 1,
 			plotBorderColor: 'rgba(255, 255, 255, 0.14)',
 			alignTicks: false,
@@ -123,6 +164,12 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 		// pour `exportChartLocal`.
 		exporting: { buttons: { contextButton: { enabled: false } } },
 		tooltip: {
+			// Tooltip de survol DÉSACTIVÉ : les valeurs du pas sélectionné sont
+			// affichées par l'encart maison (meteogram.svelte), boîte unique et
+			// cohérente mobile/desktop. Le tooltip de survol créait une 2ᵉ boîte au
+			// comportement incohérent (persistant au tactile, volatil au survol).
+			// Config conservée (headerFormat/pointFormatter, testés) mais inerte.
+			enabled: false,
 			shared: true,
 			useHTML: false,
 			backgroundColor: 'rgba(12, 20, 32, 0.95)',
@@ -147,26 +194,24 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				maxPadding: 0,
 				offset: 30,
 				showLastLabel: true,
-				labels: { format: '{value:%H}', style: { color: TEXT } },
-				crosshair: { width: 1, color: 'rgba(255, 255, 255, 0.25)' }
-			},
-			{
-				linkedTo: 0,
-				type: 'datetime',
-				tickInterval: 24 * 36e5,
+				crosshair: { width: 1, color: 'rgba(255, 255, 255, 0.25)' },
+				// Séparateurs de jour (l'ancien 2ᵉ axe « opposite » est supprimé).
+				plotLines: dayBoundaryPlotLines(input.times, input.timezone),
 				labels: {
-					format: '{value:<span style="font-size: 12px; font-weight: bold">%a</span> %e %b}',
-					align: 'left',
-					x: 3,
-					y: 8,
-					style: { color: TEXT_STRONG }
-				},
-				opposite: true,
-				tickLength: 20,
-				lineColor: AXIS,
-				tickColor: AXIS,
-				gridLineWidth: 1,
-				gridLineColor: GRID_DAY
+					style: { color: TEXT },
+					// Heure (%H) par défaut ; à minuit local, la date en gras (cadre allégé).
+					formatter: function () {
+						const ctx = this as unknown as {
+							value: number;
+							axis: { chart: { time: { dateFormat(f: string, t: number): string } } };
+						};
+						const time = ctx.axis.chart.time;
+						const hh = time.dateFormat('%H', ctx.value);
+						return hh === '00'
+							? time.dateFormat('<span style="font-weight: bold">%a %e %b</span>', ctx.value)
+							: hh;
+					}
+				}
 			}
 		] as XAxisOptions[],
 		yAxis: [
@@ -181,7 +226,6 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				plotLines: [{ value: 0, color: 'rgba(255,255,255,0.3)', width: 1, zIndex: 2 }],
 				maxPadding: 0.3,
 				minRange: 8,
-				tickInterval: 1,
 				gridLineColor: GRID
 			},
 			{
@@ -210,16 +254,58 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				gridLineWidth: 0,
 				opposite: true,
 				showLastLabel: false
+			},
+			{
+				// Humidité relative (0-100 %)
+				visible: hasHumidity,
+				showEmpty: false, // axe caché tant que la série humidité (masquée par défaut) n'est pas activée
+				min: 0,
+				max: 100,
+				tickInterval: 50, // 0 / 50 / 100 seulement (limiter l'encombrement à droite)
+				title: {
+					text: hasHumidity ? '%' : undefined,
+					offset: 0,
+					align: 'high',
+					rotation: 0,
+					style: { fontSize: '10px', color: '#c084fc' },
+					textAlign: 'right',
+					x: -3
+				},
+				labels: { style: { fontSize: '8px', color: '#c084fc' }, x: -3 },
+				gridLineWidth: 0,
+				opposite: true,
+				showLastLabel: false
 			}
 		],
-		legend: { enabled: false },
+		legend: {
+			enabled: true,
+			align: 'center',
+			verticalAlign: 'top',
+			padding: 4,
+			itemMarginTop: 0,
+			itemMarginBottom: 0,
+			symbolHeight: 8,
+			itemStyle: { color: TEXT_STRONG, fontSize: '11px', fontWeight: 'normal' },
+			itemHoverStyle: { color: '#ffffff' },
+			itemHiddenStyle: { color: 'rgba(255, 255, 255, 0.3)' }
+		},
 		plotOptions: {
 			series: {
 				pointPlacement: 'between',
+				// Sortie de série → l'encart revient au pas sélectionné (fin de survol).
+				events: {
+					mouseOut: function () {
+						onHover?.(null);
+					}
+				},
 				point: {
 					events: {
 						click: function () {
 							onTimeClick(new Date(this.x as number));
+						},
+						// Survol d'un point (desktop) → l'encart suit la souris.
+						mouseOver: function () {
+							onHover?.(this.x as number);
 						}
 					}
 				}
@@ -260,7 +346,7 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				dataLabels: {
 					enabled: true,
 					filter: { operator: '>', property: 'y', value: 0 },
-					style: { fontSize: '8px', color: TEXT, textOutline: 'none' }
+					style: { fontSize: '10px', color: TEXT, textOutline: 'none' }
 				},
 				tooltip: { valueSuffix: ` ${input.units.precipitation}` }
 			},
@@ -279,6 +365,18 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				tooltip: { valueSuffix: ` ${input.units.pressure}` }
 			},
 			{
+				name: 'Humidité',
+				visible: false, // masquée par défaut : activable via la légende (bonus discret)
+				showInLegend: hasHumidity,
+				data: humidityData,
+				type: 'spline',
+				marker: { enabled: false },
+				lineWidth: 1,
+				color: '#c084fc',
+				yAxis: 3,
+				tooltip: { valueSuffix: ' %' }
+			},
+			{
 				name: 'Vent',
 				type: 'windbarb',
 				id: 'windbarbs',
@@ -288,8 +386,6 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 				vectorLength: 18,
 				yOffset: -15,
 				tooltip: {
-					// Remplace le format par défaut du windbarb, dont la description
-					// Beaufort (`point.beaufort`) est en anglais (« Light air »…).
 					pointFormatter: function () {
 						const p = this as unknown as {
 							value: number;
@@ -299,14 +395,11 @@ export function buildChartOptions(input: MeteogramChartInput): Options {
 						};
 						const beaufort =
 							p.beaufortLevel !== undefined ? ` (${BEAUFORT_FR[p.beaufortLevel] ?? ''})` : '';
-						// La valeur `p.value` reste en m/s (le module windbarb dessine les
-						// plumes et calcule le Beaufort sur cette base) ; on ne convertit
-						// qu'à l'affichage. Virgule décimale : cohérent avec les autres
-						// séries (locale fr).
-						const kmh = (p.value * 3.6).toFixed(1).replace('.', ',');
+						// p.value reste en m/s ; conversion à l'affichage via windDisplay.
+						const speed = (p.value * windDisplay.factor).toFixed(1).replace('.', ',');
 						return (
 							`<span style="color:${p.color ?? '#7dd3fc'}">●</span> ` +
-							`${p.series.name} : <b>${kmh} km/h</b>${beaufort}<br/>`
+							`${p.series.name} : <b>${speed} ${windDisplay.unit}</b>${beaufort}<br/>`
 						);
 					}
 				}

@@ -2,6 +2,8 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { get } from 'svelte/store';
 
+	import XIcon from '@lucide/svelte/icons/x';
+
 	import { desktop } from '$lib/stores/preferences';
 	import { metaJson, time } from '$lib/stores/time';
 	import { convertValue, getDisplayUnit, unitPreferences } from '$lib/stores/units';
@@ -10,7 +12,7 @@
 	import { fetchMeteogram } from '$lib/meteogram/api';
 	import { type ExportableChart, renderMeteogramExport } from '$lib/meteogram/export-image';
 	import { INFOCLIMAT_LOGO_DATA_URI } from '$lib/meteogram/infoclimat-logo';
-	import { buildChartOptions } from '$lib/meteogram/meteogram-chart';
+	import { BEAUFORT_FR, buildChartOptions } from '$lib/meteogram/meteogram-chart';
 	import { resolveApiModel } from '$lib/meteogram/model-map';
 	import { nearestValidTime } from '$lib/meteogram/snap';
 	import { symbolForWmo } from '$lib/meteogram/weather-symbols';
@@ -20,7 +22,14 @@
 	import type Highcharts from 'highcharts';
 	import type { Chart } from 'highcharts';
 
-	let { lat, lng }: { lat: number; lng: number } = $props();
+	// `elevation` (bindable) : altitude du point selon le modèle, publiée vers le
+	// tiroir (affichée dans l'en-tête). L'API terrain de la carte n'étant pas
+	// fiable sans DEM chargé, on prend l'altitude fournie par l'API forecast.
+	let {
+		lat,
+		lng,
+		elevation = $bindable(null)
+	}: { lat: number; lng: number; elevation?: number | null } = $props();
 
 	let data = $state<MeteogramData | null>(null);
 	let loading = $state(false);
@@ -81,6 +90,11 @@
 		load();
 	});
 
+	// Publie l'altitude (modèle) vers le tiroir dès que les données arrivent.
+	$effect(() => {
+		elevation = data?.elevation ?? null;
+	});
+
 	// ——— séries converties dans l'unité d'affichage ———
 	function seriesValues(key: MeteogramKey): (number | null)[] {
 		const raw = data?.series[key] ?? [];
@@ -91,6 +105,140 @@
 			v === null || !Number.isFinite(v) ? null : convertValue(v, baseUnit, $unitPreferences, key)
 		);
 	}
+
+	// ——— Encart de valeurs du pas sélectionné (playhead) ———
+	// Remplace le tooltip de survol Highcharts, inutilisable au tactile : sur
+	// mobile/tablette il ne s'affichait pas de façon fiable (piloté par le hover,
+	// tué par le touchend/reflow). Ici on lit nous-mêmes les valeurs au pas le plus
+	// proche du temps courant et on les rend dans un encart TOUJOURS visible,
+	// déterministe sur tous les appareils. Le tooltip de survol reste dispo desktop.
+	type ReadoutRow = { label: string; value: string; color: string };
+	// Stores lus au top level (les runes interdisent `$store` dans un callback imbriqué).
+	const currentTime = $derived($time);
+	const currentUnits = $derived($unitPreferences);
+
+	// Survol d'un pas (desktop) : timestamp ms du point sous la souris, `null` hors
+	// survol. Sur mobile/tactile il n'y a pas de survol → reste `null`.
+	let hoveredX = $state<number | null>(null);
+
+	function nearestIdx(times: Date[], tx: number): number {
+		let idx = 0;
+		let best = Infinity;
+		for (let i = 0; i < times.length; i++) {
+			const diff = Math.abs(times[i].getTime() - tx);
+			if (diff < best) {
+				best = diff;
+				idx = i;
+			}
+		}
+		return idx;
+	}
+
+	// Pas « actif » de l'encart : celui SOUS LA SOURIS si on survole (desktop → la
+	// boîte suit le curseur comme un tooltip), sinon le pas sélectionné (playhead /
+	// tactile). C'est ce qui restaure le comportement de prod sur desktop.
+	const activeIdx = $derived.by(() => {
+		const d = data;
+		if (!d || !d.times.length) return 0;
+		const tx = hoveredX ?? (currentTime ? new Date(currentTime).getTime() : d.times[0].getTime());
+		return nearestIdx(d.times, tx);
+	});
+
+	// Échelle de Beaufort : vitesse m/s → indice 0-12 (pour la description FR du vent).
+	function beaufortFromMs(ms: number): number {
+		const thresholds = [0.5, 1.6, 3.4, 5.5, 8, 10.8, 13.9, 17.2, 20.8, 24.5, 28.5, 32.7];
+		let lvl = 0;
+		for (let i = 0; i < thresholds.length; i++) if (ms >= thresholds[i]) lvl = i + 1;
+		return lvl;
+	}
+
+	// Encart masquable : le ✕ le cache (utile au tactile où il n'y a pas de « fin de
+	// survol ») ; il réapparaît dès qu'on sélectionne un nouveau pas (changement de
+	// temps → reset). Le ✕ lui-même ne change pas le temps, donc le masquage tient.
+	let dismissed = $state(false);
+	$effect(() => {
+		void $time;
+		dismissed = false;
+	});
+	// Survoler ramène l'encart s'il avait été masqué (intention de lire les valeurs).
+	$effect(() => {
+		if (hoveredX !== null) dismissed = false;
+	});
+	const readout = $derived.by(
+		(): { time: string; weather: string | null; rows: ReadoutRow[] } | null => {
+			const d = data;
+			if (!d || !d.times.length) return null;
+			const idx = activeIdx;
+			const u = currentUnits;
+			const at = (arr: (number | null)[]): number | null => arr[idx] ?? null;
+			const fmt = (v: number | null, digits: number, unit: string): string | null =>
+				v === null || !Number.isFinite(v) ? null : `${v.toFixed(digits).replace('.', ',')} ${unit}`;
+			const windRaw = at(seriesValues('wind_speed_10m'));
+			const windDisp = windRaw === null ? null : windRaw * convertValue(1, 'm/s', u);
+			// Vent : valeur convertie + description Beaufort FR (comme l'ancien tooltip).
+			const windValue =
+				windDisp === null
+					? null
+					: `${Math.round(windDisp)} ${getDisplayUnit('m/s', u)} (${BEAUFORT_FR[beaufortFromMs(windRaw as number)]})`;
+			const code = d.series.weather_code?.[idx];
+			const isDay = (d.series.is_day?.[idx] ?? 1) === 1;
+			const candidates: { label: string; value: string | null; color: string }[] = [
+				{
+					label: 'Température',
+					value: fmt(
+						at(convertSeries('temperature_2m', '°C')),
+						1,
+						getDisplayUnit('°C', u, 'temperature_2m')
+					),
+					color: '#ff4d4d'
+				},
+				{
+					label: 'Point de rosée',
+					value: fmt(
+						at(convertSeries('dew_point_2m', '°C')),
+						1,
+						getDisplayUnit('°C', u, 'dew_point_2m')
+					),
+					color: '#34d399'
+				},
+				{
+					label: 'Humidité',
+					value: fmt(at(seriesValues('relative_humidity_2m')), 0, '%'),
+					color: '#c084fc'
+				},
+				{
+					label: 'Précipitations',
+					value: fmt(
+						at(convertSeries('precipitation', 'mm')),
+						1,
+						getDisplayUnit('mm', u, 'precipitation')
+					),
+					color: '#68cfe8'
+				},
+				{
+					label: 'Pression',
+					value: fmt(
+						at(convertSeries('pressure_msl', 'hPa')),
+						1,
+						getDisplayUnit('hPa', u, 'pressure_msl')
+					),
+					color: '#fbbf24'
+				},
+				{ label: 'Vent', value: windValue, color: '#7dd3fc' }
+			];
+			const rows = candidates.filter((r): r is ReadoutRow => r.value !== null);
+			const time = new Intl.DateTimeFormat('fr-FR', {
+				timeZone: d.timezone,
+				weekday: 'short',
+				day: 'numeric',
+				month: 'short',
+				hour: '2-digit',
+				minute: '2-digit'
+			}).format(new Date(d.times[idx]));
+			const weather = code === null || code === undefined ? null : symbolForWmo(code, isDay).label;
+			return { time, weather, rows };
+		}
+	);
 
 	function seek(t: Date) {
 		const validTimes = get(metaJson)?.valid_times?.map((v) => new Date(v)) ?? [];
@@ -183,6 +331,7 @@
 			dewPoint: convertSeries('dew_point_2m', '°C'),
 			precipitation: convertSeries('precipitation', 'mm'),
 			pressure: convertSeries('pressure_msl', 'hPa'),
+			humidity: seriesValues('relative_humidity_2m'),
 			windSpeed: seriesValues('wind_speed_10m'),
 			windDirection: seriesValues('wind_direction_10m'),
 			symbolLabels: (d.series.weather_code ?? []).map((code, i) =>
@@ -195,9 +344,16 @@
 				precipitation: getDisplayUnit('mm', $unitPreferences, 'precipitation'),
 				pressure: getDisplayUnit('hPa', $unitPreferences, 'pressure_msl')
 			},
+			windDisplay: {
+				// Conversions vitesse purement multiplicatives (m/s→km/h ×3,6, →mph, →kn) :
+				// le facteur = conversion de 1 m/s dans l'unité choisie.
+				factor: convertValue(1, 'm/s', $unitPreferences),
+				unit: getDisplayUnit('m/s', $unitPreferences)
+			},
 			timezone: d.timezone,
 			compact: !desktop.current,
-			onTimeClick: seek
+			onTimeClick: seek,
+			onHover: (x: number | null) => (hoveredX = x)
 		};
 		let cancelled = false;
 		(async () => {
@@ -212,6 +368,7 @@
 					...options.chart?.events,
 					render: function () {
 						drawSymbols(this as Chart, d);
+						positionEncart();
 					}
 				}
 			};
@@ -221,6 +378,40 @@
 		return () => {
 			cancelled = true;
 		};
+	});
+
+	// Position horizontale (px, relative au conteneur) de l'encart : suit le pas
+	// ACTIF (survolé sur desktop, sinon sélectionné). Recalculée au survol, au scrub,
+	// au render et au resize (le mapping pixel du chart change à chaque fois).
+	let encartX = $state<number | null>(null);
+	let encartW = $state(0);
+	let containerW = $state(0);
+	const encartLeft = $derived.by(() => {
+		if (encartX === null) return 4;
+		const w = encartW || 150;
+		const cw = containerW || 320;
+		// Centré sur le pas actif, borné dans le conteneur (pas de débordement).
+		return Math.round(Math.max(4, Math.min(encartX - w / 2, cw - w - 4)));
+	});
+
+	function positionEncart() {
+		const c = chart;
+		const d = data;
+		if (!c || !c.xAxis?.[0] || !d?.times.length) {
+			encartX = null;
+			return;
+		}
+		try {
+			encartX = c.xAxis[0].toPixels(d.times[activeIdx].getTime(), false);
+		} catch {
+			encartX = null;
+		}
+	}
+
+	// Repositionne l'encart quand le pas actif change (survol souris inclus).
+	$effect(() => {
+		void activeIdx;
+		positionEncart();
 	});
 
 	// Playhead : plotLine repositionnée au scrub, sans re-render du chart.
@@ -238,6 +429,7 @@
 				zIndex: 4
 			});
 		}
+		positionEncart();
 	}
 	$effect(() => {
 		void $time;
@@ -251,7 +443,10 @@
 	$effect(() => {
 		const el = chartEl;
 		if (!el || typeof ResizeObserver === 'undefined') return;
-		const ro = new ResizeObserver(() => chart?.reflow());
+		const ro = new ResizeObserver(() => {
+			chart?.reflow();
+			positionEncart();
+		});
 		ro.observe(el);
 		return () => ro.disconnect();
 	});
@@ -299,6 +494,42 @@
 	{:else if error === 'empty'}
 		<p class="p-4 text-sm text-white/60">Aucune donnée à ce point pour ce modèle.</p>
 	{:else if data && data.times.length}
-		<div bind:this={chartEl} class="min-h-[300px] w-full flex-1"></div>
+		<div class="relative min-h-[300px] w-full flex-1" bind:clientWidth={containerW}>
+			<div bind:this={chartEl} class="h-full w-full"></div>
+			{#if readout && !dismissed}
+				<!-- Encart de valeurs du pas sélectionné : boîte unique (le tooltip de
+				     survol Highcharts est désactivé). Suit horizontalement le playhead
+				     (`left`), borné dans le conteneur. `pointer-events-none` pour laisser
+				     passer les taps vers le graphe ; seul le ✕ est cliquable. -->
+				<div
+					bind:clientWidth={encartW}
+					style="left: {encartLeft}px"
+					class="pointer-events-none absolute top-1 z-10 rounded-md bg-[rgba(12,20,32,0.9)] py-1 pr-6 pl-2 text-[11px] leading-tight text-white/90 shadow ring-1 ring-white/10"
+				>
+					<button
+						class="pointer-events-auto absolute top-0.5 right-0.5 rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
+						aria-label="Masquer les valeurs"
+						title="Masquer"
+						onclick={(e) => {
+							e.stopPropagation();
+							dismissed = true;
+						}}
+					>
+						<XIcon class="size-3.5" aria-hidden="true" />
+					</button>
+					<div class="font-medium">{readout.time}</div>
+					{#if readout.weather}
+						<div class="text-white/70">{readout.weather}</div>
+					{/if}
+					{#each readout.rows as r (r.label)}
+						<div class="flex items-center gap-1 tabular-nums">
+							<span class="inline-block size-1.5 rounded-full" style="background:{r.color}"></span>
+							<span class="text-white/70">{r.label} :</span>
+							<span class="font-semibold">{r.value}</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>

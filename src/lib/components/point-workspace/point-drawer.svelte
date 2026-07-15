@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import DownloadIcon from '@lucide/svelte/icons/download';
 	import XIcon from '@lucide/svelte/icons/x';
 	import * as maplibregl from 'maplibre-gl';
@@ -19,6 +20,52 @@
 	let height = $state(DEFAULT_HEIGHT);
 	let maxHeight = $state(DEFAULT_HEIGHT);
 	let meteogramComp = $state<ReturnType<typeof Meteogram>>();
+	// Altitude du point (modèle), publiée par le meteogram et affichée dans l'en-tête.
+	let elevation = $state<number | null>(null);
+	let sectionEl = $state<HTMLElement>();
+
+	// Fermeture au clic hors du tiroir (« dismiss »). On écoute `click` (pas
+	// `pointerdown`) pour ne PAS fermer pendant un panoramique de la carte (un pan
+	// ne produit pas de `click`). L'effet ne tourne que tant que le tiroir est monté
+	// (composant sous `{#if open}`) → le clic d'ouverture (bouton du popup) a déjà
+	// fini de se propager quand l'écouteur est ajouté, il ne se referme pas seul.
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		function onClick(e: MouseEvent) {
+			if (!sectionEl) return;
+			// `composedPath()` = chemin de propagation figé au dispatch → robuste si la
+			// cible est détachée pendant le handler (ex. le ✕ de l'encart qui se retire
+			// du DOM en se masquant : `contains(e.target)` renverrait alors faux à tort
+			// et fermerait tout le tiroir). On teste l'appartenance sur ce chemin.
+			const path = e.composedPath();
+			if (path.includes(sectionEl)) return; // clic dans le tiroir
+			if (path.some((n) => n instanceof Element && n.classList.contains('popup'))) return; // bulle-viseur
+			pointWorkspace.close();
+		}
+		window.addEventListener('click', onClick);
+		return () => window.removeEventListener('click', onClick);
+	});
+
+	// Fermeture au tap sur la CARTE : on écoute l'événement `click` de MapLibre
+	// (fiable au tactile, contrairement au `click` DOM que MapLibre supprime souvent
+	// au tap — d'où un clic hors cadre qui ne fermait pas sur mobile/tablette).
+	// L'ouverture se fait via le bouton du popup (pas un clic carte) → pas d'auto-
+	// fermeture à l'ouverture.
+	$effect(() => {
+		const currentMap = $map;
+		if (!currentMap) return;
+		const close = (e: maplibregl.MapMouseEvent) => {
+			// Le bouton « Météogramme » vit dans le marker MapLibre (conteneur canvas) :
+			// le tap qui OUVRE le tiroir déclenche aussi ce `click`. On ignore donc les
+			// clics dont la cible est dans la bulle `.popup` — sinon le tiroir se
+			// refermerait aussitôt ouvert.
+			const t = e.originalEvent?.target;
+			if (t instanceof Element && t.closest('.popup')) return;
+			pointWorkspace.close();
+		};
+		currentMap.on('click', close);
+		return () => currentMap.off('click', close);
+	});
 
 	// Réserve basse dégageant l'axe des heures de la barre d'adresse Safari iOS
 	// (~50pt) : sur iPhone, cette barre recouvre le bas du viewport web et n'est
@@ -139,10 +186,22 @@
 
 {#if $pointWorkspace.open && $pointWorkspace.lat !== null && $pointWorkspace.lng !== null}
 	<section
+		bind:this={sectionEl}
 		class="bg-glass glass-blur fixed right-0 bottom-0 z-40 flex flex-col border-t border-sky-500/30 text-white"
 		style={`height:${height}px;left:${$sidebarWidth}px`}
 		aria-label="Espace point — météogramme"
 	>
+		<!-- Onglet de fermeture (au-dessus du bord du tiroir) : moyen SÛR de fermer sur
+		     tout appareil — le tap hors cadre est capricieux au tactile (MapLibre traite
+		     beaucoup de touchers comme des gestes carte). Grande cible tactile, centrée. -->
+		<button
+			class="bg-glass glass-blur absolute -top-6 left-1/2 z-10 flex h-6 w-16 -translate-x-1/2 items-center justify-center rounded-t-lg border border-b-0 border-sky-500/30 text-white/80 hover:text-white"
+			aria-label="Fermer le météogramme"
+			title="Fermer le météogramme"
+			onclick={() => pointWorkspace.close()}
+		>
+			<ChevronDownIcon class="size-5" aria-hidden="true" />
+		</button>
 		<!--
 			Poignée de redimensionnement : un « separator » focusable qui pilote une
 			valeur (hauteur du tiroir) implémente en réalité le pattern clavier d'un
@@ -174,8 +233,13 @@
 				<span class="hidden sm:inline">Météogramme —&nbsp;</span>{$pointWorkspace.lat.toFixed(3)},
 				{$pointWorkspace.lng.toFixed(3)}
 			</span>
-			<span class="min-w-0 flex-1 truncate text-xs text-sky-300">
-				{$selectedDomain.label} · dernier run
+			<span
+				class="min-w-0 flex-1 truncate text-xs text-sky-300"
+				title={elevation !== null ? 'Altitude du point (modèle)' : undefined}
+			>
+				{$selectedDomain.label} · dernier run{elevation !== null
+					? ` · ${Math.round(elevation)} m`
+					: ''}
 			</span>
 			<button
 				class="flex shrink-0 items-center gap-1 rounded px-2 py-1 hover:bg-white/10"
@@ -195,7 +259,12 @@
 			</button>
 		</header>
 		<div class="flex-1 overflow-y-auto px-2" style="padding-bottom: {bottomPad}">
-			<Meteogram bind:this={meteogramComp} lat={$pointWorkspace.lat} lng={$pointWorkspace.lng} />
+			<Meteogram
+				bind:this={meteogramComp}
+				bind:elevation
+				lat={$pointWorkspace.lat}
+				lng={$pointWorkspace.lng}
+			/>
 		</div>
 	</section>
 {/if}

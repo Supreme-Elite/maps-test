@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { type MeteogramChartInput, buildChartOptions } from '$lib/meteogram/meteogram-chart';
+import {
+	type MeteogramChartInput,
+	buildChartOptions,
+	dayBoundaryPlotLines
+} from '$lib/meteogram/meteogram-chart';
 
 function input(overrides: Partial<MeteogramChartInput> = {}): MeteogramChartInput {
 	const times = [0, 1, 2, 3].map((h) => new Date(Date.UTC(2026, 6, 10, h)));
@@ -22,19 +26,25 @@ function input(overrides: Partial<MeteogramChartInput> = {}): MeteogramChartInpu
 }
 
 describe('buildChartOptions', () => {
-	it('déclare 3 axes Y (T°, précip, pression) et 2 axes X liés', () => {
+	it('déclare 4 axes Y (T°, précip, pression, humidité)', () => {
 		const o = buildChartOptions(input());
-		expect(o.yAxis).toHaveLength(3);
-		expect(o.xAxis).toHaveLength(2);
-		expect((o.xAxis as { linkedTo?: number }[])[1].linkedTo).toBe(0);
+		expect(o.yAxis).toHaveLength(4);
 	});
 
-	it('série 5 : température, rosée, précip, pression, windbarb — sur le bon axe', () => {
+	it('6 séries : température, rosée, précip, pression, humidité, windbarb — sur le bon axe', () => {
 		const o = buildChartOptions(input());
 		const s = o.series as { type?: string; yAxis?: number; name?: string }[];
-		expect(s.map((x) => x.type)).toEqual(['spline', 'spline', 'column', 'spline', 'windbarb']);
-		expect(s[2].yAxis).toBe(1);
-		expect(s[3].yAxis).toBe(2);
+		expect(s.map((x) => x.type)).toEqual([
+			'spline',
+			'spline',
+			'column',
+			'spline',
+			'spline',
+			'windbarb'
+		]);
+		expect(s[2].yAxis).toBe(1); // précip
+		expect(s[3].yAxis).toBe(2); // pression
+		expect(s[4].yAxis).toBe(3); // humidité
 	});
 
 	it('température porte x (ms epoch) et symbolName pour le tooltip', () => {
@@ -156,6 +166,29 @@ describe('buildChartOptions', () => {
 		expect(pressureSeries.visible).not.toBe(false);
 	});
 
+	it('humidité fournie : série masquée par défaut mais présente en légende', () => {
+		const o = buildChartOptions(input({ humidity: [40, 55, 60, 45] }));
+		const humAxis = (o.yAxis as { min?: number; max?: number; showEmpty?: boolean }[])[3];
+		expect(humAxis.min).toBe(0);
+		expect(humAxis.max).toBe(100);
+		expect(humAxis.showEmpty).toBe(false);
+		const hum = (o.series as { name?: string; visible?: boolean; showInLegend?: boolean }[]).find(
+			(x) => x.name === 'Humidité'
+		)!;
+		expect(hum.visible).toBe(false);
+		expect(hum.showInLegend).toBe(true);
+	});
+
+	it('humidité absente/nulle : série hors légende, axe masqué', () => {
+		const o = buildChartOptions(input());
+		expect((o.yAxis as { visible?: boolean }[])[3].visible).toBe(false);
+		const hum = (o.series as { name?: string; visible?: boolean; showInLegend?: boolean }[]).find(
+			(x) => x.name === 'Humidité'
+		)!;
+		expect(hum.visible).toBe(false);
+		expect(hum.showInLegend).toBe(false);
+	});
+
 	it('unités injectées dans tooltips/axes', () => {
 		const o = buildChartOptions(
 			input({ units: { temperature: '°F', precipitation: 'inch', pressure: 'hPa' } })
@@ -163,5 +196,61 @@ describe('buildChartOptions', () => {
 		const json = JSON.stringify(o);
 		expect(json).toContain('°F');
 		expect(json).toContain('inch');
+	});
+
+	it('vent : pas de nombres sur les barbules (dataLabels non activés)', () => {
+		const o = buildChartOptions(input());
+		const barbs = (o.series as { type?: string; dataLabels?: { enabled?: boolean } }[]).find(
+			(s) => s.type === 'windbarb'
+		)!;
+		expect(barbs.dataLabels?.enabled).not.toBe(true);
+	});
+
+	it('vent : tooltip à l’unité de préférence (windDisplay)', () => {
+		const o = buildChartOptions(input({ windDisplay: { factor: 1, unit: 'm/s' } }));
+		const barbs = (
+			o.series as { type?: string; tooltip?: { pointFormatter?: (this: unknown) => string } }[]
+		).find((s) => s.type === 'windbarb')!;
+		const rendered = barbs.tooltip!.pointFormatter!.call({
+			value: 4.2,
+			beaufortLevel: 3,
+			color: '#7dd3fc',
+			series: { name: 'Vent' }
+		});
+		expect(rendered).toContain('4,2 m/s');
+	});
+
+	it('légende activée (identifie les courbes)', () => {
+		const o = buildChartOptions(input());
+		expect((o.legend as { enabled?: boolean }).enabled).toBe(true);
+	});
+
+	it('étiquettes de précipitations à 10px (lisibilité)', () => {
+		const o = buildChartOptions(input());
+		const precip = (
+			o.series as { name?: string; dataLabels?: { style?: { fontSize?: string } } }[]
+		).find((s) => s.name === 'Précipitations')!;
+		expect(precip.dataLabels?.style?.fontSize).toBe('10px');
+	});
+
+	it('axe T° auto-adaptable : pas de tickInterval forcé, minRange conservé', () => {
+		const o = buildChartOptions(input());
+		const tempAxis = (o.yAxis as { tickInterval?: number; minRange?: number }[])[0];
+		expect(tempAxis.tickInterval).toBeUndefined();
+		expect(tempAxis.minRange).toBe(8);
+	});
+
+	it('un seul axe X, avec séparateurs de jour (plotLines)', () => {
+		const o = buildChartOptions(input());
+		expect(o.xAxis).toHaveLength(1);
+		const axis = (o.xAxis as { plotLines?: unknown[] }[])[0];
+		expect(Array.isArray(axis.plotLines)).toBe(true);
+	});
+
+	it('dayBoundaryPlotLines : un trait à chaque minuit local (premier point exclu)', () => {
+		// 50 h horaires depuis minuit UTC, fuseau UTC → minuits à h=24 et h=48.
+		const times = Array.from({ length: 50 }, (_, h) => new Date(Date.UTC(2026, 6, 10) + h * 36e5));
+		const lines = dayBoundaryPlotLines(times, 'UTC');
+		expect(lines.map((l) => l.value)).toEqual([Date.UTC(2026, 6, 11), Date.UTC(2026, 6, 12)]);
 	});
 });
